@@ -2,10 +2,12 @@ package io.scalac.tezos.translator
 
 import akka.actor.ActorSystem
 import akka.http.scaladsl.Http
-import akka.http.scaladsl.model.{ContentType, HttpEntity, HttpResponse, MediaTypes}
+import akka.http.scaladsl.model.{ContentType, HttpEntity, HttpResponse, MediaTypes, StatusCodes}
 import akka.http.scaladsl.server.Directives.{entity, _}
 import akka.stream.ActorMaterializer
+import io.scalac.tezos.translator.micheline.MichelineTranslator
 import io.scalac.tezos.translator.michelson.JsonToMichelson
+import io.scalac.tezos.translator.michelson.dto.MichelsonSchema
 
 import scala.concurrent.Future
 
@@ -17,13 +19,19 @@ object Routes {
         path("from" / "michelson" / "to" / "micheline") {
           post {
             entity(as[String]) { body =>
-              complete(HttpResponse(entity = HttpEntity(ContentType(MediaTypes.`application/json`), Samples.micheline)))
+              MichelineTranslator.michelsonToMicheline(body).fold(
+                error => complete(StatusCodes.BadRequest, error.toString),
+                parsed => complete(HttpResponse(entity = HttpEntity(ContentType(MediaTypes.`application/json`), parsed)))
+              )
             }
           }
         } ~ path("from" / "micheline" / "to" / "michelson") {
           post {
             entity(as[String]) { body =>
-              complete(Samples.michelson)
+              JsonToMichelson.convert[MichelsonSchema](body).fold(
+                  error => complete(StatusCodes.BadRequest, error.toString),
+                  parsed => complete(parsed)
+              )
             }
           }
         }
