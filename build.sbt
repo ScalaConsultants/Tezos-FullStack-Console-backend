@@ -15,5 +15,6 @@ libraryDependencies ++= Seq(
   "org.scalatest" %% "scalatest" % "3.0.5" % "test",
   "com.typesafe.akka" %% "akka-stream-testkit" % "2.5.23",
   "com.typesafe.akka" %% "akka-http-testkit" % "10.1.8",
-  "Scalac" %% "tezos-fullstack-console-translation-module" % "0.1"
+  "Scalac" %% "tezos-fullstack-console-translation-module" % "0.1",
+  "ch.megard" %% "akka-http-cors" % "0.4.1"
 )
