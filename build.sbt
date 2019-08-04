@@ -8,7 +8,7 @@ resolvers += "scalaz-bintray" at "https://dl.bintray.com/scalaz/releases"
 
 resolvers += "typesafe" at "http://repo.typesafe.com/typesafe/releases/"
 
-resolvers += "Scalac" at "https://raw.githubusercontent.com/ScalaConsultants/mvn-repo/"
+resolvers += "Scalac" at "https://raw.githubusercontent.com/ScalaConsultants/mvn-repo/master/"
 
 libraryDependencies ++= Seq(
   "com.typesafe.akka" %% "akka-http"   % "10.1.9",
@@ -17,6 +17,6 @@ libraryDependencies ++= Seq(
   "org.scalatest" %% "scalatest" % "3.0.5" % "test",
   "com.typesafe.akka" %% "akka-stream-testkit" % "2.5.23",
   "com.typesafe.akka" %% "akka-http-testkit" % "10.1.8",
-  "Scalac" %% "tezos-fullstack-console-translation-module" % "0.1",
+  "io.scalac" %% "tezos-fullstack-console-translation-module" % "0.1",
   "ch.megard" %% "akka-http-cors" % "0.4.1"
 )
