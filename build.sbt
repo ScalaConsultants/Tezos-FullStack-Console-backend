@@ -8,6 +8,8 @@ resolvers += "scalaz-bintray" at "https://dl.bintray.com/scalaz/releases"
 
 resolvers += "typesafe" at "http://repo.typesafe.com/typesafe/releases/"
 
+resolvers += "Scalac" at "https://raw.githubusercontent.com/ScalaConsultants/mvn-repo/"
+
 libraryDependencies ++= Seq(
   "com.typesafe.akka" %% "akka-http"   % "10.1.9",
   "com.typesafe.akka" %% "akka-stream" % "2.5.23",
