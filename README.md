@@ -87,6 +87,12 @@ Content-Type: application/json
 ]
 ```
 
+##Run in docker
+
+```sbt assembly```
+
+```docker-compose up```
+
 ## References
 
 [Conseil](https://github.com/Cryptonomic/Conseil)

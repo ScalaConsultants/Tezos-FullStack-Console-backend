@@ -3,6 +3,8 @@ package io.scalac.tezos.translator
 import akka.actor.ActorSystem
 import akka.http.scaladsl.Http
 import akka.stream.ActorMaterializer
+import com.typesafe.config.ConfigFactory
+
 import scala.concurrent.Future
 import scala.io.StdIn
 
@@ -12,9 +14,14 @@ object Boot {
     implicit val materializer = ActorMaterializer()
     implicit val executionContext = system.dispatcher
 
-    val bindingFuture: Future[Http.ServerBinding] = Routes.setupRoutes
+    val config = ConfigFactory.load().getConfig("console")
+    val httpConfig = config.getConfig("http")
+    val host = httpConfig.getString("host")
+    val port = httpConfig.getInt("port")
 
-    println(s"Server online at http://\nPress RETURN to stop...")
+    val bindingFuture: Future[Http.ServerBinding] = Routes.setupRoutes(host, port)
+
+    println(s"Server online at http://$host:$port\nPress RETURN to stop...")
 
     val line = StdIn.readLine()
     bindingFuture

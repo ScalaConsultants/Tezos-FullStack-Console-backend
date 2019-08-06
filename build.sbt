@@ -20,3 +20,14 @@ libraryDependencies ++= Seq(
   "io.scalac" %% "tezos-fullstack-console-translation-module" % "0.1",
   "ch.megard" %% "akka-http-cors" % "0.4.1"
 )
+
+// No need to run tests while building jar
+test in assembly := {}
+// Simple and constant jar name
+assemblyJarName in assembly := s"console.jar"
+// Merge strategy for assembling conflicts
+assemblyMergeStrategy in assembly := {
+  case PathList("reference.conf") => MergeStrategy.concat
+  case PathList("META-INF", "MANIFEST.MF") => MergeStrategy.discard
+  case _ => MergeStrategy.first
+}

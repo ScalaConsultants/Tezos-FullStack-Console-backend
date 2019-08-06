@@ -49,11 +49,11 @@ object Routes {
     CorsSettings.defaultSettings.withAllowedOrigins(HttpOriginMatcher.ALL)
   }
 
-  def setupRoutes (
+  def setupRoutes(host: String, port: Int)(
     implicit actorSystem: ActorSystem,
     actorMaterializer: ActorMaterializer): Future[Http.ServerBinding] = {
 
-    Http().bindAndHandle(route, "localhost", 8080)
+    Http().bindAndHandle(route, host, port)
   }
 
 }
