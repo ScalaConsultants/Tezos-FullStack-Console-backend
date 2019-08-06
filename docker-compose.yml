@@ -1,6 +1,7 @@
 version: "3"
 services:
   console-service:
+    container_name: tezos-fullstack-console-backend
     image: scalaconsultants/tezos-fullstack-console-backend:latest
     tty: true
     stdin_open: true
