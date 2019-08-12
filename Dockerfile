@@ -8,7 +8,7 @@ RUN apt-get install -y curl \
 RUN mkdir -p /opt/app
 WORKDIR /opt/app
 
-RUN npm i nearley
+RUN npm i nearley@2.16.0
 
 EXPOSE 8080
 
