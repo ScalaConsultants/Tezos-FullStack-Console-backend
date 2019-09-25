@@ -3,13 +3,21 @@
 REST API for translating from `Michelson` to `Micheline` and back.
 It utilizes [Tezos-FullStack-Console-Translation-Module](https://github.com/ScalaConsultants/Tezos-FullStack-Console-Translation-Module) to perform it.
 
+## Prerequisites
+* JDK (> 8.x)
+* Scala (> 2.12.8)
+* SBT (> 1.2.8)
+* Node.js with nearly ([Tezos-FullStack-Console-Translation-Module](https://github.com/ScalaConsultants/Tezos-FullStack-Console-Translation-Module) requires it)
+
 ## Usage
 
 1. Clone repo
 
-2. Run `sbt run`
+2. Run `npm install`
 
-3. Query your local instance with exemplary snippets
+3. Run `sbt run`
+
+4. Query your local instance with exemplary snippets
 
 From `Michelson` to `Micheline`:
 
