@@ -1,5 +1,5 @@
 {
-  "name": "my-node",
+  "name": "tezos-translator",
   "version": "1.0.0",
   "dependencies": {
     "nearley": "^2.16.0"

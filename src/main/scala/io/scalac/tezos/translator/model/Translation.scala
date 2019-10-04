@@ -9,6 +9,17 @@ object Translation {
   case object FromMicheline extends From
   case object FromMichelson extends From
 
+  def asString(r: From) = r match {
+    case FromMicheline => "micheline"
+    case FromMichelson => "michelson"
+  }
+
+  def fromString(s: String): Option[From] = s.toLowerCase match {
+    case "micheline" => Some(FromMicheline)
+    case "michelson" => Some(FromMichelson)
+    case _ => None
+  }
+
   implicit val fromDeserializer = Unmarshaller.strict[String, From] { string =>
     string.toLowerCase match {
       case "micheline" => FromMicheline

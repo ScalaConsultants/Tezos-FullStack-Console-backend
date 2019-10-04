@@ -5,10 +5,16 @@ import akka.http.scaladsl.testkit.ScalatestRouteTest
 import io.circe.parser._
 import org.scalatest.{MustMatchers, WordSpec}
 import org.scalatest.concurrent.ScalaFutures
+import slick.jdbc.MySQLProfile.api._
 
 class TranslationTest extends WordSpec with MustMatchers with ScalaFutures with ScalatestRouteTest {
 
-  val routes = new Routes(new TranslationsService).allRoutes
+  implicit val repository = new TranslationRepository
+
+  implicit val db = Database.forConfig("tezos-db")
+
+  private val service = new TranslationsService
+  val routes = new Routes(service).allRoutes
 
   "A Routes" can {
     "translate michelson to micheline" when {
