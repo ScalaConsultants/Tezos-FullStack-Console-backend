@@ -1,2 +1,8 @@
 *.class
 *.log
+.Michelson.js
+.MichelsonTranslator.js
+package-lock.json
+
+target/
+node_modules/

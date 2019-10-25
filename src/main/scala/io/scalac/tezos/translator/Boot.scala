@@ -8,9 +8,11 @@ import com.typesafe.config.ConfigFactory
 import scala.concurrent.Future
 import scala.io.StdIn
 
+import slick.jdbc.MySQLProfile.api._
+
 object Boot {
   def main(args: Array[String]): Unit = {
-    implicit val system = ActorSystem("my-system")
+    implicit val system = ActorSystem("tezos-translator")
     implicit val materializer = ActorMaterializer()
     implicit val executionContext = system.dispatcher
 
@@ -19,7 +21,12 @@ object Boot {
     val host = httpConfig.getString("host")
     val port = httpConfig.getInt("port")
 
-    val bindingFuture: Future[Http.ServerBinding] = Routes.setupRoutes(host, port)
+    implicit val db = Database.forConfig("tezos-db")
+    implicit val repository = new TranslationRepository
+
+    val routes = new Routes(new TranslationsService)
+
+    val bindingFuture: Future[Http.ServerBinding] = Http().bindAndHandle(routes.allRoutes, host, port)
 
     println(s"Server online at http://$host:$port\nPress RETURN to stop...")
 
