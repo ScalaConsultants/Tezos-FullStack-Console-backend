@@ -4,7 +4,9 @@ import akka.http.scaladsl.server.Directives._
 import ch.megard.akka.http.cors.scaladsl.CorsDirectives._
 import io.scalac.tezos.translator.routes.{HistoryRoutes, HttpRoutes, TranslatorRoutes}
 
-class Routes(translationsService: TranslationsService) {
+import scala.concurrent.ExecutionContext
+
+class Routes(translationsService: TranslationsService)(implicit ec: ExecutionContext) {
 
   private val apis: List[HttpRoutes] =
     List(new TranslatorRoutes(translationsService), new HistoryRoutes(translationsService))

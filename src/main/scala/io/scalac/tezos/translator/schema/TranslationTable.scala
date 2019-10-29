@@ -23,5 +23,4 @@ class TranslationTable(tag: Tag) extends Table[TranslationDomainModel](tag, "tra
   def createdAt = column[DateTime]("created_at", slick.sql.SqlProfile.ColumnOption.NotNull, O.SqlType("TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6)"))
 
   def * = (id.?, from, source, translation, createdAt) <> (TranslationDomainModel.tupled, TranslationDomainModel.unapply)
-
 }
