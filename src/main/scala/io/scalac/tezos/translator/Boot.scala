@@ -4,10 +4,10 @@ import akka.actor.ActorSystem
 import akka.http.scaladsl.Http
 import akka.stream.ActorMaterializer
 import com.typesafe.config.ConfigFactory
+import io.scalac.tezos.translator.config.Configuration
 
 import scala.concurrent.Future
 import scala.io.StdIn
-
 import slick.jdbc.MySQLProfile.api._
 
 object Boot {
@@ -16,10 +16,12 @@ object Boot {
     implicit val materializer = ActorMaterializer()
     implicit val executionContext = system.dispatcher
 
+    val log = system.log
     val config = ConfigFactory.load().getConfig("console")
     val httpConfig = config.getConfig("http")
     val host = httpConfig.getString("host")
     val port = httpConfig.getInt("port")
+    val configuration = Configuration.getConfig(log)
 
     implicit val db = Database.forConfig("tezos-db")
     implicit val repository = new TranslationRepository
