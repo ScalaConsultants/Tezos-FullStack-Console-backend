@@ -1,6 +1,7 @@
-package io.scalac.tezos.translator
+package io.scalac.tezos.translator.service
 
 import io.scalac.tezos.translator.model.{Translation, TranslationDomainModel}
+import io.scalac.tezos.translator.repository.TranslationRepository
 import org.joda.time.DateTime
 import slick.jdbc.MySQLProfile.api._
 

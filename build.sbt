@@ -14,7 +14,7 @@ resolvers += "Scalac" at "https://raw.githubusercontent.com/ScalaConsultants/mvn
 
 val akkaHttpVersion = "10.1.10"
 
-libraryDependencies ++= akkaHttp ++ akkaHttpCors ++ akkaStream ++ jodaTime ++ logBack ++ mySql ++ pureConfig ++
+libraryDependencies ++= akkaHttp ++ akkaHttpCors ++ akkaStream ++ cats ++ jodaTime ++ logBack ++ mySql ++ pureConfig ++
                         scalactic ++ scalaTest ++ sl4j ++ slick ++ tesozFCTM
 
 // No need to run tests while building jar
@@ -27,3 +27,5 @@ assemblyMergeStrategy in assembly := {
   case PathList("META-INF", "MANIFEST.MF") => MergeStrategy.discard
   case _ => MergeStrategy.first
 }
+
+scalacOptions ++= Seq("-Ypartial-unification")

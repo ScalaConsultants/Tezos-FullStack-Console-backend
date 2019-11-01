@@ -9,6 +9,7 @@ object DTO {
                                    hostname: String,
                                    `error-codes`: List[String])
   case class ErrorDTO(error: String)
+  case class ErrorsDTO(errors: List[String])
   case class SendEmailDTO(name: String, phone: String, email: String, content: String)
 
 }

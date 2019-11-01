@@ -1,9 +1,8 @@
-package io.scalac.tezos.translator
+package io.scalac.tezos.translator.repository
 
 import io.scalac.tezos.translator.model.{Translation, TranslationDomainModel}
-import io.scalac.tezos.translator.schema.TranslationTable
+import io.scalac.tezos.translator.schema.{TranslationTable, _}
 import slick.jdbc.MySQLProfile.api._
-import io.scalac.tezos.translator.schema._
 
 class TranslationRepository {
 

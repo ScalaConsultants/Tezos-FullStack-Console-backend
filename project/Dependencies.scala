@@ -5,6 +5,7 @@ object Version {
   val akkaHttp     = "10.1.10"
   val akkaHttpCors = "0.4.1"
   val akkaStream   = "2.5.23"
+  val cats         = "2.0.0"
   val jodaTime     = "2.10.4"
   val logback      = "1.2.3"
   val mySql        = "8.0.17"
@@ -32,6 +33,10 @@ object Dependencies {
   val akkaStream: Seq[ModuleID] = Seq(
     "com.typesafe.akka" %% "akka-stream"         % Version.akkaStream,
     "com.typesafe.akka" %% "akka-stream-testkit" % Version.akkaStream % "test"
+  )
+
+  val cats: Seq[ModuleID] = Seq(
+    "org.typelevel" %% "cats-core" % Version.cats
   )
 
   val jodaTime: Seq[ModuleID] = Seq (
