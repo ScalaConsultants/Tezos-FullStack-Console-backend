@@ -4,9 +4,9 @@ import org.joda.time.DateTime
 
 object DTO {
 
-  case class CaptchaVerifyResponse(success: Boolean,
-                                   challenge_ts: DateTime,
-                                   hostname: String,
+  case class CaptchaVerifyResponse(success:       Boolean,
+                                   challenge_ts:  Option[DateTime],
+                                   hostname:      Option[String],
                                    `error-codes`: List[String])
   case class ErrorDTO(error: String)
   case class ErrorsDTO(errors: List[String])

@@ -25,6 +25,7 @@ object Boot {
     val host = httpConfig.getString("host")
     val port = httpConfig.getInt("port")
     val configuration = Configuration.getConfig(log)
+    log.info(s"Config loaded - $configuration")
 
     implicit val db: MySQLProfile.backend.Database = Database.forConfig("tezos-db")
     implicit val repository: TranslationRepository = new TranslationRepository
