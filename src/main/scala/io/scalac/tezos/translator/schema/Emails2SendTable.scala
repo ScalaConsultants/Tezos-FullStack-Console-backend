@@ -19,12 +19,14 @@ class Emails2SendTable(tag: Tag) extends Table[SendEmailModel](tag, "emails2send
 
   def phone: Rep[String] = column[String]("phone")
 
+  def content: Rep[String] = column[String]("content")
+
   def inSending: Rep[Boolean] = column[Boolean]("in_sending")
 
   def createdAt: Rep[DateTime] = column[DateTime]("created_at", slick.sql.SqlProfile.ColumnOption.NotNull, O.SqlType("TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6)"))
 
   def lastTryToSend: Rep[DateTime] = column[DateTime]("last_try_to_send", slick.sql.SqlProfile.ColumnOption.NotNull, O.SqlType("TIMESTAMP(6) NULL"))
 
-  override def * : ProvenShape[SendEmailModel] = (id, name, phone, inSending, createdAt, lastTryToSend.?) <> (SendEmailModel.tupled, SendEmailModel.unapply)
+  override def * : ProvenShape[SendEmailModel] = (id, name, phone, content, inSending, createdAt, lastTryToSend.?) <> (SendEmailModel.tupled, SendEmailModel.unapply)
 
 }

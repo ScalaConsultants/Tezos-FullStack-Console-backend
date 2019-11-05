@@ -5,6 +5,7 @@ import org.joda.time.DateTime
 case class SendEmailModel(id: Long,
                           name: String,
                           phone: String,
+                          content: String,
                           inSending: Boolean,
                           createdAt: DateTime,
                           lastTryToSend: Option[DateTime])

@@ -4,6 +4,7 @@ import akka.actor.ActorSystem
 import akka.http.scaladsl.Http
 import akka.stream.ActorMaterializer
 import com.typesafe.config.ConfigFactory
+import io.scalac.tezos.translator.actor.EmailSender
 import io.scalac.tezos.translator.config.Configuration
 import io.scalac.tezos.translator.repository.{Emails2SendRepository, TranslationRepository}
 import io.scalac.tezos.translator.service.{Emails2SendService, TranslationsService}
@@ -31,6 +32,7 @@ object Boot {
     implicit val repository: TranslationRepository = new TranslationRepository
     val emails2SendRepo = new Emails2SendRepository
     val email2SendService = new Emails2SendService(emails2SendRepo, db)
+    val cronEmailSender = EmailSender(email2SendService, configuration, log)
 
     val routes = new Routes(new TranslationsService, email2SendService, log, configuration)
 
@@ -40,7 +42,10 @@ object Boot {
 
     val _ = StdIn.readLine()
     bindingFuture
-      .flatMap(_.unbind())
+      .flatMap { binding =>
+        cronEmailSender.cancel()
+        binding.unbind()
+      }
       .onComplete(_ => system.terminate())
 
   }
