@@ -6,6 +6,4 @@ case class SendEmailModel(id: Long,
                           name: String,
                           phone: String,
                           content: String,
-                          inSending: Boolean,
-                          createdAt: DateTime,
-                          lastTryToSend: Option[DateTime])
+                          createdAt: DateTime)

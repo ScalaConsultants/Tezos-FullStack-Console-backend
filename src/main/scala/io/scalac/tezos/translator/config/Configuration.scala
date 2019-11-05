@@ -25,7 +25,7 @@ case class EmailConfiguration(host: String          = "smtp.gmail.com",
                               subjectPrefix: String = "Service message")
 
 
-case class CronConfiguration(cronBatchSize: Int               = 50,
+case class CronConfiguration(cronBatchSize: Int               = 10,
                              startDelay: FiniteDuration       = 0 milliseconds,
                              cronTaskInterval: FiniteDuration = 30 seconds)
 

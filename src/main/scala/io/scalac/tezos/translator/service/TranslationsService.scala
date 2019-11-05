@@ -2,7 +2,7 @@ package io.scalac.tezos.translator.service
 
 import io.scalac.tezos.translator.model.{Translation, TranslationDomainModel}
 import io.scalac.tezos.translator.repository.TranslationRepository
-import org.joda.time.DateTime
+import org.joda.time.{DateTime, DateTimeZone}
 import slick.jdbc.MySQLProfile.api._
 
 import scala.concurrent.Future
@@ -12,7 +12,7 @@ class TranslationsService(implicit repository: TranslationRepository, db: Databa
   def addTranslation(from: Translation.From, source: String, translation: String): Future[Int] =
     db.run {
       repository.add(
-        TranslationDomainModel(id = None, from = from, source = source, translation = translation, createdAt = DateTime.now)
+        TranslationDomainModel(id = None, from = from, source = source, translation = translation, createdAt = DateTime.now(DateTimeZone.UTC))
       )
     }
 

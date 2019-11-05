@@ -10,8 +10,8 @@ class Emails2SendService(repository: Emails2SendRepository, db: Database) {
 
   def addNewEmail2Send(validatedDTO: SendEmailDTO): Future[Int] = {
     db.run(
-      sqlu"""insert into emails2send (name, phone, email, content, in_sending) values
-            (${validatedDTO.name}, ${validatedDTO.phone}, ${validatedDTO.email}, ${validatedDTO.content}, false)"""
+      sqlu"""insert into emails2send (name, phone, email, content) values
+            (${validatedDTO.name}, ${validatedDTO.phone}, ${validatedDTO.email}, ${validatedDTO.content})"""
     )
   }
 

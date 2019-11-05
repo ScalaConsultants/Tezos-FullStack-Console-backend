@@ -31,7 +31,7 @@ class EmailSender(service: Emails2SendService,
       .map(_.foreach(sendSingleMail))
   }
 
-  def sendSingleMail(sendEmailModel: SendEmailModel): Unit = {
+  def sendSingleMail(sendEmailModel: SendEmailModel): Unit =
     mailer(
       Envelope
         .from(config.user.addr)
@@ -45,7 +45,6 @@ class EmailSender(service: Emails2SendService,
         service.removeSentMessage(sendEmailModel.id)
         log.debug(s"Message sent - $sendEmailModel")
     }
-  }
 
   def textMessageFromSendEmailModer(mail: SendEmailModel): Text =
     Text(
