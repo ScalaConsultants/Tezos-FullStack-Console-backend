@@ -18,10 +18,13 @@ object ReCaptchaDirective extends Directives with JsonHelper {
   def withReCaptchaVerify(log: LoggingAdapter,
                           reCaptchaConfig: CaptchaConfig)
                          (implicit actorSystem: ActorSystem): Directive[Unit] =
-    headerValueByName(reCaptchaConfig.headerName)
-      .flatMap(
-        userCaptcha => captchaCheckDirective(userCaptcha, log, reCaptchaConfig)
-      )
+    if (reCaptchaConfig.checkOn)
+      headerValueByName(reCaptchaConfig.headerName)
+        .flatMap(
+          userCaptcha => captchaCheckDirective(userCaptcha, log, reCaptchaConfig)
+        )
+    else
+      Directive[Unit](inner => ctx => inner()(ctx))
 
   protected def captchaCheckDirective(userCaptcha: String,
                                       log: LoggingAdapter,
@@ -29,21 +32,17 @@ object ReCaptchaDirective extends Directives with JsonHelper {
                                      (implicit actorSystem: ActorSystem): Directive[Unit] = Directive[Unit] {
     inner => ctx =>
 
-      if (reCaptchaConfig.checkOn) {
-        implicit val materializer: ActorMaterializer = ActorMaterializer()
-        implicit val ec: ExecutionContextExecutor    = ctx.executionContext
+      implicit val materializer: ActorMaterializer = ActorMaterializer()
+      implicit val ec: ExecutionContextExecutor    = ctx.executionContext
 
-        for {
-          verifyResponse <- doRequestToVerifyCaptcha(userCaptcha, log, reCaptchaConfig)
-          preparedResult <- verifyResponse match {
-            case Right(response) => checkVerifyResponse(response, log, inner)
-            case Left(errorResponse) => Future.successful(errorResponse)
-          }
-          result <- preparedResult(ctx)
-        } yield result
-      }
-      else
-        inner()(ctx)
+      for {
+        verifyResponse <- doRequestToVerifyCaptcha(userCaptcha, log, reCaptchaConfig)
+        preparedResult <- verifyResponse match {
+          case Right(response) => checkVerifyResponse(response, log, inner)
+          case Left(errorResponse) => Future.successful(errorResponse)
+        }
+        result <- preparedResult(ctx)
+      } yield result
 
   }
 
