@@ -51,6 +51,7 @@ class EmailSender(service: Emails2SendService,
       s"""
          |name: ${mail.name}
          |phone: ${mail.phone}
+         |email: ${mail.email}
          |content: ${mail.content}
          |""".stripMargin
     )
