@@ -39,6 +39,7 @@ class CaptchaDirectiveSpec extends WordSpec with Matchers with ScalatestRouteTes
     secret     = secret,
     headerName = headerName
   )
+
   val captchaTestRoute: Route = path("test") {
     pathEndOrSingleSlash {
       ReCaptchaDirective.withReCaptchaVerify(system.log, captchaTestConfig)(system) {
@@ -99,7 +100,7 @@ class CaptchaDirectiveSpec extends WordSpec with Matchers with ScalatestRouteTes
 
   }
 
-  def stubForCaptchaCheck(expectedUserResponse: String): Unit = {
+  def stubForCaptchaCheck(expectedUserResponse: String): Unit =
     wireMockServer.stubFor(
       expectedPost(urlEqualTo(checkCaptchaUri + s"?secret=$secret&response=$expectedUserResponse"))
         .willReturn(
@@ -112,9 +113,8 @@ class CaptchaDirectiveSpec extends WordSpec with Matchers with ScalatestRouteTes
             ).withStatus(StatusCodes.OK.intValue)
         )
     )
-  }
 
-  def stubForInvalidCaptcha(expectedUserResponse: String): Unit = {
+  def stubForInvalidCaptcha(expectedUserResponse: String): Unit =
     wireMockServer.stubFor(
       expectedPost(urlEqualTo(checkCaptchaUri + s"?secret=$secret&response=$expectedUserResponse"))
         .willReturn(
@@ -129,6 +129,5 @@ class CaptchaDirectiveSpec extends WordSpec with Matchers with ScalatestRouteTes
                 |}""".stripMargin
             ).withStatus(StatusCodes.OK.intValue))
     )
-  }
 
 }

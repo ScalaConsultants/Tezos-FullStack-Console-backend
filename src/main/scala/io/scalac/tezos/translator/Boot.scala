@@ -38,7 +38,7 @@ object Boot {
 
     val bindingFuture: Future[Http.ServerBinding] = Http().bindAndHandle(routes.allRoutes, host, port)
 
-    println(s"Server online at http://$host:$port\nPress RETURN to stop...")
+    log.info(s"Server online at http://$host:$port\nPress RETURN to stop...")
 
     val _ = StdIn.readLine()
     bindingFuture
