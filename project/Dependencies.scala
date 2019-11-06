@@ -7,6 +7,7 @@ object Version {
   val akkaStream   = "2.5.23"
   val cats         = "2.0.0"
   val courier      = "2.0.0"
+  val greenMail    = "1.5.11"
   val jodaTime     = "2.10.4"
   val logback      = "1.2.3"
   val mySql        = "8.0.17"
@@ -43,6 +44,10 @@ object Dependencies {
 
   val courier: Seq[ModuleID] = Seq(
     "com.github.daddykotex" %% "courier" % Version.courier
+  )
+
+  val greenMail: Seq[ModuleID] = Seq(
+    "com.icegreen" % "greenmail" % Version.greenMail % Test
   )
 
   val jodaTime: Seq[ModuleID] = Seq (
