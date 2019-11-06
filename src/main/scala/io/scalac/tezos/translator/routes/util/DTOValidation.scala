@@ -1,7 +1,9 @@
 package io.scalac.tezos.translator.routes.util
 
 import cats.data.NonEmptyList
-import cats.implicits._
+import cats.syntax.either._
+import cats.syntax.parallel._
+import cats.instances.parallel._
 import io.scalac.tezos.translator.model.DTO.SendEmailDTO
 import io.scalac.tezos.translator.routes.util.DTOValidation.ValidationResult
 
@@ -13,12 +15,16 @@ trait DTOValidation[T] {
 
 object DTOValidation {
 
+  val maxTinyLength = 255
+
   type ValidationResult[A] = Either[NonEmptyList[DTOValidationError], A]
 
   def apply[T](value: T)(implicit validator: DTOValidation[T]): ValidationResult[T] =
     validator.validate(value)
 
   sealed trait DTOValidationError
+
+  final case class FieldToLong(field: String, maxLength: Int) extends DTOValidationError
 
   case object NameIsEmpty extends DTOValidationError
 
@@ -49,8 +55,21 @@ object DTOValidation {
       NonEmptyList.one(onNonMatch).asLeft
   }
 
+  def checkStringLength(string: String,
+                        maxLength: Int,
+                        whenMaxLengthExceeds: => DTOValidationError): ValidationResult[String] = {
+    if (string.length > maxLength)
+      NonEmptyList.one(whenMaxLengthExceeds).asLeft
+    else
+      string.asRight
+  }
+
   implicit val SendEmailDTOValidation: DTOValidation[SendEmailDTO] = { dto =>
-    val checkingNameResult: ValidationResult[String]    = checkStringNotEmpty(dto.name, NameIsEmpty)
+    val checkingNameResult: ValidationResult[String] =
+      checkStringNotEmpty(dto.name, NameIsEmpty)
+      .flatMap(
+        name => checkStringLength(name, maxTinyLength, FieldToLong("name", maxTinyLength))
+      )
     val checkingPhoneNotEmpty: ValidationResult[String] = checkStringNotEmpty(dto.phone, PhoneIsEmpty)
 
     val checkingPhoneIsValid: ValidationResult[String] = checkingPhoneNotEmpty
@@ -60,12 +79,15 @@ object DTOValidation {
 
     val checkingEmailNotEmpty: ValidationResult[String] = checkStringNotEmpty(dto.email, EmailIsEmpty)
 
-    val checkingEmailIsValid: ValidationResult[String] = checkingEmailNotEmpty.flatMap(
-      maybeEmail => checkStringMatchRegExp(maybeEmail, emailRegex, EmailIsInvalid(maybeEmail))
-    )
+    val checkingEmailIsValid: ValidationResult[String] = checkingEmailNotEmpty
+      .flatMap(
+        maybeEmail => checkStringMatchRegExp(maybeEmail, emailRegex, EmailIsInvalid(maybeEmail))
+      )
+      .flatMap(
+        email => checkStringLength(email, maxTinyLength, FieldToLong("email", maxTinyLength))
+      )
 
     val checkContentNotEmpty: ValidationResult[String] = checkStringNotEmpty(dto.content, ContentIsEmpty)
-
 
     (checkingNameResult, checkingPhoneIsValid, checkingEmailIsValid, checkContentNotEmpty)
       .parMapN(SendEmailDTO)

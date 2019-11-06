@@ -5,7 +5,7 @@ import akka.http.scaladsl.server.{Directive, Directives}
 import akka.http.scaladsl.unmarshalling.FromEntityUnmarshaller
 import io.scalac.tezos.translator.model.DTO.ErrorsDTO
 import io.scalac.tezos.translator.routes.JsonHelper
-import io.scalac.tezos.translator.routes.util.DTOValidation.{ContentIsEmpty, DTOValidationError, EmailIsEmpty, EmailIsInvalid, NameIsEmpty, PhoneIsEmpty, PhoneIsInvalid}
+import io.scalac.tezos.translator.routes.util.DTOValidation._
 
 object DTOValidationDirective extends Directives with JsonHelper {
 
@@ -20,12 +20,13 @@ object DTOValidationDirective extends Directives with JsonHelper {
     }
 
   def convertValidationErrorsToString: PartialFunction[DTOValidationError, String] = {
-    case NameIsEmpty           => "Name field is empty"
-    case PhoneIsEmpty          => "Phone field is empty"
-    case PhoneIsInvalid(phone) => s"Invalid phone number $phone"
-    case EmailIsEmpty          => "Email field is empty"
-    case EmailIsInvalid(email) => s"Invalid email $email"
-    case ContentIsEmpty        => "Content fields is empty"
+    case FieldToLong(field, maxLength) => s"Field $field is to long, max length - $maxLength"
+    case NameIsEmpty                   => "Name field is empty"
+    case PhoneIsEmpty                  => "Phone field is empty"
+    case PhoneIsInvalid(phone)         => s"Invalid phone number $phone"
+    case EmailIsEmpty                  => "Email field is empty"
+    case EmailIsInvalid(email)         => s"Invalid email $email"
+    case ContentIsEmpty                => "Content fields is empty"
   }
 
 }
