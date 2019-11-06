@@ -17,6 +17,7 @@ val akkaHttpVersion = "10.1.10"
 libraryDependencies ++= akkaHttp ++ akkaHttpCors ++ akkaStream ++ cats ++ courier ++ greenMail ++ jodaTime ++ logBack ++
                         mySql ++ pureConfig ++ scalactic ++ scalaTest ++ sl4j ++ slick ++ tesozFCTM ++ wireMock
 
+// Otherwise - some tests will fail due mess in the database
 parallelExecution in test := false
 // No need to run tests while building jar
 test in assembly := {}
