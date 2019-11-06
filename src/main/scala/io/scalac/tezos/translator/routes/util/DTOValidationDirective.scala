@@ -25,7 +25,7 @@ object DTOValidationDirective extends Directives with JsonHelper {
     case PhoneIsInvalid(phone) => s"Invalid phone number $phone"
     case EmailIsEmpty          => "Email field is empty"
     case EmailIsInvalid(email) => s"Invalid email $email"
-    case ContentIsEmpty        => "Content fiels is empty"
+    case ContentIsEmpty        => "Content fields is empty"
   }
 
 }
