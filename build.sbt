@@ -15,7 +15,7 @@ resolvers += "Scalac" at "https://raw.githubusercontent.com/ScalaConsultants/mvn
 val akkaHttpVersion = "10.1.10"
 
 libraryDependencies ++= akkaHttp ++ akkaHttpCors ++ akkaStream ++ cats ++ courier ++ jodaTime ++ logBack ++ mySql ++
-                        pureConfig ++ scalactic ++ scalaTest ++ sl4j ++ slick ++ tesozFCTM
+                        pureConfig ++ scalactic ++ scalaTest ++ sl4j ++ slick ++ tesozFCTM ++ wireMock
 
 // No need to run tests while building jar
 test in assembly := {}

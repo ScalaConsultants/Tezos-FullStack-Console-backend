@@ -16,6 +16,7 @@ object Version {
   val sl4j         = "1.7.26"
   val slick        = "3.3.1"
   val tesozFCTM    = "0.1"
+  val wireMock     = "1.58"
 
 }
 
@@ -79,6 +80,10 @@ object Dependencies {
 
   val tesozFCTM: Seq[ModuleID] = Seq(
     "io.scalac" %% "tezos-fullstack-console-translation-module" % Version.tesozFCTM
+  )
+
+  val wireMock: Seq[ModuleID] = Seq(
+    "com.github.tomakehurst" % "wiremock" % Version.wireMock % Test
   )
 
 }
