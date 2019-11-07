@@ -1,13 +1,12 @@
 package io.scalac.tezos.translator
 
-import io.scalac.tezos.translator.schema.TranslationTable
+import io.scalac.tezos.translator.schema.{Emails2SendTable, TranslationTable}
 import slick.dbio.{DBIOAction, NoStream}
 import slick.jdbc.JdbcBackend
 import slick.jdbc.MySQLProfile.api._
 
-import scala.concurrent.{Await, Future}
+import scala.concurrent.Await
 import scala.concurrent.duration._
-import scala.concurrent.ExecutionContext.Implicits.global
 
 trait DbTestBase {
 
@@ -21,14 +20,20 @@ trait DbTestBase {
     run(
       DBIO.sequence(
         Seq(
-          TranslationTable.translations.schema.create
+          TranslationTable.translations.schema.create,
+          Emails2SendTable.emails2Send.schema.create
         )
       )
     )
 
-  protected def dropTables() = run {
-    TranslationTable.translations.schema.dropIfExists
-  }
+  protected def dropTables(): Seq[Unit] = run(
+    DBIO.sequence(
+      Seq(
+        TranslationTable.translations.schema.dropIfExists,
+        Emails2SendTable.emails2Send.schema.dropIfExists
+      )
+    )
+  )
 
   protected def recreateTables(): Unit = {
     dropTables()

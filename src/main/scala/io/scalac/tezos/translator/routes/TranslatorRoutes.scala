@@ -1,15 +1,16 @@
 package io.scalac.tezos.translator.routes
 
 import akka.http.scaladsl.model.{ContentType, HttpEntity, HttpResponse, MediaTypes, StatusCodes}
-import io.scalac.tezos.translator.TranslationsService
+import akka.http.scaladsl.server.Route
 import io.scalac.tezos.translator.micheline.MichelineTranslator
 import io.scalac.tezos.translator.michelson.JsonToMichelson
 import io.scalac.tezos.translator.michelson.dto.MichelsonSchema
 import io.scalac.tezos.translator.model.Translation
+import io.scalac.tezos.translator.service.TranslationsService
 
 class TranslatorRoutes(translationsService: TranslationsService) extends HttpRoutes {
 
-  override def routes =
+  override def routes: Route =
     pathPrefix("translate") {
       path("from" / "michelson" / "to" / "micheline") {
         post {

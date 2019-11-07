@@ -1,15 +1,27 @@
 package io.scalac.tezos.translator
 
+import akka.actor.ActorSystem
+import akka.event.LoggingAdapter
 import akka.http.scaladsl.server.Directives._
+import akka.http.scaladsl.server.Route
 import ch.megard.akka.http.cors.scaladsl.CorsDirectives._
-import io.scalac.tezos.translator.routes.{HistoryRoutes, HttpRoutes, TranslatorRoutes}
+import io.scalac.tezos.translator.config.Configuration
+import io.scalac.tezos.translator.routes.{HistoryRoutes, HttpRoutes, MessageRoutes, TranslatorRoutes}
+import io.scalac.tezos.translator.service.{Emails2SendService, TranslationsService}
 
-class Routes(translationsService: TranslationsService) {
+class Routes(translationsService: TranslationsService,
+             emails2SendService: Emails2SendService,
+             log: LoggingAdapter,
+             config: Configuration)(implicit as: ActorSystem) {
 
   private val apis: List[HttpRoutes] =
-    List(new TranslatorRoutes(translationsService), new HistoryRoutes(translationsService))
+    List(
+      new TranslatorRoutes(translationsService),
+      new HistoryRoutes(translationsService),
+      new MessageRoutes(emails2SendService, log, config.reCaptcha)
+    )
 
-  lazy val allRoutes =
+  lazy val allRoutes: Route =
     cors() {
       pathPrefix("v1") {
         apis.map(_.routes).reduce(_ ~ _)
