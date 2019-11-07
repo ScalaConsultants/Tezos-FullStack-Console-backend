@@ -8,6 +8,7 @@ import io.scalac.tezos.translator.model.DTO.{ErrorsDTO, SendEmailDTO}
 import io.scalac.tezos.translator.model.SendEmailModel
 import io.scalac.tezos.translator.repository.Emails2SendRepository
 import io.scalac.tezos.translator.routes.{JsonHelper, MessageRoutes}
+import io.scalac.tezos.translator.schema.Emails2SendTable
 import io.scalac.tezos.translator.service.Emails2SendService
 import org.scalatest.{Assertion, BeforeAndAfterAll, Matchers, WordSpec}
 import slick.jdbc.MySQLProfile
@@ -84,7 +85,7 @@ class MessageSpec extends WordSpec with Matchers with ScalatestRouteTest with Be
   }
 
   def getAllSendEmailsFromDb: Seq[SendEmailModel] = {
-    val queryFuture = testDb.run(emails2SendRepo.emails2Send.result)
+    val queryFuture = testDb.run(Emails2SendTable.emails2Send.result)
     Await.result(queryFuture, 1 second)
   }
 

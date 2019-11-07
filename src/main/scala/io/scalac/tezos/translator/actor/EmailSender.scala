@@ -1,21 +1,20 @@
 package io.scalac.tezos.translator.actor
 
 import akka.actor.{Actor, ActorSystem, Cancellable, Props}
-import io.scalac.tezos.translator.actor.EmailSender.SendEmails
-import io.scalac.tezos.translator.service.Emails2SendService
-import courier._
 import akka.event.LoggingAdapter
+import courier._
+import io.scalac.tezos.translator.actor.EmailSender.SendEmails
 import io.scalac.tezos.translator.config.{Configuration, EmailConfiguration}
 import io.scalac.tezos.translator.model.SendEmailModel
-import scala.concurrent.{ExecutionContextExecutor, Future}
-import scala.util.{Failure, Success}
+import io.scalac.tezos.translator.service.Emails2SendService
+
+import scala.concurrent.{ExecutionContext, ExecutionContextExecutor, Future}
 
 class EmailSender(service: Emails2SendService,
                   config: EmailConfiguration,
                   batchSize: Int,
-                  log: LoggingAdapter) extends Actor {
+                  log: LoggingAdapter)(implicit ec: ExecutionContext) extends Actor {
 
-  protected implicit val ec: ExecutionContextExecutor = context.dispatcher
   protected val mailer: Mailer = Mailer(config.host, config.port)
     .auth(config.auth)
     .as(config.user, config.pass)
@@ -31,19 +30,20 @@ class EmailSender(service: Emails2SendService,
       .map(_.foreach(sendSingleMail))
   }
 
-  protected def sendSingleMail(sendEmailModel: SendEmailModel): Unit =
+  protected def sendSingleMail(sendEmailModel: SendEmailModel): Future[Unit] =
     mailer(
       Envelope
         .from(config.user.addr)
         .to(config.receiver.addr)
         .subject(config.subjectPrefix + s" from:${sendEmailModel.name}")
         .content(textMessageFromSendEmailModel(sendEmailModel))
-    ).onComplete {
-      case Failure(err) =>
-        log.error(s"Can't send message - $sendEmailModel, error - $err")
-      case Success(_)   =>
-        service.removeSentMessage(sendEmailModel.id)
-        log.debug(s"Message sent - $sendEmailModel")
+    ).flatMap { _ =>
+      service
+        .removeSentMessage(sendEmailModel.id)
+        .map(_ => log.debug(s"Message sent - $sendEmailModel"))
+        .recover { case err => log.error(s"Can't remove sent message from db - $sendEmailModel, error - $err") }
+    }.recover {
+      case err => log.error(s"Can't send message - $sendEmailModel, error - $err")
     }
 
   protected def textMessageFromSendEmailModel(mail: SendEmailModel): Text =
@@ -61,7 +61,7 @@ class EmailSender(service: Emails2SendService,
 object EmailSender {
 
   def apply(service: Emails2SendService, config: Configuration, log: LoggingAdapter)(implicit ac: ActorSystem): Cancellable = {
-    import ac.dispatcher
+    implicit val ec: ExecutionContextExecutor = ac.dispatchers.lookup("blocking-dispatcher")
     val cronConfig = config.cron
     val actor = ac.actorOf(Props(new EmailSender(service, config.email, cronConfig.cronBatchSize, log)))
     ac.scheduler.schedule(cronConfig.startDelay, cronConfig.cronTaskInterval, actor, SendEmails)

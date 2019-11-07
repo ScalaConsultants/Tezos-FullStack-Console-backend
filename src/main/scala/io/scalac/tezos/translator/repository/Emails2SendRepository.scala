@@ -9,7 +9,7 @@ import scala.concurrent.ExecutionContext
 
 class Emails2SendRepository(implicit ec: ExecutionContext) {
 
-  val emails2Send = Emails2SendTable.emails2Send
+  protected val emails2Send = Emails2SendTable.emails2Send
 
   def getEmails2Send(batchSize: Int): DBIO[Seq[SendEmailModel]] =
     emails2Send

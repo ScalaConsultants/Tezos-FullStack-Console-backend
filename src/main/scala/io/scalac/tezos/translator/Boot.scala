@@ -40,7 +40,7 @@ object Boot {
 
     log.info(s"Server online at http://$host:$port\nPress RETURN to stop...")
 
-    val _ = StdIn.readLine()
+    StdIn.readLine()
     bindingFuture
       .flatMap { binding =>
         cronEmailSender.cancel()
