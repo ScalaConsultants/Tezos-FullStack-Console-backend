@@ -13,7 +13,9 @@ import scala.concurrent.{ExecutionContext, ExecutionContextExecutor, Future}
 class EmailSender(service: Emails2SendService,
                   config: EmailConfiguration,
                   batchSize: Int,
-                  log: LoggingAdapter)(implicit ec: ExecutionContext) extends Actor {
+                  log: LoggingAdapter) extends Actor {
+
+  protected implicit val ec: ExecutionContextExecutor = context.dispatcher
 
   protected val mailer: Mailer = Mailer(config.host, config.port)
     .auth(config.auth)
@@ -61,9 +63,11 @@ class EmailSender(service: Emails2SendService,
 object EmailSender {
 
   def apply(service: Emails2SendService, config: Configuration, log: LoggingAdapter)(implicit ac: ActorSystem): Cancellable = {
-    implicit val ec: ExecutionContextExecutor = ac.dispatchers.lookup("blocking-dispatcher")
+    implicit val ec: ExecutionContextExecutor = ac.dispatcher
     val cronConfig = config.cron
-    val actor = ac.actorOf(Props(new EmailSender(service, config.email, cronConfig.cronBatchSize, log)))
+    val actor = ac
+      .actorOf(Props(new EmailSender(service, config.email, cronConfig.cronBatchSize, log))
+      .withDispatcher("blocking-dispatcher"), "email-sender")
     ac.scheduler.schedule(cronConfig.startDelay, cronConfig.cronTaskInterval, actor, SendEmails)
   }
 
