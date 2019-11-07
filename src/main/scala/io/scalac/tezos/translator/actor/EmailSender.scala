@@ -15,8 +15,8 @@ class EmailSender(service: Emails2SendService,
                   batchSize: Int,
                   log: LoggingAdapter) extends Actor {
 
-  implicit val ec: ExecutionContextExecutor = context.dispatcher
-  val mailer: Mailer = Mailer(config.host, config.port)
+  protected implicit val ec: ExecutionContextExecutor = context.dispatcher
+  protected val mailer: Mailer = Mailer(config.host, config.port)
     .auth(config.auth)
     .as(config.user, config.pass)
     .startTls(config.startTls)()
@@ -25,19 +25,19 @@ class EmailSender(service: Emails2SendService,
     case SendEmails => sendEmails
   }
 
-  def sendEmails: Future[Unit] = {
+  protected def sendEmails: Future[Unit] = {
     service
       .getEmails2Send(batchSize)
       .map(_.foreach(sendSingleMail))
   }
 
-  def sendSingleMail(sendEmailModel: SendEmailModel): Unit =
+  protected def sendSingleMail(sendEmailModel: SendEmailModel): Unit =
     mailer(
       Envelope
         .from(config.user.addr)
         .to(config.receiver.addr)
         .subject(config.subjectPrefix + s" from:${sendEmailModel.name}")
-        .content(textMessageFromSendEmailModer(sendEmailModel))
+        .content(textMessageFromSendEmailModel(sendEmailModel))
     ).onComplete {
       case Failure(err) =>
         log.error(s"Can't send message - $sendEmailModel, error - $err")
@@ -46,7 +46,7 @@ class EmailSender(service: Emails2SendService,
         log.debug(s"Message sent - $sendEmailModel")
     }
 
-  def textMessageFromSendEmailModer(mail: SendEmailModel): Text =
+  protected def textMessageFromSendEmailModel(mail: SendEmailModel): Text =
     Text(
       s"""
          |name: ${mail.name}
