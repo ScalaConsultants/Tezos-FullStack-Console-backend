@@ -1,36 +1,25 @@
 package io.scalac.tezos.translator
 
-import akka.event.LoggingAdapter
 import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.server.Route
 import akka.http.scaladsl.testkit.ScalatestRouteTest
-import io.scalac.tezos.translator.config.Configuration
 import io.scalac.tezos.translator.model.{HistoryViewModel, Translation, TranslationDomainModel}
-import io.scalac.tezos.translator.repository.{Emails2SendRepository, TranslationRepository}
 import io.scalac.tezos.translator.routes.JsonSupport
 import io.scalac.tezos.translator.schema.TranslationTable
-import io.scalac.tezos.translator.service.{Emails2SendService, TranslationsService}
 import org.joda.time.DateTime
 import org.scalatest.{BeforeAndAfterAll, FlatSpec, Matchers}
-import slick.jdbc.MySQLProfile
 import slick.jdbc.MySQLProfile.api._
 
 class HistoryTest extends FlatSpec with Matchers with ScalatestRouteTest with JsonSupport with BeforeAndAfterAll with DbTestBase {
 
-  implicit val repository: TranslationRepository = new TranslationRepository
+  implicit val repository = new TranslationRepository
 
-  implicit val testDb: MySQLProfile.backend.Database = Database.forConfig("tezos-db")
+  implicit val testDb = Database.forConfig("tezos-db")
 
   private val service = new TranslationsService
+  val routes = new Routes(service).allRoutes
 
-  val emails2SendRepo = new Emails2SendRepository
-  val email2SendService = new Emails2SendService(emails2SendRepo, testDb)
-  val log: LoggingAdapter = system.log
-  val config: Configuration = Configuration.getConfig(log)
-
-  val routes: Route = new Routes(service, email2SendService, log, config).allRoutes
-
-  override def beforeAll(): Unit = {
+  override def beforeAll() = {
     recreateTables()
     (1 to 100) foreach { i =>
       addMichelineTranslation(s"from micheline $i", s"to michelson $i")
@@ -38,7 +27,7 @@ class HistoryTest extends FlatSpec with Matchers with ScalatestRouteTest with Js
     }
   }
 
-  override def afterAll(): Unit = {
+  override def afterAll() = {
     super.afterAll()
     testDb.close()
   }
