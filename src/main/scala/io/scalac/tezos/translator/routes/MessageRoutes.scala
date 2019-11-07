@@ -17,21 +17,15 @@ class MessageRoutes(service: Emails2SendService,
                    (implicit actorSystem: ActorSystem) extends HttpRoutes with JsonHelper {
 
   override def routes: Route =
-    path ("message") {
-      pathEndOrSingleSlash {
-        withReCaptchaVerify(log, reCaptchaConfig)(actorSystem) {
-          withSendMessageValidation { sendEmail =>
-            val operationPerformed = service.addNewEmail2Send(sendEmail)
-            onComplete(operationPerformed) {
-              case Success(_)   => complete(StatusCodes.OK)
-              case Failure(err) =>
-                log.error(s"Can't add email to send, err - $err")
-                complete(StatusCodes.InternalServerError, ErrorDTO("Can't save payload"))
-            }
-          }
-        }
+    (path ("message") & pathEndOrSingleSlash & withReCaptchaVerify(log, reCaptchaConfig)(actorSystem)
+      & withSendMessageValidation) { sendEmail =>
+      val operationPerformed = service.addNewEmail2Send(sendEmail)
+      onComplete(operationPerformed) {
+        case Success(_)   => complete(StatusCodes.OK)
+        case Failure(err) =>
+          log.error(s"Can't add email to send, err - $err")
+          complete(StatusCodes.InternalServerError, ErrorDTO("Can't save payload"))
       }
-
     }
 
   def withSendMessageValidation: Directive[Tuple1[SendEmailDTO]] = withDTOValidation[SendEmailDTO]
