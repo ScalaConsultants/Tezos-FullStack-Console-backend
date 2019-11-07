@@ -14,13 +14,11 @@ class Routes(translationsService: TranslationsService,
              log: LoggingAdapter,
              config: Configuration)(implicit as: ActorSystem) {
 
-  private val reCaptchaConfig = config.reCaptcha
-
   private val apis: List[HttpRoutes] =
     List(
-      new TranslatorRoutes(translationsService, log, reCaptchaConfig),
+      new TranslatorRoutes(translationsService),
       new HistoryRoutes(translationsService),
-      new MessageRoutes(emails2SendService, log, reCaptchaConfig)
+      new MessageRoutes(emails2SendService, log, config.reCaptcha)
     )
 
   lazy val allRoutes: Route =
