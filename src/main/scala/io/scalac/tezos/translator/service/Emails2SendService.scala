@@ -1,9 +1,9 @@
 package io.scalac.tezos.translator.service
 
-import io.scalac.tezos.translator.model.DTO.SendEmailDTO
-import io.scalac.tezos.translator.model.SendEmailModel
+import io.scalac.tezos.translator.model.{SendEmailDTO, SendEmailModel}
 import io.scalac.tezos.translator.repository.Emails2SendRepository
 import slick.jdbc.MySQLProfile.api._
+
 import scala.concurrent.Future
 
 class Emails2SendService(repository: Emails2SendRepository, db: Database) {

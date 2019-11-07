@@ -6,7 +6,7 @@ import akka.testkit.TestKit
 import com.icegreen.greenmail.util.{GreenMail, GreenMailUtil, ServerSetupTest}
 import io.scalac.tezos.translator.actor.EmailSender
 import io.scalac.tezos.translator.config.{Configuration, CronConfiguration, EmailConfiguration}
-import io.scalac.tezos.translator.model.DTO.SendEmailDTO
+import io.scalac.tezos.translator.model.SendEmailDTO
 import io.scalac.tezos.translator.repository.Emails2SendRepository
 import io.scalac.tezos.translator.routes.JsonHelper
 import io.scalac.tezos.translator.service.Emails2SendService

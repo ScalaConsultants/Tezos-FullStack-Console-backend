@@ -1,7 +1,7 @@
 package io.scalac.tezos.translator.routes
 
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
-import io.scalac.tezos.translator.model.DTO.{CaptchaVerifyResponse, ErrorDTO, ErrorsDTO, SendEmailDTO}
+import io.scalac.tezos.translator.model._
 import org.joda.time.DateTime
 import org.joda.time.format.{DateTimeFormatter, ISODateTimeFormat}
 import spray.json.{DefaultJsonProtocol, DeserializationException, JsString, JsValue, RootJsonFormat}
@@ -20,8 +20,8 @@ trait JsonHelper extends SprayJsonSupport with DefaultJsonProtocol {
     }
   }
 
-  lazy implicit val errorDTOFormat: RootJsonFormat[ErrorDTO] = jsonFormat1(ErrorDTO)
-  lazy implicit val errorsDTOFormat: RootJsonFormat[ErrorsDTO] = jsonFormat1(ErrorsDTO)
+  lazy implicit val errorDTOFormat: RootJsonFormat[Error] = jsonFormat1(Error)
+  lazy implicit val errorsDTOFormat: RootJsonFormat[Errors] = jsonFormat1(Errors)
   lazy implicit val sendEmailDTOFormat: RootJsonFormat[SendEmailDTO] = jsonFormat4(SendEmailDTO)
   lazy implicit val captchaVerifyResponseFormat: RootJsonFormat[CaptchaVerifyResponse] = jsonFormat4(CaptchaVerifyResponse)
 

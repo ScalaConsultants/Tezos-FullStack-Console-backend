@@ -3,7 +3,7 @@ package io.scalac.tezos.translator.routes.util
 import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.server.{Directive, Directives}
 import akka.http.scaladsl.unmarshalling.FromEntityUnmarshaller
-import io.scalac.tezos.translator.model.DTO.ErrorsDTO
+import io.scalac.tezos.translator.model.Errors
 import io.scalac.tezos.translator.routes.JsonHelper
 import io.scalac.tezos.translator.routes.util.DTOValidation._
 
@@ -15,7 +15,7 @@ object DTOValidationDirective extends Directives with JsonHelper {
         case Right(value) => provide(value)
         case Left(errors) =>
           val errorsList = errors.map(convertValidationErrorsToString).toList
-          complete(StatusCodes.BadRequest, ErrorsDTO(errorsList))
+          complete(StatusCodes.BadRequest, Errors(errorsList))
       }
     }
 

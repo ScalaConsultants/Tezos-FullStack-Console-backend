@@ -8,7 +8,7 @@ import akka.http.scaladsl.server.{Directive, Directives, Route, StandardRoute}
 import akka.http.scaladsl.unmarshalling.Unmarshal
 import akka.stream.ActorMaterializer
 import io.scalac.tezos.translator.config.CaptchaConfig
-import io.scalac.tezos.translator.model.DTO.{CaptchaVerifyResponse, ErrorDTO}
+import io.scalac.tezos.translator.model.{CaptchaVerifyResponse, Error}
 import io.scalac.tezos.translator.routes.JsonHelper
 
 import scala.concurrent.{ExecutionContext, ExecutionContextExecutor, Future}
@@ -62,7 +62,7 @@ object ReCaptchaDirective extends Directives with JsonHelper {
       .recover {
         case err =>
           log.error(s"Can't do request to verify captcha - $userCaptcha, err - $err")
-          Left(complete(StatusCodes.InternalServerError, ErrorDTO("Can't do request to verify captcha")))
+          Left(complete(StatusCodes.InternalServerError, Error("Can't do request to verify captcha")))
       }
   }
 
@@ -75,11 +75,11 @@ object ReCaptchaDirective extends Directives with JsonHelper {
       if (value.success)
         inner(())
       else
-        complete(StatusCodes.Unauthorized, ErrorDTO("Invalid captcha"))
+        complete(StatusCodes.Unauthorized, Error("Invalid captcha"))
     }.recover {
       case err =>
         log.error(s"Can't parse google reCaptcha response, err - $err")
-        complete(StatusCodes.InternalServerError, ErrorDTO("Can't parse captcha response from google"))
+        complete(StatusCodes.InternalServerError, Error("Can't parse captcha response from google"))
     }
   }
 

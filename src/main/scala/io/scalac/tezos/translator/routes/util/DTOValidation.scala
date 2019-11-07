@@ -4,7 +4,7 @@ import cats.data.NonEmptyList
 import cats.syntax.either._
 import cats.syntax.parallel._
 import cats.instances.parallel._
-import io.scalac.tezos.translator.model.DTO.SendEmailDTO
+import io.scalac.tezos.translator.model.SendEmailDTO
 import io.scalac.tezos.translator.routes.util.DTOValidation.ValidationResult
 
 trait DTOValidation[T] {

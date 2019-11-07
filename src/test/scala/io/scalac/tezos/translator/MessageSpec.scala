@@ -4,8 +4,7 @@ import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.server.Route
 import akka.http.scaladsl.testkit.ScalatestRouteTest
 import io.scalac.tezos.translator.config.CaptchaConfig
-import io.scalac.tezos.translator.model.DTO.{ErrorsDTO, SendEmailDTO}
-import io.scalac.tezos.translator.model.SendEmailModel
+import io.scalac.tezos.translator.model.{Errors, SendEmailDTO, SendEmailModel}
 import io.scalac.tezos.translator.repository.Emails2SendRepository
 import io.scalac.tezos.translator.routes.{JsonHelper, MessageRoutes}
 import io.scalac.tezos.translator.schema.Emails2SendTable
@@ -80,7 +79,7 @@ class MessageSpec extends WordSpec with Matchers with ScalatestRouteTest with Be
   def checkValidationErrorsWithExpected(dto: SendEmailDTO, expectedErrors: List[String]): Assertion = {
     Post("/message", dto) ~> messageRoute ~> check {
       status shouldBe StatusCodes.BadRequest
-      responseAs[ErrorsDTO].errors should contain theSameElementsAs expectedErrors
+      responseAs[Errors].errors should contain theSameElementsAs expectedErrors
     }
   }
 
