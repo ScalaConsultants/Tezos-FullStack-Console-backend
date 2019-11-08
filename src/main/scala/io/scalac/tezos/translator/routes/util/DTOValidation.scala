@@ -4,7 +4,7 @@ import cats.data.NonEmptyList
 import cats.syntax.either._
 import cats.syntax.parallel._
 import cats.instances.parallel._
-import io.scalac.tezos.translator.model.SendEmailDTO
+import io.scalac.tezos.translator.model.{LibraryDTO, SendEmailDTO}
 import io.scalac.tezos.translator.routes.util.DTOValidation.ValidationResult
 
 trait DTOValidation[T] {
@@ -26,24 +26,24 @@ object DTOValidation {
 
   final case class FieldToLong(field: String, maxLength: Int) extends DTOValidationError
 
-  case object NameIsEmpty extends DTOValidationError
+  final case class FieldIsEmpty(field: String) extends DTOValidationError
 
-  case object PhoneIsEmpty extends DTOValidationError
-
-  final case class PhoneIsInvalid(phoneString: String) extends DTOValidationError
-
-  case object EmailIsEmpty extends DTOValidationError
-
-  final case class EmailIsInvalid(emailString: String) extends DTOValidationError
-
-  case object ContentIsEmpty extends DTOValidationError
+  final case class FieldIsInvalid(fieldName: String, field: String) extends DTOValidationError
 
   def checkStringNotEmpty(string: String,
-                          onEmpty: DTOValidationError): ValidationResult[String] = {
+                          onEmpty: => DTOValidationError): ValidationResult[String] = {
     if (string.trim.isEmpty)
       NonEmptyList.one(onEmpty).asLeft
     else
       string.asRight
+  }
+
+  def checkStringNotEmptyAndLength(string: String,
+                                   maxLength: Int,
+                                   onEmpty: => DTOValidationError,
+                                   whenMaxLengthExceeds: => DTOValidationError): ValidationResult[String] = {
+    checkStringNotEmpty(string, onEmpty)
+      .flatMap(checkStringLength(_, maxLength, whenMaxLengthExceeds))
   }
 
   def checkStringMatchRegExp(string: String,
@@ -66,34 +66,45 @@ object DTOValidation {
 
   implicit val SendEmailDTOValidation: DTOValidation[SendEmailDTO] = { dto =>
     val checkingNameResult: ValidationResult[String] =
-      checkStringNotEmpty(dto.name, NameIsEmpty)
-      .flatMap(
-        name => checkStringLength(name, maxTinyLength, FieldToLong("name", maxTinyLength))
-      )
-    val checkingPhoneNotEmpty: ValidationResult[String] = checkStringNotEmpty(dto.phone, PhoneIsEmpty)
+      checkStringNotEmptyAndLength(dto.name, maxTinyLength, FieldIsEmpty("name"), FieldToLong("name", maxTinyLength))
 
-    val checkingPhoneIsValid: ValidationResult[String] = checkingPhoneNotEmpty
-      .flatMap(
-        maybePhone => checkStringMatchRegExp(maybePhone, """^\+?\d{6,18}$""", PhoneIsInvalid(maybePhone))
-      )
+    val checkingPhoneIsValid: ValidationResult[String] =
+      checkStringNotEmpty(dto.phone, FieldIsEmpty("phone"))
+        .flatMap(
+          maybePhone => checkStringMatchRegExp(maybePhone, phoneRegex, FieldIsInvalid("phone number", maybePhone))
+        )
 
-    val checkingEmailNotEmpty: ValidationResult[String] = checkStringNotEmpty(dto.email, EmailIsEmpty)
-
-    val checkingEmailIsValid: ValidationResult[String] = checkingEmailNotEmpty
+    val checkingEmailIsValid: ValidationResult[String] =
+      checkStringNotEmptyAndLength(dto.email, maxTinyLength, FieldIsEmpty("email"), FieldToLong("email", maxTinyLength))
       .flatMap(
-        maybeEmail => checkStringMatchRegExp(maybeEmail, emailRegex, EmailIsInvalid(maybeEmail))
-      )
-      .flatMap(
-        email => checkStringLength(email, maxTinyLength, FieldToLong("email", maxTinyLength))
+        email => checkStringMatchRegExp(email, emailRegex, FieldIsInvalid("email", email))
       )
 
-    val checkContentNotEmpty: ValidationResult[String] = checkStringNotEmpty(dto.content, ContentIsEmpty)
+    val checkContentNotEmpty: ValidationResult[String] = checkStringNotEmpty(dto.content, FieldIsEmpty("content"))
 
     (checkingNameResult, checkingPhoneIsValid, checkingEmailIsValid, checkContentNotEmpty)
       .parMapN(SendEmailDTO)
   }
 
+  implicit val LibraryDTOValidation: DTOValidation[LibraryDTO] = { dto =>
+    val checkName =
+      checkStringNotEmptyAndLength(dto.name, maxTinyLength, FieldIsEmpty("name"), FieldToLong("name", maxTinyLength))
+    val checkAuthor =
+      checkStringNotEmptyAndLength(dto.author, maxTinyLength, FieldIsEmpty("author"), FieldToLong("author", maxTinyLength))
+    val checkDescription =
+      checkStringNotEmpty(dto.description, FieldIsEmpty("description"))
+    val checkMicheline =
+      checkStringNotEmpty(dto.micheline, FieldIsEmpty("micheline"))
+    val checkMichelson =
+      checkStringNotEmpty(dto.michelson, FieldIsEmpty("michelson"))
+
+    (checkName, checkAuthor, checkDescription, checkMicheline, checkMichelson).parMapN(LibraryDTO)
+  }
+
   val emailRegex: String =
     """(?:[a-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\.[a-z0-9!#$%&'*+/=?^_`{|}~-]+)*|"(?:[\x01-\x08\x0b\x0c\x0e-\x1f\x21\x23-\x5b\x5d-\x7f]|\\[\x01-\x09\x0b\x0c\x0e-\x7f])*")@(?:(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?|\[(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?|[a-z0-9-]*[a-z0-9]:(?:[\x01-\x08\x0b\x0c\x0e-\x1f\x21-\x5a\x53-\x7f]|\\[\x01-\x09\x0b\x0c\x0e-\x7f])+)\])"""
+
+  val phoneRegex: String =
+    """^\+?\d{6,18}$"""
 
 }
