@@ -20,7 +20,7 @@ object DTOValidationDirective extends Directives with JsonHelper {
     }
 
   def convertValidationErrorsToString: PartialFunction[DTOValidationError, String] = {
-    case FieldToLong(field, maxLength)    => s"field $field is to long, max length - $maxLength"
+    case FieldToLong(field, maxLength)    => s"field $field is too long, max length - $maxLength"
     case FieldIsEmpty(fieldName)          => s"$fieldName field is empty"
     case FieldIsInvalid(fieldName, field) => s"invalid $fieldName - $field"
   }

@@ -52,7 +52,7 @@ class MessageSpec extends WordSpec with Matchers with ScalatestRouteTest with Be
           "90123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678" +
           "901234567890123456789012345678901234567890123456789012345678901234567890@gmail.com",
         "whatsup man")
-      val expectedErrorsList3 = List("field name is to long, max length - 255", "field email is to long, max length - 255")
+      val expectedErrorsList3 = List("field name is too long, max length - 255", "field email is too long, max length - 255")
       checkValidationErrorsWithExpected(dtoNameAndEmailToLong, expectedErrorsList3)
 
       val tableActual = getAllSendEmailsFromDb
