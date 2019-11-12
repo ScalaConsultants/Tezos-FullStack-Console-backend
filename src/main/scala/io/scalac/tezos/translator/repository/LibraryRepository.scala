@@ -4,16 +4,24 @@ import io.scalac.tezos.translator.model.LibraryModel
 import io.scalac.tezos.translator.schema.LibraryTable
 import io.scalac.tezos.translator.schema._
 import slick.jdbc.MySQLProfile.api._
+import LibraryRepository._
 
 class LibraryRepository {
 
-  val acceptedStatus = 1
 
   def accepted(max: Int): DBIO[Seq[LibraryModel]] =
     LibraryTable.library
-      .filter(_.status === acceptedStatus)
+      .filter(_.status === Status.accepted)
       .sortBy(_.createdAt.desc)
       .take(max)
       .result
+
+}
+
+object LibraryRepository {
+
+  object Status {
+    val accepted = 1
+  }
 
 }
