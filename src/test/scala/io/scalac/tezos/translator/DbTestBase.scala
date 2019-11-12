@@ -1,6 +1,6 @@
 package io.scalac.tezos.translator
 
-import io.scalac.tezos.translator.schema.{Emails2SendTable, TranslationTable}
+import io.scalac.tezos.translator.schema.{Emails2SendTable, LibraryTable, TranslationTable}
 import slick.dbio.{DBIOAction, NoStream}
 import slick.jdbc.JdbcBackend
 import slick.jdbc.MySQLProfile.api._
@@ -21,7 +21,8 @@ trait DbTestBase {
       DBIO.sequence(
         Seq(
           TranslationTable.translations.schema.create,
-          Emails2SendTable.emails2Send.schema.create
+          Emails2SendTable.emails2Send.schema.create,
+          LibraryTable.library.schema.create
         )
       )
     )
@@ -30,7 +31,8 @@ trait DbTestBase {
     DBIO.sequence(
       Seq(
         TranslationTable.translations.schema.dropIfExists,
-        Emails2SendTable.emails2Send.schema.dropIfExists
+        Emails2SendTable.emails2Send.schema.dropIfExists,
+        LibraryTable.library.schema.dropIfExists
       )
     )
   )

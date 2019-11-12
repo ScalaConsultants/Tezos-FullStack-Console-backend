@@ -11,5 +11,6 @@ package object model {
   case class Error(error: String)
   case class Errors(errors: List[String])
   case class SendEmailDTO(name: String, phone: String, email: String, content: String)
+  case class LibraryDTO(name: String, author: String, description: String, micheline: String, michelson: String)
 
 }

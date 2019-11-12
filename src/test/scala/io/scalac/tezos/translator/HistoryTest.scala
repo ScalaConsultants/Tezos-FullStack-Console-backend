@@ -6,10 +6,10 @@ import akka.http.scaladsl.server.Route
 import akka.http.scaladsl.testkit.ScalatestRouteTest
 import io.scalac.tezos.translator.config.Configuration
 import io.scalac.tezos.translator.model.{HistoryViewModel, Translation, TranslationDomainModel}
-import io.scalac.tezos.translator.repository.{Emails2SendRepository, TranslationRepository}
+import io.scalac.tezos.translator.repository.{Emails2SendRepository, LibraryRepository, TranslationRepository}
 import io.scalac.tezos.translator.routes.JsonSupport
 import io.scalac.tezos.translator.schema.TranslationTable
-import io.scalac.tezos.translator.service.{Emails2SendService, TranslationsService}
+import io.scalac.tezos.translator.service.{Emails2SendService, LibraryService, TranslationsService}
 import org.joda.time.DateTime
 import org.scalatest.{BeforeAndAfterAll, FlatSpec, Matchers}
 import slick.jdbc.MySQLProfile
@@ -24,11 +24,13 @@ class HistoryTest extends FlatSpec with Matchers with ScalatestRouteTest with Js
   private val service = new TranslationsService
 
   val emails2SendRepo = new Emails2SendRepository
+  val libraryRepo     = new LibraryRepository
   val email2SendService = new Emails2SendService(emails2SendRepo, testDb)
+  val libraryService    = new LibraryService(libraryRepo, testDb)
   val log: LoggingAdapter = system.log
   val config: Configuration = Configuration.getConfig(log)
 
-  val routes: Route = new Routes(service, email2SendService, log, config).allRoutes
+  val routes: Route = new Routes(service, email2SendService, libraryService, log, config).allRoutes
 
   override def beforeAll(): Unit = {
     recreateTables()

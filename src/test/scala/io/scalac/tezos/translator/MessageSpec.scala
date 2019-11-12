@@ -37,11 +37,11 @@ class MessageSpec extends WordSpec with Matchers with ScalatestRouteTest with Be
   "message endpoint" should {
     "validate dto before storing" in {
       val invalidDto = SendEmailDTO("", "", "", "")
-      val expectedErrorsList1 = List("Name field is empty","Phone field is empty","Email field is empty","Content fields is empty")
+      val expectedErrorsList1 = List("name field is empty","phone field is empty","email field is empty","content field is empty")
       checkValidationErrorsWithExpected(invalidDto, expectedErrorsList1)
 
       val dtoInvalidPhoneAndEmail = SendEmailDTO("name", "+7777777777777777777777", "email@@@gmail.com", "whatsup man")
-      val expectedErrorsList2 = List("Invalid phone number +7777777777777777777777","Invalid email email@@@gmail.com")
+      val expectedErrorsList2 = List("invalid phone number - +7777777777777777777777","invalid email - email@@@gmail.com")
       checkValidationErrorsWithExpected(dtoInvalidPhoneAndEmail, expectedErrorsList2)
 
       val dtoNameAndEmailToLong = SendEmailDTO("123456789012345678901234567890123456789012345678901234567890123456789012345678" +
@@ -52,7 +52,7 @@ class MessageSpec extends WordSpec with Matchers with ScalatestRouteTest with Be
           "90123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678" +
           "901234567890123456789012345678901234567890123456789012345678901234567890@gmail.com",
         "whatsup man")
-      val expectedErrorsList3 = List("Field name is to long, max length - 255", "Field email is to long, max length - 255")
+      val expectedErrorsList3 = List("field name is too long, max length - 255", "field email is too long, max length - 255")
       checkValidationErrorsWithExpected(dtoNameAndEmailToLong, expectedErrorsList3)
 
       val tableActual = getAllSendEmailsFromDb
