@@ -20,9 +20,9 @@ class Routes(translationsService: TranslationsService,
   private val apis: List[HttpRoutes] =
     List(
       new TranslatorRoutes(translationsService, log, reCaptchaConfig),
-      new HistoryRoutes(translationsService),
+      new HistoryRoutes(translationsService, config.dbUtility),
       new MessageRoutes(emails2SendService, log, reCaptchaConfig),
-      new LibraryRoutes(libraryService, log, reCaptchaConfig)
+      new LibraryRoutes(libraryService, log, config)
     )
 
   lazy val allRoutes: Route =

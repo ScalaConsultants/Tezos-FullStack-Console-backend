@@ -14,10 +14,10 @@ trait DbTestBase {
 
   val dbTimeout: Duration = 5.seconds
 
-  protected def run[R](dbAction: DBIOAction[R, NoStream, Nothing]): R = Await.result(testDb.run(dbAction), dbTimeout)
+  protected def runDB[R](dbAction: DBIOAction[R, NoStream, Nothing]): R = Await.result(testDb.run(dbAction), dbTimeout)
 
   protected def createTables(): Unit =
-    run(
+    runDB(
       DBIO.sequence(
         Seq(
           TranslationTable.translations.schema.create,
@@ -27,7 +27,7 @@ trait DbTestBase {
       )
     )
 
-  protected def dropTables(): Seq[Unit] = run(
+  protected def dropTables(): Seq[Unit] = runDB(
     DBIO.sequence(
       Seq(
         TranslationTable.translations.schema.dropIfExists,
