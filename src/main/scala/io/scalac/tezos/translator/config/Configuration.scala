@@ -6,9 +6,10 @@ import pureconfig.generic.auto._ // Required, don't let idea optimize imports he
 import scala.concurrent.duration._
 import scala.language.postfixOps
 
-case class Configuration(reCaptcha: CaptchaConfig     = CaptchaConfig(),
-                         email: EmailConfiguration    = EmailConfiguration(),
-                         cron: CronConfiguration      = CronConfiguration())
+case class Configuration(reCaptcha: CaptchaConfig          = CaptchaConfig(),
+                         email: EmailConfiguration         = EmailConfiguration(),
+                         cron: CronConfiguration           = CronConfiguration(),
+                         dbUtility: DBUtilityConfiguration = DBUtilityConfiguration())
 
 case class CaptchaConfig(checkOn: Boolean   = false,
                          url: String        = "https://www.google.com/recaptcha/api/siteverify",
@@ -28,6 +29,8 @@ case class EmailConfiguration(host: String          = "smtp.gmail.com",
 case class CronConfiguration(cronBatchSize: Int               = 10,
                              startDelay: FiniteDuration       = 0 milliseconds,
                              cronTaskInterval: FiniteDuration = 30 seconds)
+
+case class DBUtilityConfiguration(defaultLimit: Int = 10)
 
 object Configuration {
 

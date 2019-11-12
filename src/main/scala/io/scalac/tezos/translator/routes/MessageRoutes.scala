@@ -18,7 +18,7 @@ class MessageRoutes(service: Emails2SendService,
 
   override def routes: Route =
     (path ("message") & pathEndOrSingleSlash & withReCaptchaVerify(log, reCaptchaConfig)(actorSystem)
-      & withSendMessageValidation) { sendEmail =>
+      & withSendMessageValidation & post) { sendEmail =>
       val operationPerformed = service.addNewEmail2Send(sendEmail)
       onComplete(operationPerformed) {
         case Success(_)   => complete(StatusCodes.OK)

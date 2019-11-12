@@ -131,7 +131,7 @@ class HistoryTest extends FlatSpec with Matchers with ScalatestRouteTest with Js
   private val addMichelsonTranslation = addTranslation(Translation.FromMichelson, _, _)
 
   private def addTranslation(from: Translation.From, source: String, translation: String) =
-    run(
+    runDB(
       TranslationTable.translations += TranslationDomainModel(id = None, from, source, translation, createdAt = DateTime.now)
     )
 
