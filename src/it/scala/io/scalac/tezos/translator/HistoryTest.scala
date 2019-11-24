@@ -17,7 +17,7 @@ import slick.jdbc.JdbcBackend
 import slick.jdbc.MySQLProfile.api._
 
 class HistoryTest extends FlatSpec with Matchers with ScalatestRouteTest with JsonSupport with ForEachTestContainer {
-  override val container = MySQLContainer()
+  override lazy val container = MySQLContainer()
 
   private trait TranslationsFixture extends DbTestBase {
     implicit val repository: TranslationRepository = new TranslationRepository

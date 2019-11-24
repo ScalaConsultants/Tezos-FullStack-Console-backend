@@ -17,7 +17,7 @@ lazy val root = (project in file(".")).settings(
     // No need to run tests while building jar
     test in assembly := {},
     // Simple and constant jar name
-    assemblyJarName in assembly := s"console.jar",
+    assemblyJarName in assembly := s"tezos-console.jar",
     // Merge strategy for assembling conflicts
     assemblyMergeStrategy in assembly := {
       case PathList("reference.conf") => MergeStrategy.concat

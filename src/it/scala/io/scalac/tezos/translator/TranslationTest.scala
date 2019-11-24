@@ -14,7 +14,7 @@ import org.scalatest.{MustMatchers, WordSpec}
 import slick.jdbc.MySQLProfile
 
 class TranslationTest extends WordSpec with MustMatchers with ScalaFutures with ScalatestRouteTest with ForEachTestContainer {
-  override val container = MySQLContainer()
+  override lazy val container = MySQLContainer()
 
   private trait DatabaseFixture extends DbTestBase {
     implicit val testDb: MySQLProfile.backend.Database = DbTestBase.dbFromContainer(container)

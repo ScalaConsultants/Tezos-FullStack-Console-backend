@@ -26,7 +26,7 @@ class LibrarySpec
   with BeforeAndAfterAll
   with JsonHelper
   with ForEachTestContainer {
-    override val container = MySQLContainer()
+    override lazy val container = MySQLContainer()
 
     private trait DatabaseFixture extends DbTestBase {
       val testDb: MySQLProfile.backend.Database = DbTestBase.dbFromContainer(container)

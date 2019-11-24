@@ -95,7 +95,6 @@ object Dependencies {
   
   val testContainers: Seq[ModuleID] = Seq(
     "com.dimafeng"        %%  "testcontainers-scala"  % Version.testContainersScala % "it,test",
-    "org.testcontainers"  %   "mysql"                 % Version.testContainersMySQL % "it,test",
-    "org.hamcrest"        % "hamcrest"                % "2.2"                       % "it,test"
+    "org.testcontainers"  %   "mysql"                 % Version.testContainersMySQL % "it,test"
   )
 }

@@ -12,7 +12,7 @@ import io.scalac.tezos.translator.repository.Emails2SendRepository
 import io.scalac.tezos.translator.routes.JsonHelper
 import io.scalac.tezos.translator.service.Emails2SendService
 import org.scalatest.concurrent.ScalaFutures
-import org.scalatest.{BeforeAndAfterAll, Matchers, WordSpecLike}
+import org.scalatest.{Matchers, WordSpecLike}
 import slick.jdbc.MySQLProfile
 
 import scala.concurrent.duration._
@@ -24,12 +24,11 @@ class EmailSenderSpec
   with WordSpecLike
   with ScalaFutures
   with Matchers
-  with BeforeAndAfterAll
   with JsonHelper
   with ForEachTestContainer {
 
     implicit val ec: ExecutionContextExecutor = system.dispatcher
-    override val container = MySQLContainer()
+    override lazy val container = MySQLContainer()
     override implicit val patienceConfig: PatienceConfig = PatienceConfig(10 seconds)
 
     private trait DatabaseFixture extends DbTestBase {
@@ -45,9 +44,9 @@ class EmailSenderSpec
     val log: LoggingAdapter = system.log
     val emails2SendRepo = new Emails2SendRepository
     val greenMail = new GreenMail(ServerSetupTest.SMTP)
-    val testMailUser = "sender@mail.some"
+    val testMailUser = "sender@scalac.io"
     val testMailPass = "6131Zz$*n6z2"
-    val testReceiver = "testrec@some.some"
+    val testReceiver = "testrec@scalac.io"
 
     val testCronConfig = CronConfiguration(cronTaskInterval = 1 seconds)
     val testEmailConfig = EmailConfiguration("localhost", 3025, auth = true, testMailUser, testMailPass, receiver = testReceiver)
@@ -58,7 +57,7 @@ class EmailSenderSpec
 
         val testName = "testName"
         val testPhone = "+79025680396"
-        val testMail = "some@some.some"
+        val testMail = "some@scalac.io"
         val testContent = "some content"
 
         val newEmail2Send = SendEmailDTO(testName, testPhone, testMail, testContent)
@@ -70,7 +69,7 @@ class EmailSenderSpec
 
         whenReady(addMail) { _ shouldBe 1 }
 
-        val messageF = Future(greenMail.waitForIncomingEmail(1))
+        val messageF = Future(greenMail.waitForIncomingEmail(8000L, 1))
           .flatMap {
             case false  =>  Future.failed(new Exception("No email was received"))
             case true   =>  Future.successful(())
