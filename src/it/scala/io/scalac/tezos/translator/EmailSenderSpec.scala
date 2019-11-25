@@ -11,7 +11,6 @@ import io.scalac.tezos.translator.model.{SendEmailDTO, SendEmailModel}
 import io.scalac.tezos.translator.repository.Emails2SendRepository
 import io.scalac.tezos.translator.routes.JsonHelper
 import io.scalac.tezos.translator.service.Emails2SendService
-import javax.mail.internet.MimeMessage
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.{Matchers, WordSpecLike}
 import slick.jdbc.MySQLProfile
