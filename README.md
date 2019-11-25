@@ -98,11 +98,16 @@ Content-Type: application/json
 ]
 ```
 
-##Run in docker
+## Run Dev-Env
 
-```sbt assembly```
+```./run.sh```
+(make sure this script has execution permissions)
 
-```docker-compose up```
+Alternatively only the DB container can be run with `docker-compose up -d tezos-console-db` and the application run with:
+```
+TEZOS_DB_IP="127.0.0.1" \
+sbt run
+```
 
 ## References
 

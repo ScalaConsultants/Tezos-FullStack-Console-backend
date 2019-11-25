@@ -12,6 +12,6 @@ RUN npm i nearley@2.16.0
 
 EXPOSE 8080
 
-COPY ./target/scala-2.12/console.jar ./
+COPY ./target/scala-2.12/tezos-console.jar ./
 
-CMD java -jar console.jar
+CMD java -jar tezos-console.jar
