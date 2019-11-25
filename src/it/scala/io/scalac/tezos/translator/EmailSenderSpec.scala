@@ -11,6 +11,7 @@ import io.scalac.tezos.translator.model.{SendEmailDTO, SendEmailModel}
 import io.scalac.tezos.translator.repository.Emails2SendRepository
 import io.scalac.tezos.translator.routes.JsonHelper
 import io.scalac.tezos.translator.service.Emails2SendService
+import javax.mail.internet.MimeMessage
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.{Matchers, WordSpecLike}
 import slick.jdbc.MySQLProfile
@@ -44,9 +45,9 @@ class EmailSenderSpec
     val log: LoggingAdapter = system.log
     val emails2SendRepo = new Emails2SendRepository
     val greenMail = new GreenMail(ServerSetupTest.SMTP)
-    val testMailUser = "sender@scalac.io"
+    val testMailUser = "sender-tezostests@scalac.io"
     val testMailPass = "6131Zz$*n6z2"
-    val testReceiver = "testrec@scalac.io"
+    val testReceiver = "testrec-tezostests@scalac.io"
 
     val testCronConfig = CronConfiguration(cronTaskInterval = 1 seconds)
     val testEmailConfig = EmailConfiguration("localhost", 3025, auth = true, testMailUser, testMailPass, receiver = testReceiver)
@@ -55,9 +56,9 @@ class EmailSenderSpec
     "Email sender" should {
       "send emails" in new DatabaseFixture {
 
-        val testName = "testName"
+        val testName = "testName-tezostests"
         val testPhone = "+79025680396"
-        val testMail = "some@scalac.io"
+        val testMail = "some-tezostests@scalac.io"
         val testContent = "some content"
 
         val newEmail2Send = SendEmailDTO(testName, testPhone, testMail, testContent)

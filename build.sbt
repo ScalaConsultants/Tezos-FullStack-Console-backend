@@ -11,21 +11,21 @@ lazy val root = (project in file(".")).settings(
   libraryDependencies ++= akkaHttp ++ akkaHttpCors ++ akkaStream ++ cats ++ courier ++ greenMail ++ jodaTime ++ logBack ++
     mySql ++ pureConfig ++ scalactic ++ scalaTest ++ sl4j ++ slick ++ tesozFCTM ++ wireMock ++ testContainers,
   
-    Defaults.itSettings,
+  Defaults.itSettings,
 
-    parallelExecution in IntegrationTest := true,
-    // No need to run tests while building jar
-    test in assembly := {},
-    // Simple and constant jar name
-    assemblyJarName in assembly := s"tezos-console.jar",
-    // Merge strategy for assembling conflicts
-    assemblyMergeStrategy in assembly := {
-      case PathList("reference.conf") => MergeStrategy.concat
-      case PathList("META-INF", "MANIFEST.MF") => MergeStrategy.discard
-      case _ => MergeStrategy.first
-    },
-    
-    scalacOptions ++= Seq("-Ypartial-unification")
+  parallelExecution in IntegrationTest := true,
+  // No need to run tests while building jar
+  test in assembly := {},
+  // Simple and constant jar name
+  assemblyJarName in assembly := s"tezos-console.jar",
+  // Merge strategy for assembling conflicts
+  assemblyMergeStrategy in assembly := {
+    case PathList("reference.conf") => MergeStrategy.concat
+    case PathList("META-INF", "MANIFEST.MF") => MergeStrategy.discard
+    case _ => MergeStrategy.first
+  },
+  
+  scalacOptions ++= Seq("-Ypartial-unification")
 
 ).configs(IntegrationTest)
 
