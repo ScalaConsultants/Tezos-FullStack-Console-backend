@@ -1,0 +1,27 @@
+CREATE TABLE translations (
+`id` BIGINT(20) UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+`from` VARCHAR(20),
+`source` TEXT,
+`translation` TEXT,
+`created_at` TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6)
+);
+
+CREATE TABLE emails2send (
+`id` BIGINT(20) AUTO_INCREMENT PRIMARY KEY,
+`name` TINYTEXT,
+`phone` TEXT,
+`email` TEXT,
+`content` TEXT,
+`created_at` TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6)
+);
+
+CREATE TABLE library (
+`id` BIGINT(20) AUTO_INCREMENT PRIMARY KEY,
+`name` TINYTEXT,
+`author` TINYTEXT,
+`description` TEXT,
+`micheline` TEXT,
+`michelson` TEXT,
+`created_at` TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+`status` INT(11) DEFAULT NULL
+);

@@ -29,6 +29,7 @@ object Boot {
     log.info(s"Config loaded - $configuration")
 
     implicit val db: MySQLProfile.backend.Database = Database.forConfig("tezos-db")
+    log.info(s"DB config: ${ConfigFactory.load().getConfig("tezos-db")}")
     implicit val repository: TranslationRepository = new TranslationRepository
     val emails2SendRepo = new Emails2SendRepository
     val libraryRepo     = new LibraryRepository

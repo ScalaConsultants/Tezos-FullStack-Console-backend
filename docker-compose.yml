@@ -2,7 +2,8 @@ version: "3"
 services:
   console-service:
     container_name: tezos-fullstack-console-backend
-    image: scalaconsultants/tezos-fullstack-console-backend:latest
+    image: tezos-fullstack-console-backend:latest
+    restart: always
     tty: true
     stdin_open: true
     ports:
@@ -10,3 +11,19 @@ services:
     environment:
       TEZOS_CONSOLE_HTTP_HOST: 0.0.0.0
       TEZOS_CONSOLE_HTTP_PORT: 8080
+
+  tezos-console-db:
+    image: mysql:5.7
+    restart: always
+    environment:
+      MYSQL_DATABASE: 'tezos'
+      MYSQL_USER: 'tezos'
+      MYSQL_PASSWORD: 'Tez0s'
+      MYSQL_ROOT_PASSWORD: 'password'
+    ports:
+      - 3306:3306
+    expose:
+      - 3306
+    volumes:
+      - ./mysql/data:/var/lib/mysql
+      - ./mysql/db-init:/docker-entrypoint-initdb.d
