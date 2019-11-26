@@ -5,7 +5,13 @@ RUN apt-get install -y curl \
   && apt-get install -y nodejs \
   && curl -L https://www.npmjs.com/install.sh | sh
 
+RUN mkdir -p /opt/app
+WORKDIR /opt/app
 
 RUN npm i nearley@2.16.0
 
 EXPOSE 8080
+
+COPY ./target/scala-2.12/tezos-console.jar ./
+
+CMD java -jar tezos-console.jar
