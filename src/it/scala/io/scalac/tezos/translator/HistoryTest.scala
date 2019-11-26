@@ -4,6 +4,7 @@ import akka.event.LoggingAdapter
 import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.server.Route
 import akka.http.scaladsl.testkit.ScalatestRouteTest
+import com.dimafeng.testcontainers.{ForEachTestContainer, MySQLContainer}
 import io.scalac.tezos.translator.config.Configuration
 import io.scalac.tezos.translator.model.{HistoryViewModel, Translation, TranslationDomainModel}
 import io.scalac.tezos.translator.repository.{Emails2SendRepository, LibraryRepository, TranslationRepository}
@@ -11,41 +12,49 @@ import io.scalac.tezos.translator.routes.JsonSupport
 import io.scalac.tezos.translator.schema.TranslationTable
 import io.scalac.tezos.translator.service.{Emails2SendService, LibraryService, TranslationsService}
 import org.joda.time.DateTime
-import org.scalatest.{BeforeAndAfterAll, FlatSpec, Matchers}
-import slick.jdbc.MySQLProfile
+import org.scalatest.{FlatSpec, Matchers}
+import slick.jdbc.JdbcBackend
 import slick.jdbc.MySQLProfile.api._
 
-class HistoryTest extends FlatSpec with Matchers with ScalatestRouteTest with JsonSupport with BeforeAndAfterAll with DbTestBase {
+class HistoryTest extends FlatSpec with Matchers with ScalatestRouteTest with JsonSupport with ForEachTestContainer {
+  override lazy val container = MySQLContainer()
 
-  implicit val repository: TranslationRepository = new TranslationRepository
+  private trait TranslationsFixture extends DbTestBase {
+    implicit val repository: TranslationRepository = new TranslationRepository
 
-  implicit val testDb: MySQLProfile.backend.Database = Database.forConfig("tezos-db")
+    implicit val db: JdbcBackend#DatabaseDef = DbTestBase.dbFromContainer(container)
 
-  private val service = new TranslationsService
+    private val service = new TranslationsService
 
-  val emails2SendRepo = new Emails2SendRepository
-  val libraryRepo     = new LibraryRepository
-  val email2SendService = new Emails2SendService(emails2SendRepo, testDb)
-  val libraryService    = new LibraryService(libraryRepo, testDb)
-  val log: LoggingAdapter = system.log
-  val config: Configuration = Configuration.getConfig(log)
+    val emails2SendRepo = new Emails2SendRepository
+    val libraryRepo     = new LibraryRepository
+    val email2SendService = new Emails2SendService(emails2SendRepo, db)
+    val libraryService    = new LibraryService(libraryRepo, db)
+    val log: LoggingAdapter = system.log
+    val config: Configuration = Configuration.getConfig(log)
 
-  val routes: Route = new Routes(service, email2SendService, libraryService, log, config).allRoutes
+    val routes: Route = new Routes(service, email2SendService, libraryService, log, config).allRoutes
 
-  override def beforeAll(): Unit = {
-    recreateTables()
+    override def testDb = db
+
+    createTables()
+
+    private val addMichelineTranslation = addTranslation(Translation.FromMicheline, _, _)
+
+    private val addMichelsonTranslation = addTranslation(Translation.FromMichelson, _, _)
+
+    private def addTranslation(from: Translation.From, source: String, translation: String) =
+      runDB(
+        TranslationTable.translations += TranslationDomainModel(id = None, from, source, translation, createdAt = DateTime.now)
+      )
+
     (1 to 100) foreach { i =>
       addMichelineTranslation(s"from micheline $i", s"to michelson $i")
       addMichelsonTranslation(s"from michelson $i", s"to micheline $i")
     }
   }
 
-  override def afterAll(): Unit = {
-    super.afterAll()
-    testDb.close()
-  }
-
-  "A History" should "return 10 mixed translations if query parameters not specified" in {
+  "A History" should "return 10 mixed translations if query parameters not specified" in new TranslationsFixture {
     Get("/v1/translations") ~> routes ~> check {
       status shouldBe StatusCodes.OK
 
@@ -62,14 +71,14 @@ class HistoryTest extends FlatSpec with Matchers with ScalatestRouteTest with Js
     }
   }
 
-  it should "fails for unknown source" in {
+  it should "fails for unknown source" in new TranslationsFixture {
     Get("/v1/translations?source=lorem") ~> Route.seal(routes) ~> check {
       status shouldBe StatusCodes.BadRequest
       responseAs[String] shouldBe "The query parameter 'source' was malformed:\n'lorem' is not a valid `source` value"
     }
   }
 
-  it should "return only micheline to michelson translations" in {
+  it should "return only micheline to michelson translations" in new TranslationsFixture {
     Get("/v1/translations?source=micheline") ~> routes ~> check {
       status shouldBe StatusCodes.OK
       val history = responseAs[List[HistoryViewModel]]
@@ -85,7 +94,7 @@ class HistoryTest extends FlatSpec with Matchers with ScalatestRouteTest with Js
     }
   }
 
-  it should "return only michelson to micheline translations" in {
+  it should "return only michelson to micheline translations" in new TranslationsFixture {
     Get("/v1/translations?source=michelson") ~> routes ~> check {
       status shouldBe StatusCodes.OK
       val history = responseAs[List[HistoryViewModel]]
@@ -98,7 +107,7 @@ class HistoryTest extends FlatSpec with Matchers with ScalatestRouteTest with Js
     }
   }
 
-  it should "return limited history entries filtered by micheline" in {
+  it should "return limited history entries filtered by micheline" in new TranslationsFixture {
     Get("/v1/translations?source=micheline&limit=3") ~> routes ~> check {
       status shouldBe StatusCodes.OK
       val history = responseAs[List[HistoryViewModel]]
@@ -112,7 +121,7 @@ class HistoryTest extends FlatSpec with Matchers with ScalatestRouteTest with Js
     }
   }
 
-  it should "return limited history entries filtered by michelson" in {
+  it should "return limited history entries filtered by michelson" in new TranslationsFixture {
     Get("/v1/translations?source=michelson&limit=3") ~> routes ~> check {
       status shouldBe StatusCodes.OK
       val history = responseAs[List[HistoryViewModel]]
@@ -125,14 +134,4 @@ class HistoryTest extends FlatSpec with Matchers with ScalatestRouteTest with Js
       history.map(_.translation) shouldBe expectedTranslations
     }
   }
-
-  private val addMichelineTranslation = addTranslation(Translation.FromMicheline, _, _)
-
-  private val addMichelsonTranslation = addTranslation(Translation.FromMichelson, _, _)
-
-  private def addTranslation(from: Translation.From, source: String, translation: String) =
-    runDB(
-      TranslationTable.translations += TranslationDomainModel(id = None, from, source, translation, createdAt = DateTime.now)
-    )
-
 }

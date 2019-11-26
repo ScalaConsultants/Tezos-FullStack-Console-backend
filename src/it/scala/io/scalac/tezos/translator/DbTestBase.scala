@@ -1,9 +1,10 @@
 package io.scalac.tezos.translator
 
+import com.dimafeng.testcontainers.MySQLContainer
 import io.scalac.tezos.translator.schema.{Emails2SendTable, LibraryTable, TranslationTable}
 import slick.dbio.{DBIOAction, NoStream}
-import slick.jdbc.JdbcBackend
 import slick.jdbc.MySQLProfile.api._
+import slick.jdbc.{JdbcBackend, MySQLProfile}
 
 import scala.concurrent.Await
 import scala.concurrent.duration._
@@ -42,4 +43,14 @@ trait DbTestBase {
     createTables()
   }
 
+}
+
+object DbTestBase {
+  def dbFromContainer(container: MySQLContainer): MySQLProfile.backend.DatabaseDef = {
+    Database.forURL(
+      container.jdbcUrl,
+      container.username,
+      container.password,
+      executor = AsyncExecutor("exec", 10, 10, 1000, 10))
+  }
 }

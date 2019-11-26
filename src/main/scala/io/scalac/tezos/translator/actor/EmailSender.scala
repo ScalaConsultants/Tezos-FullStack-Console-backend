@@ -24,13 +24,14 @@ class EmailSender(service: Emails2SendService,
     case SendEmails => sendEmails
   }
 
-  protected def sendEmails: Future[Unit] = {
-    service
-      .getEmails2Send(batchSize)
-      .map(_.foreach(sendSingleMail))
-  }
+  protected def sendEmails: Future[Unit] =
+    for {
+      emailsToSend    <-  service.getEmails2Send(batchSize)
+      emailsToSendF   =   emailsToSend.map(sendSingleMail)
+      _               <-  Future.sequence(emailsToSendF)
+    } yield ()
 
-  protected def sendSingleMail(sendEmailModel: SendEmailModel): Future[Unit] =
+  protected def sendSingleMail(sendEmailModel: SendEmailModel): Future[Unit] = {
     mailer(
       Envelope
         .from(config.user.addr)
@@ -45,6 +46,7 @@ class EmailSender(service: Emails2SendService,
     }.recover {
       case err => log.error(s"Can't send message - $sendEmailModel, error - $err")
     }
+  }
 
   protected def textMessageFromSendEmailModel(mail: SendEmailModel): Text =
     Text(
