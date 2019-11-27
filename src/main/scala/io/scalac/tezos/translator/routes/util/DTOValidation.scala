@@ -4,7 +4,7 @@ import cats.data.NonEmptyList
 import cats.syntax.either._
 import cats.syntax.parallel._
 import cats.instances.parallel._
-import io.scalac.tezos.translator.model.{LibraryDTO, SendEmailDTO}
+import io.scalac.tezos.translator.model._
 import io.scalac.tezos.translator.routes.util.DTOValidation.ValidationResult
 
 trait DTOValidation[T] {
@@ -64,7 +64,7 @@ object DTOValidation {
       string.asRight
   }
 
-  implicit val SendEmailDTOValidation: DTOValidation[SendEmailDTO] = { dto =>
+  implicit val SendEmailDTOValidation: DTOValidation[SendEmailJsonDTO] = { dto =>
     val checkingNameResult: ValidationResult[String] =
       checkStringNotEmptyAndLength(dto.name, maxTinyLength, FieldIsEmpty("name"), FieldToLong("name", maxTinyLength))
 
@@ -74,23 +74,25 @@ object DTOValidation {
           maybePhone => checkStringMatchRegExp(maybePhone, phoneRegex, FieldIsInvalid("phone number", maybePhone))
         )
 
-    val checkingEmailIsValid: ValidationResult[String] =
-      checkStringNotEmptyAndLength(dto.email, maxTinyLength, FieldIsEmpty("email"), FieldToLong("email", maxTinyLength))
-      .flatMap(
-        email => checkStringMatchRegExp(email, emailRegex, FieldIsInvalid("email", email))
-      )
-
     val checkContentNotEmpty: ValidationResult[String] = checkStringNotEmpty(dto.content, FieldIsEmpty("content"))
 
-    (checkingNameResult, checkingPhoneIsValid, checkingEmailIsValid, checkContentNotEmpty)
-      .parMapN(SendEmailDTO)
+    (checkingNameResult, checkingPhoneIsValid, checkEmailIsValid(dto.email), checkContentNotEmpty)
+      .parMapN(SendEmailJsonDTO)
   }
 
-  implicit val LibraryDTOValidation: DTOValidation[LibraryDTO] = { dto =>
+  private def checkEmailIsValid(email: String): ValidationResult[String] =
+    checkStringNotEmptyAndLength(email, maxTinyLength, FieldIsEmpty("email"), FieldToLong("email", maxTinyLength))
+      .flatMap(
+        mail => checkStringMatchRegExp(mail, emailRegex, FieldIsInvalid("email", mail))
+      )
+
+  implicit val LibraryDTOValidation: DTOValidation[LibraryJsonDTO] = { dto =>
     val checkName =
       checkStringNotEmptyAndLength(dto.name, maxTinyLength, FieldIsEmpty("name"), FieldToLong("name", maxTinyLength))
     val checkAuthor =
       checkStringNotEmptyAndLength(dto.author, maxTinyLength, FieldIsEmpty("author"), FieldToLong("author", maxTinyLength))
+    val checkEmail =
+      dto.email.map(mail => checkEmailIsValid(mail).map(Some(_))).getOrElse(None.asRight)
     val checkDescription =
       checkStringNotEmpty(dto.description, FieldIsEmpty("description"))
     val checkMicheline =
@@ -98,7 +100,7 @@ object DTOValidation {
     val checkMichelson =
       checkStringNotEmpty(dto.michelson, FieldIsEmpty("michelson"))
 
-    (checkName, checkAuthor, checkDescription, checkMicheline, checkMichelson).parMapN(LibraryDTO)
+    (checkName, checkAuthor, checkEmail, checkDescription, checkMicheline, checkMichelson).parMapN(LibraryJsonDTO)
   }
 
   val emailRegex: String =

@@ -1,6 +1,7 @@
 package io.scalac.tezos.translator.service
 
-import io.scalac.tezos.translator.model.LibraryDTO
+import io.scalac.tezos.translator.model.LibraryEntry
+import io.scalac.tezos.translator.model.LibraryEntry._
 import io.scalac.tezos.translator.repository.LibraryRepository
 import slick.jdbc.MySQLProfile.api._
 
@@ -8,25 +9,16 @@ import scala.concurrent.{ExecutionContext, Future}
 
 class LibraryService(repository: LibraryRepository, db: Database) {
 
-  def addNew(dto: LibraryDTO): Future[Int] =
-    db.run {
-      sqlu"""insert into library (name, author, description, micheline, michelson) values
-            (${dto.name}, ${dto.author}, ${dto.description}, ${dto.micheline}, ${dto.michelson})"""
-    }
+  def addNew(entry: LibraryEntry): Future[Int] =
+    db.run(repository.add(entry.toDbDto))
 
-  def getAcceptedAsDto(count: Int)(implicit ec: ExecutionContext): Future[Seq[LibraryDTO]] =
+  def getAccepted(count: Int)(implicit ec: ExecutionContext): Future[Seq[LibraryEntry]] =
+    getAll(count, Some(Accepted))
+
+  def getAll(count: Int, statusFilter: Option[Status] = None)(implicit ec: ExecutionContext): Future[Seq[LibraryEntry]] =
     for {
-      models <- db.run(repository.accepted(count))
-    } yield models
-      .map(
-        model =>
-          LibraryDTO(
-            name        = model.name,
-            author      = model.author,
-            description = model.description,
-            micheline   = model.micheline,
-            michelson   = model.michelson
-          )
-      )
-
+      entriesDto  <-  db.run(repository.list(statusFilter, count))
+      entriesFSeq =   entriesDto.map(e => Future.fromTry(LibraryEntry.fromDbDTO(e)))
+      entries     <-  Future.sequence(entriesFSeq)
+    } yield entries
 }

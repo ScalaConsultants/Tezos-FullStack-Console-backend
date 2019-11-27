@@ -5,7 +5,7 @@ import akka.event.LoggingAdapter
 import courier._
 import io.scalac.tezos.translator.actor.EmailSender.SendEmails
 import io.scalac.tezos.translator.config.{Configuration, EmailConfiguration}
-import io.scalac.tezos.translator.model.SendEmailModel
+import io.scalac.tezos.translator.model.SendEmail
 import io.scalac.tezos.translator.service.Emails2SendService
 
 import scala.concurrent.{ExecutionContext, ExecutionContextExecutor, Future}
@@ -31,7 +31,7 @@ class EmailSender(service: Emails2SendService,
       _               <-  Future.sequence(emailsToSendF)
     } yield ()
 
-  protected def sendSingleMail(sendEmailModel: SendEmailModel): Future[Unit] = {
+  protected def sendSingleMail(sendEmailModel: SendEmail): Future[Unit] = {
     mailer(
       Envelope
         .from(config.user.addr)
@@ -40,7 +40,7 @@ class EmailSender(service: Emails2SendService,
         .content(textMessageFromSendEmailModel(sendEmailModel))
     ).flatMap { _ =>
       service
-        .removeSentMessage(sendEmailModel.id)
+        .removeSentMessage(sendEmailModel.uid)
         .map(_ => log.debug(s"Message sent - $sendEmailModel"))
         .recover { case err => log.error(s"Can't remove sent message from db - $sendEmailModel, error - $err") }
     }.recover {
@@ -48,7 +48,7 @@ class EmailSender(service: Emails2SendService,
     }
   }
 
-  protected def textMessageFromSendEmailModel(mail: SendEmailModel): Text =
+  protected def textMessageFromSendEmailModel(mail: SendEmail): Text =
     Text(
       s"""
          |name: ${mail.name}

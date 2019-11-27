@@ -6,8 +6,8 @@ import akka.stream.ActorMaterializer
 import com.typesafe.config.ConfigFactory
 import io.scalac.tezos.translator.actor.EmailSender
 import io.scalac.tezos.translator.config.Configuration
-import io.scalac.tezos.translator.repository.{Emails2SendRepository, LibraryRepository, TranslationRepository}
-import io.scalac.tezos.translator.service.{Emails2SendService, LibraryService, TranslationsService}
+import io.scalac.tezos.translator.repository.{Emails2SendRepository, LibraryRepository}
+import io.scalac.tezos.translator.service.{Emails2SendService, LibraryService}
 import slick.jdbc.MySQLProfile
 
 import scala.concurrent.{ExecutionContextExecutor, Future}
@@ -30,14 +30,13 @@ object Boot {
 
     implicit val db: MySQLProfile.backend.Database = Database.forConfig("tezos-db")
     log.info(s"DB config: ${ConfigFactory.load().getConfig("tezos-db")}")
-    implicit val repository: TranslationRepository = new TranslationRepository
     val emails2SendRepo = new Emails2SendRepository
     val libraryRepo     = new LibraryRepository
     val email2SendService = new Emails2SendService(emails2SendRepo, db)
     val libraryService    = new LibraryService(libraryRepo, db)
     val cronEmailSender = EmailSender(email2SendService, configuration, log)
 
-    val routes = new Routes(new TranslationsService, email2SendService, libraryService, log, configuration)
+    val routes = new Routes(email2SendService, libraryService, log, configuration)
 
     val bindingFuture: Future[Http.ServerBinding] = Http().bindAndHandle(routes.allRoutes, host, port)
 

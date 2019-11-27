@@ -1,27 +1,18 @@
 package io.scalac.tezos.translator.repository
 
-import io.scalac.tezos.translator.model.LibraryModel
+import io.scalac.tezos.translator.model.LibraryDbDTO
+import io.scalac.tezos.translator.model.LibraryEntry.Status
 import io.scalac.tezos.translator.schema.LibraryTable
-import io.scalac.tezos.translator.schema._
 import slick.jdbc.MySQLProfile.api._
-import LibraryRepository._
 
 class LibraryRepository {
 
+  def add(translation: LibraryDbDTO): DBIO[Int] =
+    LibraryTable.library += translation
 
-  def accepted(max: Int): DBIO[Seq[LibraryModel]] =
-    LibraryTable.library
-      .filter(_.status === Status.accepted)
+  def list(status: Option[Status], limit: Int): DBIO[Seq[LibraryDbDTO]] =
+    LibraryTable.library.filterOpt(status){ case (row, s) =>  row.status === s.value}
       .sortBy(_.createdAt.desc)
-      .take(max)
+      .take(limit)
       .result
-
-}
-
-object LibraryRepository {
-
-  object Status {
-    val accepted = 1
-  }
-
 }

@@ -7,7 +7,7 @@ import com.dimafeng.testcontainers.{ForEachTestContainer, MySQLContainer}
 import com.icegreen.greenmail.util.{GreenMail, GreenMailUtil, ServerSetupTest}
 import io.scalac.tezos.translator.actor.EmailSender
 import io.scalac.tezos.translator.config.{Configuration, CronConfiguration, EmailConfiguration}
-import io.scalac.tezos.translator.model.{SendEmailDTO, SendEmailModel}
+import io.scalac.tezos.translator.model.{SendEmail, SendEmailJsonDTO}
 import io.scalac.tezos.translator.repository.Emails2SendRepository
 import io.scalac.tezos.translator.routes.JsonHelper
 import io.scalac.tezos.translator.service.Emails2SendService
@@ -19,6 +19,7 @@ import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContextExecutor, Future}
 import scala.language.postfixOps
 
+//noinspection TypeAnnotation
 class EmailSenderSpec
   extends TestKit(ActorSystem("MySpec"))
   with WordSpecLike
@@ -28,7 +29,7 @@ class EmailSenderSpec
   with ForEachTestContainer {
 
     implicit val ec: ExecutionContextExecutor = system.dispatcher
-    override lazy val container = MySQLContainer()
+    override lazy val container = MySQLContainer(mysqlImageVersion = DbTestBase.mySqlVersion)
     override implicit val patienceConfig: PatienceConfig = PatienceConfig(10 seconds)
 
     private trait DatabaseFixture extends DbTestBase {
@@ -60,7 +61,7 @@ class EmailSenderSpec
         val testMail = "some-tezostests@scalac.io"
         val testContent = "some content"
 
-        val newEmail2Send = SendEmailDTO(testName, testPhone, testMail, testContent)
+        val newEmail2Send = SendEmail.fromJsonDto(SendEmailJsonDTO(testName, testPhone, testMail, testContent))
         val cronTask = EmailSender(email2SendService, testConfig, log)
 
         whenReady(email2SendService.getEmails2Send(10)) { _ shouldBe 'empty }
@@ -90,7 +91,7 @@ class EmailSenderSpec
         }
 
 
-        val dbState: Future[Seq[SendEmailModel]] =
+        val dbState: Future[Seq[SendEmail]] =
           Future(Thread.sleep(5000)) // this is to give time for EmailSender actor to finish db deletion
             .flatMap(_ => email2SendService.getEmails2Send(10))
 

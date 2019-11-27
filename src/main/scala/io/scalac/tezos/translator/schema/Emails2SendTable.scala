@@ -1,9 +1,10 @@
 package io.scalac.tezos.translator.schema
 
-import io.scalac.tezos.translator.model.SendEmailModel
-import org.joda.time.DateTime
-import slick.lifted.{ProvenShape, Tag}
+import java.sql.Timestamp
+
+import io.scalac.tezos.translator.model.SendEmailDbDTO
 import slick.jdbc.MySQLProfile.api._
+import slick.lifted.{ProvenShape, Tag}
 
 object Emails2SendTable {
 
@@ -11,20 +12,22 @@ object Emails2SendTable {
 
 }
 
-class Emails2SendTable(tag: Tag) extends Table[SendEmailModel](tag, "emails2send") {
+class Emails2SendTable(tag: Tag) extends Table[SendEmailDbDTO](tag, "emails2send") {
 
   def id: Rep[Long] = column[Long]("id", O.PrimaryKey, O.AutoInc)
 
-  def name: Rep[String] = column[String]("name", O.SqlType("tinytext"))
+  def uid: Rep[String] = column[String]("uid", O.SqlType("VARCHAR(8) NOT NULL"))
 
-  def phone: Rep[String] = column[String]("phone")
+  def name: Rep[String] = column[String]("name", O.SqlType("TINYTEXT NOT NULL"))
 
-  def email: Rep[String] = column[String]("email")
+  def phone: Rep[String] = column[String]("phone", O.SqlType("TINYTEXT NOT NULL"))
 
-  def content: Rep[String] = column[String]("content")
+  def email: Rep[String] = column[String]("email", O.SqlType("TINYTEXT NOT NULL"))
 
-  def createdAt: Rep[DateTime] = column[DateTime]("created_at", slick.sql.SqlProfile.ColumnOption.NotNull, O.SqlType("TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6)"))
+  def content: Rep[String] = column[String]("content", O.SqlType("TEXT NOT NULL"))
 
-  override def * : ProvenShape[SendEmailModel] = (id, name, phone, email, content, createdAt) <> (SendEmailModel.tupled, SendEmailModel.unapply)
+  def createdAt: Rep[Timestamp] = column[Timestamp]("created_at", slick.sql.SqlProfile.ColumnOption.NotNull, O.SqlType("TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6)"))
+
+  override def * : ProvenShape[SendEmailDbDTO] = (id.?, uid, name, phone, email, content, createdAt) <> (SendEmailDbDTO.tupled, SendEmailDbDTO.unapply)
 
 }

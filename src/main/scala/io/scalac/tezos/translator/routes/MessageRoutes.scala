@@ -4,7 +4,7 @@ import akka.event.LoggingAdapter
 import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.server.{Directive, Route}
 import io.scalac.tezos.translator.config.CaptchaConfig
-import io.scalac.tezos.translator.model.{Error, SendEmailDTO}
+import io.scalac.tezos.translator.model.{Error, SendEmail, SendEmailJsonDTO}
 import io.scalac.tezos.translator.routes.util.ReCaptchaDirective._
 import io.scalac.tezos.translator.service.Emails2SendService
 import util.DTOValidationDirective._
@@ -19,7 +19,7 @@ class MessageRoutes(service: Emails2SendService,
   override def routes: Route =
     (path ("message") & pathEndOrSingleSlash & withReCaptchaVerify(log, reCaptchaConfig)(actorSystem)
       & withSendMessageValidation & post) { sendEmail =>
-      val operationPerformed = service.addNewEmail2Send(sendEmail)
+      val operationPerformed = service.addNewEmail2Send(SendEmail.fromJsonDto(sendEmail))
       onComplete(operationPerformed) {
         case Success(_)   => complete(StatusCodes.OK)
         case Failure(err) =>
@@ -28,6 +28,6 @@ class MessageRoutes(service: Emails2SendService,
       }
     }
 
-  def withSendMessageValidation: Directive[Tuple1[SendEmailDTO]] = withDTOValidation[SendEmailDTO]
+  def withSendMessageValidation: Directive[Tuple1[SendEmailJsonDTO]] = withDTOValidation[SendEmailJsonDTO]
 
 }

@@ -7,14 +7,14 @@ import akka.http.scaladsl.testkit.ScalatestRouteTest
 import com.dimafeng.testcontainers.{ForEachTestContainer, MySQLContainer}
 import io.circe.parser._
 import io.scalac.tezos.translator.config.Configuration
-import io.scalac.tezos.translator.repository.{Emails2SendRepository, LibraryRepository, TranslationRepository}
-import io.scalac.tezos.translator.service.{Emails2SendService, LibraryService, TranslationsService}
+import io.scalac.tezos.translator.repository.{Emails2SendRepository, LibraryRepository}
+import io.scalac.tezos.translator.service.{Emails2SendService, LibraryService}
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.{MustMatchers, WordSpec}
 import slick.jdbc.MySQLProfile
 
 class TranslationTest extends WordSpec with MustMatchers with ScalaFutures with ScalatestRouteTest with ForEachTestContainer {
-  override lazy val container = MySQLContainer()
+  override lazy val container = MySQLContainer(mysqlImageVersion = DbTestBase.mySqlVersion)
 
   private trait DatabaseFixture extends DbTestBase {
     implicit val testDb: MySQLProfile.backend.Database = DbTestBase.dbFromContainer(container)
@@ -22,13 +22,11 @@ class TranslationTest extends WordSpec with MustMatchers with ScalaFutures with 
     val email2SendService = new Emails2SendService(emails2SendRepo, testDb)
     val libraryService    = new LibraryService(libraryRepo, testDb)
 
-    val service = new TranslationsService
-    val routes: Route = new Routes(service, email2SendService, libraryService, log, config).allRoutes
+    val routes: Route = new Routes(email2SendService, libraryService, log, config).allRoutes
 
     recreateTables()
   }
 
-  implicit val repository: TranslationRepository = new TranslationRepository
   val emails2SendRepo = new Emails2SendRepository
   val libraryRepo     = new LibraryRepository
 

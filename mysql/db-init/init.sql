@@ -1,27 +1,22 @@
-CREATE TABLE translations (
-`id` BIGINT(20) UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-`from` VARCHAR(20),
-`source` TEXT,
-`translation` TEXT,
-`created_at` TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6)
-);
-
 CREATE TABLE emails2send (
 `id` BIGINT(20) AUTO_INCREMENT PRIMARY KEY,
-`name` TINYTEXT,
-`phone` TEXT,
-`email` TEXT,
-`content` TEXT,
+`uid` VARCHAR(8) NOT NULL,
+`name` TINYTEXT NOT NULL,
+`phone` TINYTEXT NOT NULL,
+`email` TINYTEXT NOT NULL,
+`content` TEXT NOT NULL,
 `created_at` TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6)
 );
 
 CREATE TABLE library (
 `id` BIGINT(20) AUTO_INCREMENT PRIMARY KEY,
-`name` TINYTEXT,
-`author` TINYTEXT,
-`description` TEXT,
-`micheline` TEXT,
-`michelson` TEXT,
+`uid` VARCHAR(8) NOT NULL,
+`name` TINYTEXT NOT NULL,
+`author` TINYTEXT NOT NULL,
+`email` TINYTEXT,
+`description` TEXT NOT NULL,
+`micheline` TEXT NOT NULL,
+`michelson` TEXT NOT NULL,
 `created_at` TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
-`status` INT(11) DEFAULT NULL
+`status` INT(11) NOT NULL
 );
