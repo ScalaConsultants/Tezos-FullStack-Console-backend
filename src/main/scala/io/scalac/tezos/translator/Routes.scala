@@ -6,11 +6,12 @@ import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
 import ch.megard.akka.http.cors.scaladsl.CorsDirectives._
 import io.scalac.tezos.translator.config.Configuration
-import io.scalac.tezos.translator.routes.{HttpRoutes, LibraryRoutes, MessageRoutes, TranslatorRoutes}
-import io.scalac.tezos.translator.service.{Emails2SendService, LibraryService}
+import io.scalac.tezos.translator.routes._
+import io.scalac.tezos.translator.service.{Emails2SendService, LibraryService, UserService}
 
 class Routes(emails2SendService: Emails2SendService,
              libraryService: LibraryService,
+             userService: UserService,
              log: LoggingAdapter,
              config: Configuration)(implicit as: ActorSystem) {
 
@@ -20,7 +21,8 @@ class Routes(emails2SendService: Emails2SendService,
     List(
       new TranslatorRoutes(log, reCaptchaConfig),
       new MessageRoutes(emails2SendService, log, reCaptchaConfig),
-      new LibraryRoutes(libraryService, log, config)
+      new LibraryRoutes(libraryService, log, config),
+      new LoginRoute(userService)
     )
 
   lazy val allRoutes: Route =

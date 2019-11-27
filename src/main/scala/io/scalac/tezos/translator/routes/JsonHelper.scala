@@ -25,6 +25,7 @@ trait JsonHelper extends SprayJsonSupport with DefaultJsonProtocol {
   lazy implicit val errorsDTOFormat: RootJsonFormat[Errors] = jsonFormat1(Errors)
   lazy implicit val libraryDTOFormat: RootJsonFormat[LibraryEntryRoutesDto] = jsonFormat6(LibraryEntryRoutesDto.apply)
   lazy implicit val sendEmailDTOFormat: RootJsonFormat[SendEmailRoutesDto] = jsonFormat4(SendEmailRoutesDto.apply)
+  lazy implicit val userCredentialsDTOFormat:RootJsonFormat[UserCredentialsDTO] = jsonFormat2(UserCredentialsDTO)
   lazy implicit val captchaVerifyResponseFormat: RootJsonFormat[CaptchaVerifyResponse] = jsonFormat4(CaptchaVerifyResponse)
 
 }

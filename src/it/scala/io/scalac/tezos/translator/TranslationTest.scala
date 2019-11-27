@@ -22,7 +22,7 @@ class TranslationTest extends WordSpec with MustMatchers with ScalaFutures with 
     val email2SendService = new Emails2SendService(emails2SendRepo, testDb)
     val libraryService    = new LibraryService(libraryRepo, testDb)
 
-    val routes: Route = new Routes(email2SendService, libraryService, log, config).allRoutes
+    val routes: Route = new Routes(email2SendService, libraryService, null, log, config).allRoutes
 
     recreateTables()
   }
