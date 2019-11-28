@@ -1,22 +1,21 @@
 CREATE TABLE emails2send (
-`id` BIGINT(20) AUTO_INCREMENT PRIMARY KEY,
-`uid` VARCHAR(8) NOT NULL,
-`name` TINYTEXT NOT NULL,
-`phone` TINYTEXT NOT NULL,
-`email` TINYTEXT NOT NULL,
-`content` TEXT NOT NULL,
-`created_at` TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6)
+    `uid` VARCHAR(8) NOT NULL UNIQUE,
+    `name` TINYTEXT NOT NULL,
+    `phone` TINYTEXT NOT NULL,
+    `email` TINYTEXT NOT NULL,
+    `content` TEXT NOT NULL,
+    `created_at` TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6)
 );
 
 CREATE TABLE library (
-`id` BIGINT(20) AUTO_INCREMENT PRIMARY KEY,
-`uid` VARCHAR(8) NOT NULL,
-`name` TINYTEXT NOT NULL,
-`author` TINYTEXT NOT NULL,
-`email` TINYTEXT,
-`description` TEXT NOT NULL,
-`micheline` TEXT NOT NULL,
-`michelson` TEXT NOT NULL,
-`created_at` TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
-`status` INT(11) NOT NULL
+    `uid` VARCHAR(8) NOT NULL UNIQUE,
+    `name` TINYTEXT NOT NULL,
+    `author` TINYTEXT NOT NULL,
+    `email` TINYTEXT,
+    `description` TEXT NOT NULL,
+    `micheline` TEXT NOT NULL,
+    `michelson` TEXT NOT NULL,
+    `created_at` TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+    `status` INT(2) NOT NULL
 );
+

@@ -1,4 +1,4 @@
-package io.scalac.tezos.translator.routes.util
+package io.scalac.tezos.translator.routes.directives
 
 import akka.actor.ActorSystem
 import akka.event.LoggingAdapter

@@ -7,9 +7,10 @@ import com.dimafeng.testcontainers.{ForEachTestContainer, MySQLContainer}
 import com.icegreen.greenmail.util.{GreenMail, GreenMailUtil, ServerSetupTest}
 import io.scalac.tezos.translator.actor.EmailSender
 import io.scalac.tezos.translator.config.{Configuration, CronConfiguration, EmailConfiguration}
-import io.scalac.tezos.translator.model.{SendEmail, SendEmailJsonDTO}
+import io.scalac.tezos.translator.model.SendEmail
 import io.scalac.tezos.translator.repository.Emails2SendRepository
 import io.scalac.tezos.translator.routes.JsonHelper
+import io.scalac.tezos.translator.routes.dto.SendEmailRoutesDto
 import io.scalac.tezos.translator.service.Emails2SendService
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.{Matchers, WordSpecLike}
@@ -61,7 +62,7 @@ class EmailSenderSpec
         val testMail = "some-tezostests@scalac.io"
         val testContent = "some content"
 
-        val newEmail2Send = SendEmail.fromJsonDto(SendEmailJsonDTO(testName, testPhone, testMail, testContent))
+        val newEmail2Send = SendEmailRoutesDto(testName, testPhone, testMail, testContent).toDomain
         val cronTask = EmailSender(email2SendService, testConfig, log)
 
         whenReady(email2SendService.getEmails2Send(10)) { _ shouldBe 'empty }

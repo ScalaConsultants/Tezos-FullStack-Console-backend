@@ -1,11 +1,10 @@
-package io.scalac.tezos.translator.routes.util
+package io.scalac.tezos.translator.routes.dto
 
 import cats.data.NonEmptyList
+import cats.instances.parallel._
 import cats.syntax.either._
 import cats.syntax.parallel._
-import cats.instances.parallel._
-import io.scalac.tezos.translator.model._
-import io.scalac.tezos.translator.routes.util.DTOValidation.ValidationResult
+import io.scalac.tezos.translator.routes.dto.DTOValidation.ValidationResult
 
 trait DTOValidation[T] {
 
@@ -64,7 +63,7 @@ object DTOValidation {
       string.asRight
   }
 
-  implicit val SendEmailDTOValidation: DTOValidation[SendEmailJsonDTO] = { dto =>
+  implicit val SendEmailDTOValidation: DTOValidation[SendEmailRoutesDto] = { dto =>
     val checkingNameResult: ValidationResult[String] =
       checkStringNotEmptyAndLength(dto.name, maxTinyLength, FieldIsEmpty("name"), FieldToLong("name", maxTinyLength))
 
@@ -77,7 +76,7 @@ object DTOValidation {
     val checkContentNotEmpty: ValidationResult[String] = checkStringNotEmpty(dto.content, FieldIsEmpty("content"))
 
     (checkingNameResult, checkingPhoneIsValid, checkEmailIsValid(dto.email), checkContentNotEmpty)
-      .parMapN(SendEmailJsonDTO)
+      .parMapN(SendEmailRoutesDto.apply)
   }
 
   private def checkEmailIsValid(email: String): ValidationResult[String] =
@@ -86,7 +85,7 @@ object DTOValidation {
         mail => checkStringMatchRegExp(mail, emailRegex, FieldIsInvalid("email", mail))
       )
 
-  implicit val LibraryDTOValidation: DTOValidation[LibraryJsonDTO] = { dto =>
+  implicit val LibraryDTOValidation: DTOValidation[LibraryEntryRoutesDto] = { dto =>
     val checkName =
       checkStringNotEmptyAndLength(dto.name, maxTinyLength, FieldIsEmpty("name"), FieldToLong("name", maxTinyLength))
     val checkAuthor =
@@ -100,7 +99,7 @@ object DTOValidation {
     val checkMichelson =
       checkStringNotEmpty(dto.michelson, FieldIsEmpty("michelson"))
 
-    (checkName, checkAuthor, checkEmail, checkDescription, checkMicheline, checkMichelson).parMapN(LibraryJsonDTO)
+    (checkName, checkAuthor, checkEmail, checkDescription, checkMicheline, checkMichelson).parMapN(LibraryEntryRoutesDto.apply)
   }
 
   val emailRegex: String =

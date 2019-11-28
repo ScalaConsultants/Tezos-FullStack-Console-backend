@@ -2,21 +2,22 @@ package io.scalac.tezos.translator.service
 
 import io.scalac.tezos.translator.model.{SendEmail, Uid}
 import io.scalac.tezos.translator.repository.Emails2SendRepository
+import io.scalac.tezos.translator.repository.dto.SendEmailDbDto
 import slick.jdbc.MySQLProfile.api._
 
 import scala.concurrent.{ExecutionContext, Future}
 
 class Emails2SendService(repository: Emails2SendRepository, db: Database) {
 
-  def addNewEmail2Send(validatedDTO: SendEmail): Future[Int] =
+  def addNewEmail2Send(validatedDto: SendEmail): Future[Int] =
     db.run(
-      repository.add(validatedDTO.toDbDTO)
+      repository.add(SendEmailDbDto.fromDomain(validatedDto))
     )
 
   def getEmails2Send(batchSize: Int)(implicit ec: ExecutionContext): Future[Seq[SendEmail]] =
     for {
       entriesDto  <-  db.run(repository.getEmails2Send(batchSize))
-      entriesFSeq =   entriesDto.map(e => Future.fromTry(SendEmail.fromDbDto(e)))
+      entriesFSeq =   entriesDto.map(e => Future.fromTry(e.toDomain))
       entries     <-  Future.sequence(entriesFSeq)
     } yield entries
 

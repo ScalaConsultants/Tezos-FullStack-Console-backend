@@ -9,7 +9,7 @@ import com.github.tomakehurst.wiremock.client.WireMock.{post => expectedPost, _}
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration._
 import io.scalac.tezos.translator.config.CaptchaConfig
 import io.scalac.tezos.translator.routes.JsonHelper
-import io.scalac.tezos.translator.routes.util.ReCaptchaDirective
+import io.scalac.tezos.translator.routes.directives.ReCaptchaDirective
 import org.scalatest.{BeforeAndAfterAll, Matchers, WordSpec}
 
 class CaptchaDirectiveSpec extends WordSpec with Matchers with ScalatestRouteTest with BeforeAndAfterAll with JsonHelper with Directives {

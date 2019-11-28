@@ -1,6 +1,6 @@
 package io.scalac.tezos.translator.repository
 
-import io.scalac.tezos.translator.model.SendEmailDbDTO
+import io.scalac.tezos.translator.repository.dto.SendEmailDbDto
 import io.scalac.tezos.translator.schema.Emails2SendTable
 import slick.dbio.Effect
 import slick.jdbc.MySQLProfile.api._
@@ -12,10 +12,10 @@ class Emails2SendRepository(implicit ec: ExecutionContext) {
 
   protected val emails2Send = Emails2SendTable.emails2Send
 
-  def add(sendEmail: SendEmailDbDTO): DBIO[Int] =
+  def add(sendEmail: SendEmailDbDto): DBIO[Int] =
     emails2Send += sendEmail
 
-  def getEmails2Send(batchSize: Int): DBIO[Seq[SendEmailDbDTO]] =
+  def getEmails2Send(batchSize: Int): DBIO[Seq[SendEmailDbDto]] =
     emails2Send
       .take(batchSize)
       .result

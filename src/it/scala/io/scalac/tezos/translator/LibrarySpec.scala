@@ -8,6 +8,8 @@ import io.scalac.tezos.translator.config.{CaptchaConfig, Configuration}
 import io.scalac.tezos.translator.model.LibraryEntry._
 import io.scalac.tezos.translator.model._
 import io.scalac.tezos.translator.repository.LibraryRepository
+import io.scalac.tezos.translator.repository.dto.LibraryEntryDbDto
+import io.scalac.tezos.translator.routes.dto.LibraryEntryRoutesDto
 import io.scalac.tezos.translator.routes.{JsonHelper, LibraryRoutes}
 import io.scalac.tezos.translator.schema.LibraryTable
 import io.scalac.tezos.translator.service.LibraryService
@@ -49,7 +51,7 @@ class LibrarySpec
       }
 
 
-      def checkValidationErrorsWithExpected(dto: LibraryJsonDTO, expectedErrors: List[String]): Assertion = {
+      def checkValidationErrorsWithExpected(dto: LibraryEntryRoutesDto, expectedErrors: List[String]): Assertion = {
         Post("/library", dto) ~> Route.seal(libraryRoute) ~> check {
           status shouldBe StatusCodes.BadRequest
           responseAs[Errors].errors should contain theSameElementsAs expectedErrors
@@ -66,29 +68,29 @@ class LibrarySpec
 
     "Library routes" should {
       "validate payload before storing" in new DatabaseFixture {
-        val emptyPayload = LibraryJsonDTO("", "", None, "", "", "")
+        val emptyPayload = LibraryEntryRoutesDto("", "", None, "", "", "")
         val expectedErrors1 = List("name field is empty", "author field is empty", "description field is empty",
           "micheline field is empty", "michelson field is empty")
 
         checkValidationErrorsWithExpected(emptyPayload, expectedErrors1)
 
-        val toLongPayload = LibraryJsonDTO(longField, longField, None, "description", "some", "some")
+        val toLongPayload = LibraryEntryRoutesDto(longField, longField, None, "description", "some", "some")
         val expectedErrors2 = List("field name is too long, max length - 255", "field author is too long, max length - 255")
 
         checkValidationErrorsWithExpected(toLongPayload, expectedErrors2)
       }
 
       "store proper payload" in new DatabaseFixture {
-        val properPayload = LibraryJsonDTO("vss", "Mike", None, "Some thing for some things", "micheline", "michelson")
+        val properPayload = LibraryEntryRoutesDto("vss", "Mike", None, "Some thing for some things", "micheline", "michelson")
         Post("/library", properPayload) ~> Route.seal(libraryRoute) ~> check {
           status shouldBe StatusCodes.OK
         }
 
-        val dbRequest: Future[Seq[LibraryDbDTO]] = testDb.run(LibraryTable.library.filter(_.name === "vss").result)
-        val currentLibrary: Seq[LibraryDbDTO] = Await.result(dbRequest,  1 second)
+        val dbRequest: Future[Seq[LibraryEntryDbDto]] = testDb.run(LibraryTable.library.filter(_.name === "vss").result)
+        val currentLibrary: Seq[LibraryEntryDbDto] = Await.result(dbRequest,  1 second)
 
         currentLibrary.headOption.isEmpty shouldBe false
-        val addedRecord: model.LibraryDbDTO = currentLibrary.head
+        val addedRecord: LibraryEntryDbDto = currentLibrary.head
         addedRecord.name        shouldBe "vss"
         addedRecord.author      shouldBe "Mike"
         addedRecord.description shouldBe "Some thing for some things"
@@ -109,14 +111,14 @@ class LibrarySpec
         whenReady(inserts) { _ should contain theSameElementsAs Seq(1, 1, 1) }
 
         // it was the only one accepted
-        val expectedRecord2 = LibraryJsonDTO("nameE2", "authorE2", Some("name@service.com"), "descriptionE2", "michelineE2", "michelsonE2")
+        val expectedRecord2 = LibraryEntryRoutesDto("nameE2", "authorE2", Some("name@service.com"), "descriptionE2", "michelineE2", "michelsonE2")
 
         whenReady(libraryService.getAll(5)) { _ should contain theSameElementsAs toInsert }
         whenReady(libraryService.getAccepted(5)) { _ should contain theSameElementsAs Seq(record2) }
 
         Get("/library") ~> libraryRoute ~> check {
           status shouldBe StatusCodes.OK
-          val actualRecords = responseAs[List[LibraryJsonDTO]]
+          val actualRecords = responseAs[List[LibraryEntryRoutesDto]]
           actualRecords should contain theSameElementsAs Seq(expectedRecord2)
         }
       }
@@ -129,13 +131,13 @@ class LibrarySpec
 
         Get(s"/library?limit=$manualLimit") ~> libraryRoute ~> check {
           status shouldBe StatusCodes.OK
-          val actualRecords = responseAs[List[LibraryJsonDTO]]
+          val actualRecords = responseAs[List[LibraryEntryRoutesDto]]
           actualRecords.size shouldBe manualLimit
         }
 
         Get(s"/library") ~> libraryRoute ~> check {
           status shouldBe StatusCodes.OK
-          val actualRecords = responseAs[List[LibraryJsonDTO]]
+          val actualRecords = responseAs[List[LibraryEntryRoutesDto]]
           actualRecords.size shouldBe defaultLimit
         }
       }

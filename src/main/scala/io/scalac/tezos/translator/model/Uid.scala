@@ -8,20 +8,17 @@ sealed abstract case class Uid(value: String)
 
 object Uid {
   def apply(): Uid = {
-    val uuid = UUID.randomUUID().toString.toLowerCase.split("-")(0)
-    new Uid(uuid) {}
+    new Uid(UUID.randomUUID().toString.toLowerCase) {}
   }
 
-  private val uidRegex: String = """^[0-9a-f]{8}$"""
-
   def fromString(s: String): Try[Uid] =
-    s.trim match {
-      case null => failure("Uid cannot be null")
-      case "" =>  failure("Uid cannot be an empty String")
-      case v =>
-        if (v.matches(uidRegex)) Success(new Uid(s) {})
-        else failure(s"Given String is not a valid Uid. Got: $s")
-    }
+    if (s == null) failure("Uid cannot be null")
+    else if (s.trim.isEmpty) failure("Uid cannot be empty")
+    else if (isNotUUID(s)) failure(s"Given String is not a valid Uid. Got: $s")
+    else Success(new Uid(s) {})
+
+  private def isNotUUID(input: String): Boolean =
+    Try(UUID.fromString(input.trim)).isFailure
 
   private def failure(msg: String) =
     Failure(new IllegalArgumentException(msg))

@@ -2,9 +2,10 @@ package io.scalac.tezos.translator.schema
 
 import java.sql.Timestamp
 
-import io.scalac.tezos.translator.model.SendEmailDbDTO
+import io.scalac.tezos.translator.repository.dto.SendEmailDbDto
 import slick.jdbc.MySQLProfile.api._
 import slick.lifted.{ProvenShape, Tag}
+import slick.sql.SqlProfile.ColumnOption.NotNull
 
 object Emails2SendTable {
 
@@ -12,22 +13,20 @@ object Emails2SendTable {
 
 }
 
-class Emails2SendTable(tag: Tag) extends Table[SendEmailDbDTO](tag, "emails2send") {
+class Emails2SendTable(tag: Tag) extends Table[SendEmailDbDto](tag, "emails2send") {
 
-  def id: Rep[Long] = column[Long]("id", O.PrimaryKey, O.AutoInc)
+  def uid: Rep[String] = column[String]("uid", NotNull, O.Unique, O.SqlType("VARCHAR(36)"))
 
-  def uid: Rep[String] = column[String]("uid", O.SqlType("VARCHAR(8) NOT NULL"))
+  def name: Rep[String] = column[String]("name", NotNull, O.SqlType("TINYTEXT"))
 
-  def name: Rep[String] = column[String]("name", O.SqlType("TINYTEXT NOT NULL"))
+  def phone: Rep[String] = column[String]("phone", NotNull, O.SqlType("TINYTEXT"))
 
-  def phone: Rep[String] = column[String]("phone", O.SqlType("TINYTEXT NOT NULL"))
+  def email: Rep[String] = column[String]("email", NotNull, O.SqlType("TINYTEXT"))
 
-  def email: Rep[String] = column[String]("email", O.SqlType("TINYTEXT NOT NULL"))
+  def content: Rep[String] = column[String]("content", NotNull, O.SqlType("TEXT"))
 
-  def content: Rep[String] = column[String]("content", O.SqlType("TEXT NOT NULL"))
+  def createdAt: Rep[Timestamp] = column[Timestamp]("created_at", NotNull, O.SqlType("TIMESTAMP(6) DEFAULT CURRENT_TIMESTAMP(6)"))
 
-  def createdAt: Rep[Timestamp] = column[Timestamp]("created_at", slick.sql.SqlProfile.ColumnOption.NotNull, O.SqlType("TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6)"))
-
-  override def * : ProvenShape[SendEmailDbDTO] = (id.?, uid, name, phone, email, content, createdAt) <> (SendEmailDbDTO.tupled, SendEmailDbDTO.unapply)
+  override def * : ProvenShape[SendEmailDbDto] = (uid, name, phone, email, content, createdAt) <> ((SendEmailDbDto.apply _).tupled, SendEmailDbDto.unapply)
 
 }

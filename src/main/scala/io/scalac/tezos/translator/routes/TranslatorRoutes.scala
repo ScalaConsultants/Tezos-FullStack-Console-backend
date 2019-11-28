@@ -8,7 +8,7 @@ import io.scalac.tezos.translator.config.CaptchaConfig
 import io.scalac.tezos.translator.micheline.MichelineTranslator
 import io.scalac.tezos.translator.michelson.JsonToMichelson
 import io.scalac.tezos.translator.michelson.dto.MichelsonSchema
-import io.scalac.tezos.translator.routes.util.ReCaptchaDirective._
+import io.scalac.tezos.translator.routes.directives.ReCaptchaDirective._
 
 class TranslatorRoutes(log: LoggingAdapter,
                        reCaptchaConfig: CaptchaConfig)(implicit as: ActorSystem) extends HttpRoutes {
