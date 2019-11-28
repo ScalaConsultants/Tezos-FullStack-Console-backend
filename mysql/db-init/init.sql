@@ -19,3 +19,8 @@ CREATE TABLE library (
     `status` INT(2) NOT NULL
 );
 
+CREATE TABLE users (
+    `id` INT AUTO_INCREMENT PRIMARY KEY,
+    `username` TEXT NOT NULL,
+    `password_hash` TEXT NOT NULL
+);

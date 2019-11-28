@@ -1,14 +1,14 @@
 package io.scalac.tezos.translator.repository
 
+import io.scalac.tezos.translator.model.UserModel
 import io.scalac.tezos.translator.schema.UserTable
 import slick.jdbc.MySQLProfile.api._
 
 class UserRepository {
 
-  def userExists(username: String, passwordHash: String): DBIO[Boolean] =
+  def getByUsername(username: String): DBIO[Seq[UserModel]] =
     UserTable.users
       .filter(_.username === username)
-      .filter(_.passwordHash === passwordHash)
-      .exists
+      .take(1)
       .result
 }

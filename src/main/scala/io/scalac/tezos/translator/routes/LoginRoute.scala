@@ -15,7 +15,7 @@ class LoginRoute(userService: UserService)(implicit as: ActorSystem) extends Htt
     (pathPrefix("login") & pathEndOrSingleSlash & validateCredentialsFormat & post) { credentials =>
       onComplete(userService.authenticateAndCreateToken(credentials.username, credentials.password)) {
         case Success(Some(token)) => complete(token)
-        case _ => complete(HttpResponse(status = StatusCodes.Unauthorized))
+        case _ => complete(HttpResponse(status = StatusCodes.Forbidden))
       }
     }
 
