@@ -7,12 +7,13 @@ import com.typesafe.config.ConfigFactory
 import io.scalac.tezos.translator.actor.EmailSender
 import io.scalac.tezos.translator.config.Configuration
 import io.scalac.tezos.translator.repository.{Emails2SendRepository, LibraryRepository, TranslationRepository}
+import io.scalac.tezos.translator.routes.util.MMTranslator
 import io.scalac.tezos.translator.service.{Emails2SendService, LibraryService, TranslationsService}
 import slick.jdbc.MySQLProfile
+import slick.jdbc.MySQLProfile.api._
 
 import scala.concurrent.{ExecutionContextExecutor, Future}
 import scala.io.StdIn
-import slick.jdbc.MySQLProfile.api._
 
 object Boot {
   def main(args: Array[String]): Unit = {
@@ -37,7 +38,7 @@ object Boot {
     val libraryService    = new LibraryService(libraryRepo, db)
     val cronEmailSender = EmailSender(email2SendService, configuration, log)
 
-    val routes = new Routes(new TranslationsService, email2SendService, libraryService, log, configuration)
+    val routes = new Routes(new TranslationsService, email2SendService, libraryService, MMTranslator, log, configuration)
 
     val bindingFuture: Future[Http.ServerBinding] = Http().bindAndHandle(routes.allRoutes, host, port)
 

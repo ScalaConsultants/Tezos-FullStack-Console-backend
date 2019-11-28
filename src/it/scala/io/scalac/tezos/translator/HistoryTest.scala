@@ -33,7 +33,7 @@ class HistoryTest extends FlatSpec with Matchers with ScalatestRouteTest with Js
     val log: LoggingAdapter = system.log
     val config: Configuration = Configuration.getConfig(log)
 
-    val routes: Route = new Routes(service, email2SendService, libraryService, log, config).allRoutes
+    val routes: Route = new Routes(service, email2SendService, libraryService, Fakes.MMTranslatorFake, log, config).allRoutes
 
     override def testDb = db
 

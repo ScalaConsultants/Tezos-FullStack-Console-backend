@@ -23,7 +23,7 @@ class TranslationTest extends WordSpec with MustMatchers with ScalaFutures with 
     val libraryService    = new LibraryService(libraryRepo, testDb)
 
     val service = new TranslationsService
-    val routes: Route = new Routes(service, email2SendService, libraryService, log, config).allRoutes
+    val routes: Route = new Routes(service, email2SendService, libraryService, Fakes.MMTranslatorFake, log, config).allRoutes
 
     recreateTables()
   }
