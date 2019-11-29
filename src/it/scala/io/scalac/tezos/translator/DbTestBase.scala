@@ -1,7 +1,7 @@
 package io.scalac.tezos.translator
 
 import com.dimafeng.testcontainers.MySQLContainer
-import io.scalac.tezos.translator.schema.{Emails2SendTable, LibraryTable}
+import io.scalac.tezos.translator.schema._
 import slick.dbio.{DBIOAction, NoStream}
 import slick.jdbc.MySQLProfile.api._
 import slick.jdbc.{JdbcBackend, MySQLProfile}
@@ -22,7 +22,8 @@ trait DbTestBase {
       DBIO.sequence(
         Seq(
           Emails2SendTable.emails2Send.schema.create,
-          LibraryTable.library.schema.create
+          LibraryTable.library.schema.create,
+          UsersTable.users.schema.create
         )
       )
     )

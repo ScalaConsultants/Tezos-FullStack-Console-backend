@@ -4,6 +4,7 @@ import cats.data.NonEmptyList
 import cats.instances.parallel._
 import cats.syntax.either._
 import cats.syntax.parallel._
+import io.scalac.tezos.translator.model._
 import io.scalac.tezos.translator.routes.dto.DTOValidation.ValidationResult
 
 trait DTOValidation[T] {
@@ -15,6 +16,7 @@ trait DTOValidation[T] {
 object DTOValidation {
 
   val maxTinyLength = 255
+  val maxUsernameLength = 30
 
   type ValidationResult[A] = Either[NonEmptyList[DTOValidationError], A]
 
@@ -100,6 +102,13 @@ object DTOValidation {
       checkStringNotEmpty(dto.michelson, FieldIsEmpty("michelson"))
 
     (checkName, checkAuthor, checkEmail, checkDescription, checkMicheline, checkMichelson).parMapN(LibraryEntryRoutesDto.apply)
+  }
+
+  implicit val UserCredentialsValidation: DTOValidation[UserCredentials] = { dto =>
+    val checkUsername =
+      checkStringNotEmptyAndLength(dto.username, maxUsernameLength, FieldIsEmpty("username"), FieldToLong("username", maxUsernameLength))
+    val checkPassword = checkStringNotEmpty(dto.password, FieldIsEmpty("password"))
+    (checkUsername, checkPassword).parMapN(UserCredentials.apply)
   }
 
   val emailRegex: String =
