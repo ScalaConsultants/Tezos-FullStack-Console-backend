@@ -9,7 +9,7 @@ import io.scalac.tezos.translator.service.UserService
 
 import scala.util.{Failure, Success}
 
-class LoginRoute(userService: UserService)(implicit as: ActorSystem) extends HttpRoutes with JsonHelper {
+class LoginRoutes(userService: UserService)(implicit as: ActorSystem) extends HttpRoutes with JsonHelper {
 
   override def routes: Route =
     (pathPrefix("login") & pathEndOrSingleSlash & validateCredentialsFormat & post) { credentials =>

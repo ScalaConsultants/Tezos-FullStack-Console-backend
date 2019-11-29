@@ -22,7 +22,7 @@ class Routes(emails2SendService: Emails2SendService,
       new TranslatorRoutes(log, reCaptchaConfig),
       new MessageRoutes(emails2SendService, log, reCaptchaConfig),
       new LibraryRoutes(libraryService, log, config),
-      new LoginRoute(userService)
+      new LoginRoutes(userService)
     )
 
   lazy val allRoutes: Route =
