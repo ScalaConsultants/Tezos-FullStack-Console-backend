@@ -1,5 +1,5 @@
 CREATE TABLE emails2send (
-    `uid` VARCHAR(8) NOT NULL UNIQUE,
+    `uid` VARCHAR(36) NOT NULL UNIQUE,
     `name` TINYTEXT NOT NULL,
     `phone` TINYTEXT NOT NULL,
     `email` TINYTEXT NOT NULL,
@@ -8,7 +8,7 @@ CREATE TABLE emails2send (
 );
 
 CREATE TABLE library (
-    `uid` VARCHAR(8) NOT NULL UNIQUE,
+    `uid` VARCHAR(36) NOT NULL UNIQUE,
     `name` TINYTEXT NOT NULL,
     `author` TINYTEXT NOT NULL,
     `email` TINYTEXT,
