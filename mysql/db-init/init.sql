@@ -24,4 +24,4 @@ CREATE TABLE users (
     `password_hash` TEXT NOT NULL COMMENT 'bcrypt hash of user password'
 );
 
-INSERT INTO users values('asdf', '$2a$10$Idx1kaM2XQbX72tRh9hFteQ5D5ooOnfO9pR/xYIcHQ/.5BrAnEyrW')
+INSERT INTO users values('asdf', '$2a$10$Idx1kaM2XQbX72tRh9hFteQ5D5ooOnfO9pR/xYIcHQ/.5BrAnEyrW') # plain password: "zxcv"
