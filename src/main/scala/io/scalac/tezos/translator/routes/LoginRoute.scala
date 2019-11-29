@@ -7,13 +7,14 @@ import io.scalac.tezos.translator.model.UserCredentialsDTO
 import io.scalac.tezos.translator.routes.directives.DTOValidationDirective._
 import io.scalac.tezos.translator.service.UserService
 
-import scala.util.Success
+import scala.util.{Failure, Success}
 
 class LoginRoute(userService: UserService)(implicit as: ActorSystem) extends HttpRoutes with JsonHelper {
 
   override def routes: Route =
     (pathPrefix("login") & pathEndOrSingleSlash & validateCredentialsFormat & post) { credentials =>
       onComplete(userService.authenticateAndCreateToken(credentials.username, credentials.password)) {
+        case Failure(_) => complete(HttpResponse(status = StatusCodes.InternalServerError))
         case Success(Some(token)) => complete(token)
         case _ => complete(HttpResponse(status = StatusCodes.Forbidden))
       }

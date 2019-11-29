@@ -6,9 +6,10 @@ import slick.jdbc.MySQLProfile.api._
 
 class UserRepository {
 
-  def getByUsername(username: String): DBIO[Seq[UserModel]] =
+  def getByUsername(username: String): DBIO[Option[UserModel]] =
     UserTable.users
       .filter(_.username === username)
       .take(1)
       .result
+      .headOption
 }

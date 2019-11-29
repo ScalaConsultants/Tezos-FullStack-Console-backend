@@ -1,17 +1,16 @@
 package io.scalac.tezos.translator.service
 
+import com.github.t3hnar.bcrypt._
+import io.scalac.tezos.translator.model.UserModel
 import io.scalac.tezos.translator.repository.UserRepository
 import slick.jdbc.MySQLProfile.api._
 
-import scala.collection.JavaConverters._
 import scala.concurrent.{ExecutionContext, ExecutionContextExecutor, Future}
 import scala.util.Random
-import com.github.t3hnar.bcrypt._
-import io.scalac.tezos.translator.model.UserModel
 
 class UserService(repository: UserRepository, db: Database) {
 
-  private val tokenToUser = new java.util.concurrent.ConcurrentHashMap[String, String].asScala
+  private val tokenToUser = new scala.collection.concurrent.TrieMap[String, String]
 
   implicit private val ec: ExecutionContextExecutor = ExecutionContext.global
 
@@ -29,17 +28,16 @@ class UserService(repository: UserRepository, db: Database) {
     token
   }
 
-  def authenticate(user: Option[UserModel], password: String): Boolean = {
-    if (user.isDefined)
-      password.isBcrypted(user.get.passwordHash)
-    else
-      false
+  def authenticate(user: UserModel, password: String): Boolean = {
+    password.isBcrypted(user.passwordHash)
   }
 
   def authenticateAndCreateToken(username: String, password: String): Future[Option[String]] = {
     db.run(repository.getByUsername(username))
-      .map(user => authenticate(user.headOption, password))
-      .map(if (_) Some(createToken(username)) else None)
+      .map { userOption =>
+        val isAuthenticated = userOption.exists(user => authenticate(user, password))
+        if (isAuthenticated) Some(createToken(username)) else None
+      }
   }
 
   def getUserByToken(token: String): Option[String] = tokenToUser.get(token)

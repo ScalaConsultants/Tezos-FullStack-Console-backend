@@ -98,7 +98,7 @@ object Dependencies {
     "org.testcontainers"  %   "mysql"                 % Version.testContainersMySQL % "it,test"
   )
 
-  val misc:Seq[ModuleID] = Seq(
+  val bcrypt:Seq[ModuleID] = Seq(
     "com.github.t3hnar" %% "scala-bcrypt" % "4.1"
   )
 }
