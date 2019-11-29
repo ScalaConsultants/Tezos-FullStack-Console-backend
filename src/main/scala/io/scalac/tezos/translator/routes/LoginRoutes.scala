@@ -18,7 +18,13 @@ class LoginRoutes(userService: UserService)(implicit as: ActorSystem) extends Ht
         case Success(Some(token)) => complete(token)
         case _ => complete(HttpResponse(status = StatusCodes.Forbidden))
       }
-    }
+    } ~
+      (pathPrefix("logout") & pathEndOrSingleSlash
+        & authenticateOAuth2("", userService.authenticateOAuth2AndPrependUsername)
+        & post) { case (username, token) =>
+        userService.logout(token)
+        complete(StatusCodes.OK)
+      }
 
   def validateCredentialsFormat: Directive[Tuple1[UserCredentials]] = withDTOValidation[UserCredentials]
 }

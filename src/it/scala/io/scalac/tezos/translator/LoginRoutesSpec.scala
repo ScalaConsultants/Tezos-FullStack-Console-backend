@@ -1,6 +1,8 @@
 package io.scalac.tezos.translator
 
 import akka.http.scaladsl.model.StatusCodes
+import akka.http.scaladsl.model.headers.{Authorization, OAuth2BearerToken}
+import akka.http.scaladsl.server.Route
 import akka.http.scaladsl.testkit.ScalatestRouteTest
 import com.dimafeng.testcontainers.{ForEachTestContainer, MySQLContainer}
 import com.github.t3hnar.bcrypt._
@@ -21,7 +23,7 @@ class LoginRoutesSpec extends FlatSpec with Matchers with ScalatestRouteTest wit
 
   private trait DatabaseFixture extends DbTestBase {
     val testDb: MySQLProfile.backend.Database = DbTestBase.dbFromContainer(container)
-    val loginRoute = new LoginRoutes(new UserService(new UserRepository, testDb)).routes
+    val loginRoute: Route = new LoginRoutes(new UserService(new UserRepository, testDb)).routes
 
     createTables()
     runDB(
@@ -45,6 +47,33 @@ class LoginRoutesSpec extends FlatSpec with Matchers with ScalatestRouteTest wit
   it should "handle non-existing username gracefully" in new DatabaseFixture {
     Post("/login", UserCredentials("zxcv", "zxcv")) ~> loginRoute ~> check {
       status shouldBe StatusCodes.Forbidden
+    }
+  }
+
+  it should "allow to logout" in new DatabaseFixture {
+    Post("/login", UserCredentials("asdf", "zxcv")) ~> loginRoute ~> check {
+      val token = responseAs[String]
+      Post("/logout").withHeaders(Authorization(OAuth2BearerToken(token))) ~> loginRoute ~> check {
+        status shouldBe StatusCodes.OK
+      }
+    }
+  }
+
+  it should "only allowed logout for users who are logged in" in new DatabaseFixture {
+    Post("/logout").withHeaders(Authorization(OAuth2BearerToken("someRandomToken"))) ~> Route.seal(loginRoute) ~> check {
+      status shouldBe StatusCodes.Unauthorized
+    }
+  }
+
+  it should "not allow to logout twice" in new DatabaseFixture {
+    Post("/login", UserCredentials("asdf", "zxcv")) ~> loginRoute ~> check {
+      val token = responseAs[String]
+      Post("/logout").withHeaders(Authorization(OAuth2BearerToken(token))) ~> loginRoute ~> check {
+        status shouldBe StatusCodes.OK
+      }
+      Post("/logout").withHeaders(Authorization(OAuth2BearerToken(token))) ~> Route.seal(loginRoute) ~> check {
+        status shouldBe StatusCodes.Unauthorized
+      }
     }
   }
 }

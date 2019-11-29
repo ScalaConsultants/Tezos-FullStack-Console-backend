@@ -1,10 +1,13 @@
 package io.scalac.tezos.translator.service
 
+import akka.http.scaladsl.server.directives.Credentials
+import akka.http.scaladsl.server.directives.Credentials.Provided
 import com.github.t3hnar.bcrypt._
 import io.scalac.tezos.translator.model.UserModel
 import io.scalac.tezos.translator.repository.UserRepository
 import slick.jdbc.MySQLProfile.api._
 
+import scala.annotation.tailrec
 import scala.concurrent.{ExecutionContext, ExecutionContextExecutor, Future}
 import scala.util.Random
 
@@ -14,32 +17,32 @@ class UserService(repository: UserRepository, db: Database) {
 
   implicit private val ec: ExecutionContextExecutor = ExecutionContext.global
 
+  @tailrec
   private def createToken(username: String): String = {
-    def createUniqueToken = {
-      var newToken = Random.alphanumeric.take(30).mkString
-      while (tokenToUser.contains(newToken)) {
-        newToken = Random.alphanumeric.take(30).mkString
-      }
-      newToken
+    val newToken = Random.alphanumeric.take(30).mkString
+    tokenToUser.putIfAbsent(newToken, username) match {
+      case None => newToken
+      case Some(_) => createToken(username) // token already exists, retry
     }
-
-    val token = createUniqueToken
-    tokenToUser.put(token, username)
-    token
   }
 
-  def authenticate(user: UserModel, password: String): Boolean = {
+  private def checkPassword(user: UserModel, password: String): Boolean = {
     password.isBcrypted(user.passwordHash)
   }
 
   def authenticateAndCreateToken(username: String, password: String): Future[Option[String]] = {
     db.run(repository.getByUsername(username))
       .map { userOption =>
-        val isAuthenticated = userOption.exists(user => authenticate(user, password))
+        val isAuthenticated = userOption.exists(user => checkPassword(user, password))
         if (isAuthenticated) Some(createToken(username)) else None
       }
   }
 
-  def getUserByToken(token: String): Option[String] = tokenToUser.get(token)
+  def authenticateOAuth2AndPrependUsername(credentials: Credentials): Option[(String, String)] = credentials match {
+    case Provided(bearerToken) => tokenToUser.get(bearerToken).map((_, bearerToken))
+    case _ => None
+  }
+
+  def logout(token: String): Unit = tokenToUser.remove(token)
 
 }
