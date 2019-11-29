@@ -1,10 +1,11 @@
 package io.scalac.tezos.translator.schema
 
-import io.scalac.tezos.translator.model.LibraryModel
-import org.joda.time.DateTime
+import java.sql.Timestamp
+
+import io.scalac.tezos.translator.repository.dto.LibraryEntryDbDto
 import slick.lifted.{ProvenShape, Tag}
 import slick.jdbc.MySQLProfile.api._
-import slick.sql.SqlProfile.ColumnOption.Nullable
+import slick.sql.SqlProfile.ColumnOption.NotNull
 
 object LibraryTable {
 
@@ -12,23 +13,25 @@ object LibraryTable {
 
 }
 
-class LibraryTable(tag: Tag) extends Table[LibraryModel](tag, "library") {
+class LibraryTable(tag: Tag) extends Table[LibraryEntryDbDto](tag, "library") {
 
-  def id: Rep[Long] = column[Long]("id", O.PrimaryKey, O.AutoInc)
+  def uid: Rep[String] = column[String]("uid", NotNull, O.Unique, O.SqlType("VARCHAR(36)"))
 
-  def name: Rep[String] = column[String]("name", O.SqlType("tinytext"))
+  def name: Rep[String] = column[String]("name", NotNull, O.SqlType("TINYTEXT"))
 
-  def author: Rep[String] = column[String]("author", O.SqlType("tinytext"))
+  def author: Rep[String] = column[String]("author", NotNull, O.SqlType("TINYTEXT"))
 
-  def description: Rep[String] = column[String]("description", O.SqlType("text"))
+  def email: Rep[Option[String]] = column[Option[String]]("email", O.SqlType("TINYTEXT"))
 
-  def micheline: Rep[String] = column[String]("micheline", O.SqlType("text"))
+  def description: Rep[String] = column[String]("description", NotNull, O.SqlType("TEXT"))
 
-  def michelson: Rep[String] = column[String]("michelson", O.SqlType("text"))
+  def micheline: Rep[String] = column[String]("micheline", NotNull, O.SqlType("TEXT"))
 
-  def createdAt: Rep[DateTime] = column[DateTime]("created_at", slick.sql.SqlProfile.ColumnOption.NotNull, O.SqlType("TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6)"))
+  def michelson: Rep[String] = column[String]("michelson", NotNull, O.SqlType("TEXT"))
 
-  def status: Rep[Int] = column[Int]("status", Nullable, O.SqlType("INT DEFAULT NULL"))
+  def createdAt: Rep[Timestamp] = column[Timestamp]("created_at", NotNull, O.SqlType("TIMESTAMP(6) DEFAULT CURRENT_TIMESTAMP(6)"))
 
-  override def * : ProvenShape[LibraryModel] = (id, name, author, description, micheline, michelson, createdAt, status.?) <> (LibraryModel.tupled, LibraryModel.unapply)
+  def status: Rep[Int] = column[Int]("status", NotNull, O.SqlType("INT(2)"))
+
+  override def * : ProvenShape[LibraryEntryDbDto] = (uid, name, author, email, description, micheline, michelson, createdAt, status) <> ((LibraryEntryDbDto.apply _).tupled, LibraryEntryDbDto.unapply)
 }

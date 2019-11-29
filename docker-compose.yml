@@ -13,10 +13,10 @@ services:
       TEZOS_CONSOLE_HTTP_PORT: 8080
 
   tezos-console-db:
-    image: mysql:5.7
+    image: mysql:8.0.18
     restart: always
     environment:
-      MYSQL_DATABASE: 'tezos'
+      MYSQL_DATABASE: 'tezos_console'
       MYSQL_USER: 'tezos'
       MYSQL_PASSWORD: 'Tez0s'
       MYSQL_ROOT_PASSWORD: 'password'

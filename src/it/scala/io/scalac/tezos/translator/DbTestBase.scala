@@ -1,7 +1,7 @@
 package io.scalac.tezos.translator
 
 import com.dimafeng.testcontainers.MySQLContainer
-import io.scalac.tezos.translator.schema.{Emails2SendTable, LibraryTable, TranslationTable}
+import io.scalac.tezos.translator.schema.{Emails2SendTable, LibraryTable}
 import slick.dbio.{DBIOAction, NoStream}
 import slick.jdbc.MySQLProfile.api._
 import slick.jdbc.{JdbcBackend, MySQLProfile}
@@ -21,7 +21,6 @@ trait DbTestBase {
     runDB(
       DBIO.sequence(
         Seq(
-          TranslationTable.translations.schema.create,
           Emails2SendTable.emails2Send.schema.create,
           LibraryTable.library.schema.create
         )
@@ -31,7 +30,6 @@ trait DbTestBase {
   protected def dropTables(): Seq[Unit] = runDB(
     DBIO.sequence(
       Seq(
-        TranslationTable.translations.schema.dropIfExists,
         Emails2SendTable.emails2Send.schema.dropIfExists,
         LibraryTable.library.schema.dropIfExists
       )
@@ -53,4 +51,6 @@ object DbTestBase {
       container.password,
       executor = AsyncExecutor("exec", 10, 10, 1000, 10))
   }
+
+  val mySqlVersion = "mysql:8.0.18"
 }

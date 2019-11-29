@@ -4,9 +4,10 @@ import akka.event.LoggingAdapter
 import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.server.{Directive, Route}
 import io.scalac.tezos.translator.config.Configuration
-import io.scalac.tezos.translator.model.{Error, LibraryDTO}
-import io.scalac.tezos.translator.routes.util.DTOValidationDirective._
-import io.scalac.tezos.translator.routes.util.ReCaptchaDirective._
+import io.scalac.tezos.translator.model.Error
+import io.scalac.tezos.translator.routes.directives.DTOValidationDirective._
+import io.scalac.tezos.translator.routes.directives.ReCaptchaDirective._
+import io.scalac.tezos.translator.routes.dto.LibraryEntryRoutesDto
 import io.scalac.tezos.translator.service.LibraryService
 
 import scala.util.{Failure, Success}
@@ -17,7 +18,7 @@ class LibraryRoutes(service: LibraryService,
   override def routes: Route =
     (path ("library") & pathEndOrSingleSlash) {
       (post & withReCaptchaVerify(log, config.reCaptcha)(as) & withLibraryDTOValidation) { libraryDto =>
-        val operationPerformed = service.addNew(libraryDto)
+        val operationPerformed = service.addNew(libraryDto.toDomain)
         onComplete(operationPerformed) {
           case Success(_)   => complete(StatusCodes.OK)
           case Failure(err) =>
@@ -27,9 +28,9 @@ class LibraryRoutes(service: LibraryService,
       } ~
         (get & parameters('limit.as[Int].?)) { maybeLimit =>
           val limit = maybeLimit.getOrElse(config.dbUtility.defaultLimit)
-          val operationPerformed = service.getAcceptedAsDto(limit)(as.dispatcher)
+          val operationPerformed = service.getAccepted(limit)(as.dispatcher)
           onComplete(operationPerformed) {
-            case Success(dtoList) => complete(dtoList)
+            case Success(libraryEntries) => complete(libraryEntries.map(LibraryEntryRoutesDto.fromDomain))
             case Failure(err)     =>
               log.error(s"Can't show accepted library models, limit - $limit error - $err")
               complete(StatusCodes.InternalServerError, Error("Can't get records"))
@@ -37,6 +38,6 @@ class LibraryRoutes(service: LibraryService,
       }
     }
 
-  def withLibraryDTOValidation: Directive[Tuple1[LibraryDTO]] = withDTOValidation[LibraryDTO]
+  def withLibraryDTOValidation: Directive[Tuple1[LibraryEntryRoutesDto]] = withDTOValidation[LibraryEntryRoutesDto]
 
 }
