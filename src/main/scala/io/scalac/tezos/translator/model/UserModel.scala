@@ -1,5 +1,4 @@
 package io.scalac.tezos.translator.model
 
-case class UserModel(id: Long,
-                     username: String,
+case class UserModel(username: String,
                      passwordHash: String)

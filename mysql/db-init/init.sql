@@ -20,7 +20,6 @@ CREATE TABLE library (
 );
 
 CREATE TABLE users (
-    `id` INT AUTO_INCREMENT PRIMARY KEY,
-    `username` TEXT NOT NULL,
+    `username` TEXT NOT NULL UNIQUE,
     `password_hash` TEXT NOT NULL
 );

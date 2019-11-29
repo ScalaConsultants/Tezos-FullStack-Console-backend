@@ -23,7 +23,7 @@ trait DbTestBase {
         Seq(
           Emails2SendTable.emails2Send.schema.create,
           LibraryTable.library.schema.create,
-          UserTable.users.schema.create
+          UsersTable.users.schema.create
         )
       )
     )

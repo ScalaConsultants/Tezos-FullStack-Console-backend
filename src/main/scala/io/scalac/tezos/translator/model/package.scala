@@ -12,6 +12,5 @@ package object model {
   )
   case class Error(error: String)
   case class Errors(errors: List[String])
-  case class UserCredentialsDTO(username: String, password: String)
 
 }
