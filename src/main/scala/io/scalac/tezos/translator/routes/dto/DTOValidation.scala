@@ -16,6 +16,7 @@ trait DTOValidation[T] {
 object DTOValidation {
 
   val maxTinyLength = 255
+  val maxUsernameLength = 30
 
   type ValidationResult[A] = Either[NonEmptyList[DTOValidationError], A]
 
@@ -104,7 +105,8 @@ object DTOValidation {
   }
 
   implicit val UserCredentialsValidation: DTOValidation[UserCredentials] = { dto =>
-    val checkUsername = checkStringNotEmpty(dto.username, FieldIsEmpty("username"))
+    val checkUsername =
+      checkStringNotEmptyAndLength(dto.username, maxUsernameLength, FieldIsEmpty("username"), FieldToLong("username", maxUsernameLength))
     val checkPassword = checkStringNotEmpty(dto.password, FieldIsEmpty("password"))
     (checkUsername, checkPassword).parMapN(UserCredentials.apply)
   }

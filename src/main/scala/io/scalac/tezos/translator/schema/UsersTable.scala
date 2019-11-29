@@ -11,9 +11,9 @@ object UsersTable {
 
 class UsersTable(tag: Tag) extends Table[UserModel](tag, "users") {
 
-  def username: Rep[String] = column[String]("username"/*, NotNull, O.Unique, O.SqlType("TEXT")*/)
+  def username: Rep[String] = column[String]("username", NotNull, O.Unique, O.SqlType("VARCHAR(30)"))
 
-  def passwordHash: Rep[String] = column[String]("password_hash"/*, NotNull, O.SqlType("TEXT")*/)
+  def passwordHash: Rep[String] = column[String]("password_hash", NotNull, O.SqlType("TEXT"))
 
   override def * : ProvenShape[UserModel] = (username, passwordHash) <> (UserModel.tupled, UserModel.unapply)
 
