@@ -3,7 +3,7 @@ package io.scalac.tezos.translator
 import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.server.Route
 import akka.http.scaladsl.testkit.ScalatestRouteTest
-import com.dimafeng.testcontainers.{ForEachTestContainer, MySQLContainer}
+import com.dimafeng.testcontainers.{ForEachTestContainer, PostgreSQLContainer}
 import io.scalac.tezos.translator.config.CaptchaConfig
 import io.scalac.tezos.translator.model.Errors
 import io.scalac.tezos.translator.repository.Emails2SendRepository
@@ -13,8 +13,8 @@ import io.scalac.tezos.translator.routes.{JsonHelper, MessageRoutes}
 import io.scalac.tezos.translator.schema.Emails2SendTable
 import io.scalac.tezos.translator.service.Emails2SendService
 import org.scalatest.{Assertion, BeforeAndAfterAll, Matchers, WordSpec}
-import slick.jdbc.MySQLProfile
-import slick.jdbc.MySQLProfile.api._
+import slick.jdbc.PostgresProfile.api._
+import slick.jdbc.PostgresProfile
 
 import scala.concurrent.Await
 import scala.concurrent.duration._
@@ -28,10 +28,10 @@ class MessageSpec
   with BeforeAndAfterAll
   with JsonHelper
   with ForEachTestContainer {
-  override lazy val container = MySQLContainer(mysqlImageVersion = DbTestBase.mySqlVersion)
+  override lazy val container = new PostgreSQLContainer(Some(DbTestBase.postgresVersion))
 
   private trait DatabaseFixture extends DbTestBase {
-    val testDb: MySQLProfile.backend.Database = DbTestBase.dbFromContainer(container)
+    val testDb: PostgresProfile.backend.DatabaseDef = DbTestBase.dbFromContainer(container)
 
     val email2SendService = new Emails2SendService(emails2SendRepo, testDb)
     val messageRoute: Route = new MessageRoutes(email2SendService, system.log, reCaptchaConfig).routes

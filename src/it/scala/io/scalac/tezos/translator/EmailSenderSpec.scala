@@ -3,7 +3,7 @@ package io.scalac.tezos.translator
 import akka.actor.ActorSystem
 import akka.event.LoggingAdapter
 import akka.testkit.TestKit
-import com.dimafeng.testcontainers.{ForEachTestContainer, MySQLContainer}
+import com.dimafeng.testcontainers.{ForEachTestContainer, PostgreSQLContainer}
 import com.icegreen.greenmail.util.{GreenMail, GreenMailUtil, ServerSetupTest}
 import io.scalac.tezos.translator.actor.EmailSender
 import io.scalac.tezos.translator.config.{Configuration, CronConfiguration, EmailConfiguration}
@@ -14,7 +14,7 @@ import io.scalac.tezos.translator.routes.dto.SendEmailRoutesDto
 import io.scalac.tezos.translator.service.Emails2SendService
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.{Matchers, WordSpecLike}
-import slick.jdbc.MySQLProfile
+import slick.jdbc.PostgresProfile
 
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContextExecutor, Future}
@@ -30,11 +30,11 @@ class EmailSenderSpec
   with ForEachTestContainer {
 
     implicit val ec: ExecutionContextExecutor = system.dispatcher
-    override lazy val container = MySQLContainer(mysqlImageVersion = DbTestBase.mySqlVersion)
+    override lazy val container = new PostgreSQLContainer(Some(DbTestBase.postgresVersion))
     override implicit val patienceConfig: PatienceConfig = PatienceConfig(10 seconds)
 
     private trait DatabaseFixture extends DbTestBase {
-      val testDb: MySQLProfile.backend.Database = DbTestBase.dbFromContainer(container)
+      val testDb: PostgresProfile.backend.DatabaseDef = DbTestBase.dbFromContainer(container)
 
       val email2SendService = new Emails2SendService(emails2SendRepo, testDb)
 

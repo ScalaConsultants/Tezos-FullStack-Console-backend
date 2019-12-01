@@ -2,7 +2,7 @@ package io.scalac.tezos.translator.repository
 
 import io.scalac.tezos.translator.model.UserModel
 import io.scalac.tezos.translator.schema.UsersTable
-import slick.jdbc.MySQLProfile.api._
+import slick.jdbc.PostgresProfile.api._
 
 class UserRepository {
 

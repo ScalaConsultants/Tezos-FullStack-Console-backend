@@ -4,7 +4,7 @@ import io.scalac.tezos.translator.model.LibraryEntry.Status
 import io.scalac.tezos.translator.model.Uid
 import io.scalac.tezos.translator.repository.dto.LibraryEntryDbDto
 import io.scalac.tezos.translator.schema.LibraryTable
-import slick.jdbc.MySQLProfile.api._
+import slick.jdbc.PostgresProfile.api._
 
 class LibraryRepository {
 

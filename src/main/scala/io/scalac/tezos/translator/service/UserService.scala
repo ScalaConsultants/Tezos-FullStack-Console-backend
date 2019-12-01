@@ -5,7 +5,7 @@ import akka.http.scaladsl.server.directives.Credentials.Provided
 import com.github.t3hnar.bcrypt._
 import io.scalac.tezos.translator.model.UserModel
 import io.scalac.tezos.translator.repository.UserRepository
-import slick.jdbc.MySQLProfile.api._
+import slick.jdbc.PostgresProfile.api._
 
 import scala.annotation.tailrec
 import scala.concurrent.{ExecutionContext, Future}

@@ -4,28 +4,40 @@ import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.model.headers.{Authorization, OAuth2BearerToken}
 import akka.http.scaladsl.server.Route
 import akka.http.scaladsl.testkit.ScalatestRouteTest
-import com.dimafeng.testcontainers.{ForEachTestContainer, MySQLContainer}
+import com.dimafeng.testcontainers.{ForEachTestContainer, PostgreSQLContainer}
 import com.github.t3hnar.bcrypt._
 import io.scalac.tezos.translator.model.{UserCredentials, UserModel}
 import io.scalac.tezos.translator.repository.UserRepository
 import io.scalac.tezos.translator.routes.{JsonHelper, LoginRoutes}
 import io.scalac.tezos.translator.schema.UsersTable
 import io.scalac.tezos.translator.service.UserService
+import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.{FlatSpec, Matchers}
-import slick.jdbc.MySQLProfile
-import slick.jdbc.MySQLProfile.api._
+import slick.jdbc.PostgresProfile
+import slick.jdbc.PostgresProfile.api._
 
 import scala.language.postfixOps
 
-class LoginRoutesSpec extends FlatSpec with Matchers with ScalatestRouteTest with JsonHelper with ForEachTestContainer {
+class LoginRoutesSpec
+  extends FlatSpec
+    with Matchers
+    with ScalatestRouteTest
+    with JsonHelper
+    with ScalaFutures
+    with ForEachTestContainer {
 
-  override lazy val container = MySQLContainer()
+  override lazy val container = new PostgreSQLContainer(Some(DbTestBase.postgresVersion))
 
   private trait DatabaseFixture extends DbTestBase {
-    val testDb: MySQLProfile.backend.Database = DbTestBase.dbFromContainer(container)
-    val loginRoute: Route = new LoginRoutes(new UserService(new UserRepository, testDb)).routes
+    val testDb: PostgresProfile.backend.Database = DbTestBase.dbFromContainer(container)
+    val loginRoute: Route = new LoginRoutes(new UserService(new UserRepository, testDb), system.log).routes
 
     createTables()
+    val insertUser: Int = runDB(
+      UsersTable.users += UserModel("asdf", "zxcv".bcrypt)
+    )
+
+    insertUser shouldBe 1
   }
 
   "LoginRoute" should "reject wrong credentials" in new DatabaseFixture {

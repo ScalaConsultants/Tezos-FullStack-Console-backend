@@ -13,17 +13,16 @@ services:
       TEZOS_CONSOLE_HTTP_PORT: 8080
 
   tezos-console-db:
-    image: mysql:8.0.18
+    image: postgres:9.6-alpine
     restart: always
     environment:
-      MYSQL_DATABASE: 'tezos_console'
-      MYSQL_USER: 'tezos'
-      MYSQL_PASSWORD: 'Tez0s'
-      MYSQL_ROOT_PASSWORD: 'password'
+      POSTGRES_DB: 'tezos_console'
+      POSTGRES_USER: 'postgres'
+      POSTGRES_PASSWORD: 'password'
     ports:
-      - 3306:3306
+      - 5432:5432
     expose:
-      - 3306
+      - 5432
     volumes:
-      - ./mysql/data:/var/lib/mysql
-      - ./mysql/db-init:/docker-entrypoint-initdb.d
+      - ./postgres/data:/var/lib/postgresql/data
+      - ./postgres/db-init:/docker-entrypoint-initdb.d
