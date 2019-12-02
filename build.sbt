@@ -3,7 +3,7 @@ import Dependencies._
 lazy val root = (project in file(".")).settings(
   name := "Tezos-FullStack-Console",
   version := "0.1",
-  scalaVersion := "2.12.8",
+  scalaVersion := "2.12.10",
   resolvers += "scalaz-bintray" at "https://dl.bintray.com/scalaz/releases",
   resolvers += "typesafe" at "http://repo.typesafe.com/typesafe/releases/",
   resolvers += "Scalac" at "https://raw.githubusercontent.com/ScalaConsultants/mvn-repo/master/",
