@@ -28,5 +28,6 @@ lazy val root = (project in file(".")).settings(
   scalacOptions ++= Seq("-Ypartial-unification")
 
 ).configs(IntegrationTest)
+  .enablePlugins(AssemblyPlugin)
 
 
