@@ -1,8 +1,8 @@
 version: "3"
 services:
   console-service:
-    container_name: tezos-fullstack-console-backend
-    image: tezos-fullstack-console-backend:latest
+    container_name: tezos-fullstack-console-backend-dev
+    image: tezos-fullstack-console-backend-dev:latest
     restart: always
     tty: true
     stdin_open: true
@@ -11,18 +11,7 @@ services:
     environment:
       TEZOS_CONSOLE_HTTP_HOST: 0.0.0.0
       TEZOS_CONSOLE_HTTP_PORT: 8080
-
-  tezos-console-db:
-    image: postgres:9.6-alpine
-    restart: always
-    environment:
-      POSTGRES_DB: 'tezos_console'
-      POSTGRES_USER: 'postgres'
-      POSTGRES_PASSWORD: 'password'
-    ports:
-      - 5432:5432
-    expose:
-      - 5432
-    volumes:
-      - ./postgres/data:/var/lib/postgresql/data
-      - ./postgres/db-init:/docker-entrypoint-initdb.d
+      TEZOS_DB_IP: ${POSTGRES_HOST}
+      TEZOS_DB_NAME: ${POSTGRES_DB}
+      TEZOS_DB_USERNAME: ${POSTGRES_USER}
+      TEZOS_DB_PASSWORD: ${POSTGRES_PASSWORD}
