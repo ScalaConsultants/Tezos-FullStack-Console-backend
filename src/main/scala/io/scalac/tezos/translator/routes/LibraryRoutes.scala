@@ -34,7 +34,7 @@ class LibraryRoutes(
         }
       } ~
         (get & authenticateOAuth2("", userService.authenticateOAuth2AndPrependUsername)) { _ =>
-          val operationPerformed = service.getAll()
+          val operationPerformed = service.getAll()(as.dispatcher)
           onComplete(operationPerformed) {
             case Success(libraryEntries) => complete(libraryEntries.map(LibraryEntryRoutesDto.fromDomain))
             case Failure(err) =>
@@ -44,7 +44,7 @@ class LibraryRoutes(
         } ~
         (get & parameters('limit.as[Int].?)) { maybeLimit =>
           val limit = maybeLimit.getOrElse(config.dbUtility.defaultLimit)
-          val operationPerformed = service.getAccepted(limit)
+          val operationPerformed = service.getAccepted(limit)(as.dispatcher)
           onComplete(operationPerformed) {
             case Success(libraryEntries) => complete(libraryEntries.map(LibraryEntryRoutesDto.fromDomain))
             case Failure(err) =>

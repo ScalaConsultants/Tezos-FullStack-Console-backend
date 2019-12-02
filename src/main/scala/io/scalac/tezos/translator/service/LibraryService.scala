@@ -14,7 +14,7 @@ class LibraryService(repository: LibraryRepository, db: Database)(implicit ec: E
   def addNew(entry: LibraryEntry): Future[Int] =
     db.run(repository.add(LibraryEntryDbDto.fromDomain(entry)))
 
-  def getAccepted(limit: Int): Future[Seq[LibraryEntry]] =
+  def getAccepted(limit: Int)(implicit ec: ExecutionContext): Future[Seq[LibraryEntry]] =
     getAll(limit, Some(Accepted))
 
   def getAll(limit: Int = Integer.MAX_VALUE, statusFilter: Option[Status] = None): Future[Seq[LibraryEntry]] =
