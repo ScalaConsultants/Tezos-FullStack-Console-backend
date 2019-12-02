@@ -8,14 +8,12 @@ import io.scalac.tezos.translator.repository.UserRepository
 import slick.jdbc.MySQLProfile.api._
 
 import scala.annotation.tailrec
-import scala.concurrent.{ExecutionContext, ExecutionContextExecutor, Future}
+import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Random
 
-class UserService(repository: UserRepository, db: Database) {
+class UserService(repository: UserRepository, db: Database)(implicit ec: ExecutionContext) {
 
   private val tokenToUser = new scala.collection.concurrent.TrieMap[String, String]
-
-  implicit private val ec: ExecutionContextExecutor = ExecutionContext.global
 
   @tailrec
   private def createToken(username: String): String = {

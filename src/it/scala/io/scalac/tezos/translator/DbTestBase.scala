@@ -1,13 +1,15 @@
 package io.scalac.tezos.translator
 
 import com.dimafeng.testcontainers.MySQLContainer
+import io.scalac.tezos.translator.model.UserModel
 import io.scalac.tezos.translator.schema._
 import slick.dbio.{DBIOAction, NoStream}
 import slick.jdbc.MySQLProfile.api._
 import slick.jdbc.{JdbcBackend, MySQLProfile}
 
-import scala.concurrent.Await
+import scala.concurrent.{Await, ExecutionContext}
 import scala.concurrent.duration._
+
 
 trait DbTestBase {
 
@@ -17,7 +19,7 @@ trait DbTestBase {
 
   protected def runDB[R](dbAction: DBIOAction[R, NoStream, Nothing]): R = Await.result(testDb.run(dbAction), dbTimeout)
 
-  protected def createTables(): Unit =
+  protected def createTables()(implicit ec: ExecutionContext): Unit =
     runDB(
       DBIO.sequence(
         Seq(
@@ -25,7 +27,7 @@ trait DbTestBase {
           LibraryTable.library.schema.create,
           UsersTable.users.schema.create
         )
-      )
+      ).flatMap( _ => UsersTable.users += UserModel("asdf", "$2a$10$Idx1kaM2XQbX72tRh9hFteQ5D5ooOnfO9pR/xYIcHQ/.5BrAnEyrW"))
     )
 
   protected def dropTables(): Seq[Unit] = runDB(
@@ -37,7 +39,7 @@ trait DbTestBase {
     )
   )
 
-  protected def recreateTables(): Unit = {
+  protected def recreateTables()(implicit ec: ExecutionContext): Unit = {
     dropTables()
     createTables()
   }

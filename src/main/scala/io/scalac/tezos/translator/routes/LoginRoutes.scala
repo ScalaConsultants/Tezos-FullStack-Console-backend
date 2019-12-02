@@ -21,7 +21,7 @@ class LoginRoutes(userService: UserService)(implicit as: ActorSystem) extends Ht
     } ~
       (pathPrefix("logout") & pathEndOrSingleSlash
         & authenticateOAuth2("", userService.authenticateOAuth2AndPrependUsername)
-        & post) { case (username, token) =>
+        & post) { case (_, token) =>
         userService.logout(token)
         complete(StatusCodes.OK)
       }
