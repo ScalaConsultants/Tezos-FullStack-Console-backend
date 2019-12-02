@@ -1,8 +1,8 @@
 version: "3"
 services:
   console-service:
-    container_name: tezos-fullstack-console-backend
-    image: tezos-fullstack-console-backend:latest
+    container_name: tezos-fullstack-console-backend-dev
+    image: tezos-fullstack-console-backend-dev:latest
     restart: always
     tty: true
     stdin_open: true
@@ -16,10 +16,10 @@ services:
     image: mysql:8.0.18
     restart: always
     environment:
-      MYSQL_DATABASE: 'tezos_console'
-      MYSQL_USER: 'tezos'
-      MYSQL_PASSWORD: 'Tez0s'
-      MYSQL_ROOT_PASSWORD: 'password'
+      TEZOS_DB_IP: ${POSTGRES_HOST}
+      TEZOS_DB_NAME: ${POSTGRES_DB}
+      TEZOS_DB_USERNAME: ${POSTGRES_USER}
+      TEZOS_DB_PASSWORD: ${POSTGRES_PASSWORD}
     ports:
       - 3306:3306
     expose:
