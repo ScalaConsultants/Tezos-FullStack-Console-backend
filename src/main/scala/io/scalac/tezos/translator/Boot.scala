@@ -29,7 +29,6 @@ object Boot {
     log.info(s"Config loaded - $configuration")
 
     implicit val db: PostgresProfile.backend.Database = Database.forConfig("tezos-db")
-    log.info(s"DB config: ${ConfigFactory.load().getConfig("tezos-db")}")
     val emails2SendRepo = new Emails2SendRepository
     val libraryRepo     = new LibraryRepository
     val userRepository = new UserRepository
