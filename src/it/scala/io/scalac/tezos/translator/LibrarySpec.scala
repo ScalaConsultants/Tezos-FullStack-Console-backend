@@ -1,18 +1,19 @@
 package io.scalac.tezos.translator
 
 import akka.http.scaladsl.model.StatusCodes
+import akka.http.scaladsl.model.headers.{Authorization, OAuth2BearerToken}
 import akka.http.scaladsl.server.Route
 import akka.http.scaladsl.testkit.ScalatestRouteTest
 import com.dimafeng.testcontainers.{ForEachTestContainer, MySQLContainer}
 import io.scalac.tezos.translator.config.{CaptchaConfig, Configuration}
 import io.scalac.tezos.translator.model.LibraryEntry._
 import io.scalac.tezos.translator.model._
-import io.scalac.tezos.translator.repository.LibraryRepository
+import io.scalac.tezos.translator.repository.{LibraryRepository, UserRepository}
 import io.scalac.tezos.translator.repository.dto.LibraryEntryDbDto
 import io.scalac.tezos.translator.routes.dto.LibraryEntryRoutesDto
 import io.scalac.tezos.translator.routes.{JsonHelper, LibraryRoutes}
 import io.scalac.tezos.translator.schema.LibraryTable
-import io.scalac.tezos.translator.service.LibraryService
+import io.scalac.tezos.translator.service.{LibraryService, UserService}
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.{Assertion, Matchers, WordSpec}
 import slick.jdbc.MySQLProfile
@@ -36,8 +37,10 @@ class LibrarySpec
     private trait DatabaseFixture extends DbTestBase {
       val testDb: MySQLProfile.backend.Database = DbTestBase.dbFromContainer(container)
 
+      val userService = new UserService(new UserRepository, testDb)
       val libraryService = new LibraryService(libraryRepo, testDb)
-      val libraryRoute: Route = new LibraryRoutes(libraryService, system.log, config).routes
+
+      val libraryRoute: Route = new LibraryRoutes(libraryService, userService, system.log, config).routes
 
       recreateTables()
 
@@ -57,6 +60,14 @@ class LibrarySpec
           responseAs[Errors].errors should contain theSameElementsAs expectedErrors
         }
       }
+    }
+
+    private def getToken(userService: UserService, user: UserCredentials): String = {
+      val maybeToken = Await.result(userService.authenticateAndCreateToken(user.username, user.password), 3 seconds)
+
+      maybeToken shouldBe a[Some[_]]
+
+      maybeToken.get
     }
 
     val reCaptchaConfig = CaptchaConfig(checkOn = false, "", "", "")
@@ -99,16 +110,9 @@ class LibrarySpec
         addedRecord.status      shouldBe PendingApproval.value
       }
 
-      "show only accepted records" in new DatabaseFixture {
-        val record1 = LibraryEntry(Uid(), "nameE1", "authorE1", None, "descriptionE1", "michelineE1", "michelsonE1", PendingApproval)
-        val record2 = LibraryEntry(Uid(), "nameE2", "authorE2", Some("name@service.com"), "descriptionE2", "michelineE2", "michelsonE2", Accepted)
-        val record3 = LibraryEntry(Uid(), "nameE3", "authorE3", None, "descriptionE4", "michelineE4", "michelsonE4", Declined)
+      "show only accepted records" in new DatabaseFixture with SampleEntries {
 
-        val toInsert = Seq(record1, record2, record3)
-
-        val inserts = Future.sequence(toInsert.map(r => libraryService.addNew(r)))
-
-        whenReady(inserts) { _ should contain theSameElementsAs Seq(1, 1, 1) }
+        whenReady(insert(libraryService)) { _ should contain theSameElementsAs Seq(1, 1, 1) }
 
         // it was the only one accepted
         val expectedRecord2 = LibraryEntryRoutesDto("nameE2", "authorE2", Some("name@service.com"), "descriptionE2", "michelineE2", "michelsonE2")
@@ -142,5 +146,97 @@ class LibrarySpec
         }
       }
 
+      "update library entry status" in new DatabaseFixture with SampleEntries {
+        whenReady(insert(libraryService)) { _ should contain theSameElementsAs Seq(1, 1, 1) }
+
+        val expectedRecord2 = LibraryEntryRoutesDto("nameE2", "authorE2", Some("name@service.com"), "descriptionE2", "michelineE2", "michelsonE2")
+
+        Get("/library") ~> libraryRoute ~> check {
+          status shouldBe StatusCodes.OK
+          val actualRecords = responseAs[List[LibraryEntryRoutesDto]]
+          actualRecords should contain theSameElementsAs Seq(expectedRecord2)
+        }
+
+        val bearerToken = getToken(userService, UserCredentials("asdf", "zxcv"))
+
+        // change statuses
+        // record1
+        Put(s"/library?uid=d7327913-4957-4417-96d2-e5c1d4311f80&status=accepted").withHeaders(Authorization(OAuth2BearerToken(bearerToken))) ~> libraryRoute ~> check {
+          status shouldBe StatusCodes.OK
+        }
+        // record2
+        Put("/library?uid=17976f3a-505b-4d66-854a-243a70bb94c0&status=declined").withHeaders(Authorization(OAuth2BearerToken(bearerToken))) ~> libraryRoute ~> check {
+          status shouldBe StatusCodes.OK
+        }
+        // record3
+        Put("/library?uid=5d8face2-ab24-49e0-b792-a0b99a031645&status=pending_approval").withHeaders(Authorization(OAuth2BearerToken(bearerToken))) ~> libraryRoute ~> check {
+          status shouldBe StatusCodes.OK
+        }
+
+        // invalid uid
+        Put("/library?uid=aada8ebe&status=pending_approval").withHeaders(Authorization(OAuth2BearerToken(bearerToken))) ~> libraryRoute ~> check {
+          status shouldBe StatusCodes.BadRequest
+        }
+        // non exisitng uid
+        Put("/library?uid=4cb9f377-718c-4d5d-be0d-118a5c99e298&status=pending_approval").withHeaders(Authorization(OAuth2BearerToken(bearerToken))) ~> libraryRoute ~> check {
+          status shouldBe StatusCodes.Forbidden
+        }
+
+
+        val expectedNewStatuses = Seq(record1.copy(status = Accepted), record2.copy(status = Declined), record3.copy(status = PendingApproval))
+        whenReady(libraryService.getAll(5)) { _ should contain theSameElementsAs expectedNewStatuses }
+
+        val expectedRecord1 = LibraryEntryRoutesDto("nameE1", "authorE1", None, "descriptionE1", "michelineE1", "michelsonE1")
+
+        Get("/library") ~> libraryRoute ~> check {
+          status shouldBe StatusCodes.OK
+          val actualRecords = responseAs[List[LibraryEntryRoutesDto]]
+          actualRecords should contain theSameElementsAs Seq(expectedRecord1)
+        }
+      }
+
+      "delete entry" in new DatabaseFixture with SampleEntries {
+        whenReady(insert(libraryService)) { _ should contain theSameElementsAs Seq(1, 1, 1) }
+
+        val expectedRecord2 = LibraryEntryRoutesDto("nameE2", "authorE2", Some("name@service.com"), "descriptionE2", "michelineE2", "michelsonE2")
+
+        Get("/library") ~> libraryRoute ~> check {
+          status shouldBe StatusCodes.OK
+          val actualRecords = responseAs[List[LibraryEntryRoutesDto]]
+          actualRecords should contain theSameElementsAs Seq(expectedRecord2)
+        }
+
+        val bearerToken = getToken(userService, UserCredentials("asdf", "zxcv"))
+
+        // record 2
+        Delete("/library?uid=17976f3a-505b-4d66-854a-243a70bb94c0").withHeaders(Authorization(OAuth2BearerToken(bearerToken))) ~> libraryRoute ~> check {
+          status shouldBe StatusCodes.OK
+        }
+
+        Get("/library") ~> libraryRoute ~> check {
+          status shouldBe StatusCodes.OK
+          val actualRecords = responseAs[List[LibraryEntryRoutesDto]]
+          actualRecords shouldBe 'empty
+        }
+
+        // invalid uid
+        Delete("/library?uid=aada8ebe").withHeaders(Authorization(OAuth2BearerToken(bearerToken))) ~> libraryRoute ~> check {
+          status shouldBe StatusCodes.BadRequest
+        }
+        // non exisitng uid
+        Delete("/library?uid=4cb9f377-718c-4d5d-be0d-118a5c99e298").withHeaders(Authorization(OAuth2BearerToken(bearerToken))) ~> libraryRoute ~> check {
+          status shouldBe StatusCodes.Forbidden
+        }
+      }
     }
+
+  private trait SampleEntries {
+    val record1 = LibraryEntry(Uid.fromString("d7327913-4957-4417-96d2-e5c1d4311f80").get, "nameE1", "authorE1", None, "descriptionE1", "michelineE1", "michelsonE1", PendingApproval)
+    val record2 = LibraryEntry(Uid.fromString("17976f3a-505b-4d66-854a-243a70bb94c0").get, "nameE2", "authorE2", Some("name@service.com"), "descriptionE2", "michelineE2", "michelsonE2", Accepted)
+    val record3 = LibraryEntry(Uid.fromString("5d8face2-ab24-49e0-b792-a0b99a031645").get, "nameE3", "authorE3", None, "descriptionE3", "michelineE3", "michelsonE3", Declined)
+
+    val toInsert = Seq(record1, record2, record3)
+
+    def insert(libraryService: LibraryService): Future[Seq[Int]] = Future.sequence(toInsert.map(r => libraryService.addNew(r)))
+  }
 }

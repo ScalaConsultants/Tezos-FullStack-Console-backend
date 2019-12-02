@@ -26,9 +26,6 @@ class LoginRoutesSpec extends FlatSpec with Matchers with ScalatestRouteTest wit
     val loginRoute: Route = new LoginRoutes(new UserService(new UserRepository, testDb)).routes
 
     createTables()
-    runDB(
-      UsersTable.users += UserModel("asdf", "zxcv".bcrypt)
-    )
   }
 
   "LoginRoute" should "reject wrong credentials" in new DatabaseFixture {
