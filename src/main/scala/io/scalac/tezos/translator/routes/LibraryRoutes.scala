@@ -47,12 +47,12 @@ class LibraryRoutes(
           put &
           parameters('uid.as[String], 'status.as[String])
           ) { case (_, uid, status) =>
-            val r = for {
+            val statusChangeResult = for {
               u <- Uid.fromString(uid)
               s <- Status.fromString(status)
             } yield service.changeStatus(u, s)
 
-            onComplete(Future.fromTry(r).flatten) {
+            onComplete(Future.fromTry(statusChangeResult).flatten) {
               case Success(_) =>
                 complete(StatusCodes.OK)
 

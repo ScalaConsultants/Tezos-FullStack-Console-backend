@@ -18,11 +18,11 @@ class LibraryRepository {
       .result
 
   def updateStatus(uid: Uid, newStatus: Status): DBIO[Int] = {
-    val q = for {
+    val query = for {
       l <- LibraryTable.library if l.uid === uid.value
     } yield l.status
 
-    q.update(newStatus.value)
+    query.update(newStatus.value)
   }
 
   def delete(uid: Uid): DBIO[Int] = {
