@@ -33,6 +33,15 @@ class LibraryRoutes(
             complete(StatusCodes.InternalServerError, Error("Can't save payload"))
         }
       } ~
+        (get & authenticateOAuth2("", userService.authenticateOAuth2AndPrependUsername)) { _ =>
+          val operationPerformed = service.getAll()
+          onComplete(operationPerformed) {
+            case Success(libraryEntries) => complete(libraryEntries.map(LibraryEntryRoutesDto.fromDomain))
+            case Failure(err) =>
+              log.error(s"Can't show accepted library models, error - $err")
+              complete(StatusCodes.InternalServerError, Error("Can't get records"))
+          }
+        } ~
         (get & parameters('limit.as[Int].?)) { maybeLimit =>
           val limit = maybeLimit.getOrElse(config.dbUtility.defaultLimit)
           val operationPerformed = service.getAccepted(limit)

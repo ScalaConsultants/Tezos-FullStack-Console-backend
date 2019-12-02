@@ -8,8 +8,8 @@ import com.dimafeng.testcontainers.{ForEachTestContainer, PostgreSQLContainer}
 import io.scalac.tezos.translator.config.{CaptchaConfig, Configuration}
 import io.scalac.tezos.translator.model.LibraryEntry._
 import io.scalac.tezos.translator.model._
-import io.scalac.tezos.translator.repository.{LibraryRepository, UserRepository}
 import io.scalac.tezos.translator.repository.dto.LibraryEntryDbDto
+import io.scalac.tezos.translator.repository.{LibraryRepository, UserRepository}
 import io.scalac.tezos.translator.routes.dto.LibraryEntryRoutesDto
 import io.scalac.tezos.translator.routes.{JsonHelper, LibraryRoutes}
 import io.scalac.tezos.translator.schema.LibraryTable
@@ -44,10 +44,18 @@ class LibrarySpec
 
       recreateTables()
 
-      def insertDummiesToDb(size: Int): Future[immutable.IndexedSeq[Int]] = {
+      def insertDummiesToDb(size: Int, status: Option[Status] = Some(Accepted)): Future[immutable.IndexedSeq[Int]] = {
         val inserts =for {
-          _ <- 1 to size
-          dummyData = LibraryEntry(Uid(), "name", "author", Some("email"), "description", "micheline", "michelson", Accepted)
+          i <- 1 to size
+          dummyData = LibraryEntry(
+            Uid(),
+            "name",
+            "author",
+            Some("email"),
+            "description",
+            "micheline",
+            "michelson",
+            status.getOrElse(Status.fromInt(i % 3).toOption.get))
         } yield libraryService.addNew(dummyData)
 
         Future.sequence(inserts)
@@ -131,7 +139,9 @@ class LibrarySpec
         val defaultLimit: Int = config.dbUtility.defaultLimit
         val manualLimit  = 3
 
-        whenReady(insertDummiesToDb(defaultLimit)){ _.length shouldBe defaultLimit }
+        whenReady(insertDummiesToDb(defaultLimit + 1)) {
+          _.length shouldBe defaultLimit + 1
+        }
 
         Get(s"/library?limit=$manualLimit") ~> libraryRoute ~> check {
           status shouldBe StatusCodes.OK
@@ -228,6 +238,21 @@ class LibrarySpec
           status shouldBe StatusCodes.Forbidden
         }
       }
+
+      "display full library to admins" in new DatabaseFixture {
+        val defaultLimit: Int = config.dbUtility.defaultLimit
+
+        whenReady(insertDummiesToDb(defaultLimit + 1, None)) {
+          _.length shouldBe defaultLimit + 1
+        }
+
+        Get(s"/library").withHeaders(Authorization(OAuth2BearerToken("correctToken"))) ~> libraryRoute ~> check {
+          status shouldBe StatusCodes.OK
+          val actualRecords = responseAs[List[LibraryEntryRoutesDto]]
+          actualRecords.size shouldBe defaultLimit + 1
+        }
+      }
+
     }
 
   private trait SampleEntries {
