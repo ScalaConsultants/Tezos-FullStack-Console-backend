@@ -4,7 +4,6 @@ import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.model.headers.{Authorization, OAuth2BearerToken}
 import akka.http.scaladsl.server.Route
 import akka.http.scaladsl.testkit.ScalatestRouteTest
-import com.dimafeng.testcontainers.{ForEachTestContainer, PostgreSQLContainer}
 import io.scalac.tezos.translator.config.{CaptchaConfig, Configuration}
 import io.scalac.tezos.translator.model.LibraryEntry._
 import io.scalac.tezos.translator.model._
@@ -15,9 +14,8 @@ import io.scalac.tezos.translator.routes.{JsonHelper, LibraryRoutes}
 import io.scalac.tezos.translator.schema.LibraryTable
 import io.scalac.tezos.translator.service.{LibraryService, UserService}
 import org.scalatest.concurrent.ScalaFutures
-import org.scalatest.{Assertion, Matchers, WordSpec}
+import org.scalatest.{Assertion, BeforeAndAfterEach, Matchers, WordSpec}
 import slick.jdbc.PostgresProfile.api._
-import slick.jdbc.PostgresProfile
 
 import scala.collection.immutable
 import scala.concurrent.duration._
@@ -31,42 +29,42 @@ class LibrarySpec
   with ScalatestRouteTest
   with ScalaFutures
   with JsonHelper
-  with ForEachTestContainer {
-    override lazy val container = new PostgreSQLContainer(Some(DbTestBase.postgresVersion))
+  with BeforeAndAfterEach {
 
-    private trait DatabaseFixture extends DbTestBase {
-      val testDb: PostgresProfile.backend.DatabaseDef = DbTestBase.dbFromContainer(container)
+    override def beforeEach(): Unit = DbTestBase.recreateTables()
 
-      val userService = new UserService(new UserRepository, testDb)
-      val libraryService = new LibraryService(libraryRepo, testDb)
+    val testDb = DbTestBase.db
 
-      val libraryRoute: Route = new LibraryRoutes(libraryService, userService, system.log, config).routes
+    val reCaptchaConfig = CaptchaConfig(checkOn = false, "", "", "")
+    val config          = Configuration(reCaptcha = reCaptchaConfig)
 
-      recreateTables()
+    val userService = new UserService(new UserRepository, testDb)
 
-      def insertDummiesToDb(size: Int, status: Option[Status] = Some(Accepted)): Future[immutable.IndexedSeq[Int]] = {
-        val inserts =for {
-          i <- 1 to size
-          dummyData = LibraryEntry(
-            Uid(),
-            "name",
-            "author",
-            Some("email"),
-            "description",
-            "micheline",
-            "michelson",
-            status.getOrElse(Status.fromInt(i % 3).toOption.get))
-        } yield libraryService.addNew(dummyData)
+    val libraryRepo = new LibraryRepository(config.dbUtility)
+    val libraryService = new LibraryService(libraryRepo, testDb)
+    val libraryRoute: Route = new LibraryRoutes(libraryService, userService, system.log, config).routes
 
-        Future.sequence(inserts)
-      }
+    def insertDummiesToDb(size: Int, status: Option[Status] = Some(Accepted)): Future[immutable.IndexedSeq[Int]] = {
+      val inserts =for {
+        i <- 1 to size
+        dummyData = LibraryEntry(
+          Uid(),
+          "name",
+          "author",
+          Some("email"),
+          "description",
+          "micheline",
+          "michelson",
+          status.getOrElse(Status.fromInt(i % 3).toOption.get))
+      } yield libraryService.addNew(dummyData)
 
+      Future.sequence(inserts)
+    }
 
-      def checkValidationErrorsWithExpected(dto: LibraryEntryRoutesDto, expectedErrors: List[String]): Assertion = {
-        Post("/library", dto) ~> Route.seal(libraryRoute) ~> check {
-          status shouldBe StatusCodes.BadRequest
-          responseAs[Errors].errors should contain theSameElementsAs expectedErrors
-        }
+    def checkValidationErrorsWithExpected(dto: LibraryEntryRoutesDto, expectedErrors: List[String]): Assertion = {
+      Post("/library", dto) ~> Route.seal(libraryRoute) ~> check {
+        status shouldBe StatusCodes.BadRequest
+        responseAs[Errors].errors should contain theSameElementsAs expectedErrors
       }
     }
 
@@ -78,15 +76,12 @@ class LibrarySpec
       maybeToken.get
     }
 
-    val reCaptchaConfig = CaptchaConfig(checkOn = false, "", "", "")
-    val config          = Configuration(reCaptcha = reCaptchaConfig)
-  val libraryRepo = new LibraryRepository(config.dbUtility)
     val longField: String = "qwertyuiopqwertyuiopqwertyuiopqwertyuiopqwertyuiopqwertyuiopqwertyuiopqwertyuiopqwertyuiop" +
       "qwertyuiopqwertyuiopqwertyuiopqwertyuiopqwertyuiopqwertyuiopqwertyuiopqwertyuiopqwertyuiopqwertyuiopqwertyuiopqw" +
       "ertyuiopqwertyuiopqwertyuiopqwertyuiopqwertyuiopqwertyuiop"
 
     "Library routes" should {
-      "validate payload before storing" in new DatabaseFixture {
+      "validate payload before storing" in {
         val emptyPayload = LibraryEntryRoutesDto("", "", None, "", "", "")
         val expectedErrors1 = List("name field is empty", "author field is empty", "description field is empty",
           "micheline field is empty", "michelson field is empty")
@@ -99,7 +94,7 @@ class LibrarySpec
         checkValidationErrorsWithExpected(toLongPayload, expectedErrors2)
       }
 
-      "store proper payload" in new DatabaseFixture {
+      "store proper payload" in {
         val properPayload = LibraryEntryRoutesDto("vss", "Mike", None, "Some thing for some things", "micheline", "michelson")
         Post("/library", properPayload) ~> Route.seal(libraryRoute) ~> check {
           status shouldBe StatusCodes.OK
@@ -118,7 +113,7 @@ class LibrarySpec
         addedRecord.status      shouldBe PendingApproval.value
       }
 
-      "correctly filter records" in new DatabaseFixture with SampleEntries {
+      "correctly filter records" in new SampleEntries {
 
         whenReady(insert(libraryService)) { _ should contain theSameElementsAs Seq(1, 1, 1) }
 
@@ -139,7 +134,7 @@ class LibrarySpec
         }
       }
 
-      "show records using a limit parameter or using the default limit" in new DatabaseFixture {
+      "show records using a limit parameter or using the default limit" in {
         val defaultLimit: Int = config.dbUtility.defaultLimit
         val manualLimit  = 3
 
@@ -160,7 +155,7 @@ class LibrarySpec
         }
       }
 
-      "update library entry status" in new DatabaseFixture with SampleEntries {
+      "update library entry status" in new SampleEntries {
         whenReady(insert(libraryService)) { _ should contain theSameElementsAs Seq(1, 1, 1) }
 
         val expectedRecord2 = LibraryEntryRoutesDto("nameE2", "authorE2", Some("name@service.com"), "descriptionE2", "michelineE2", "michelsonE2")
@@ -211,7 +206,7 @@ class LibrarySpec
         }
       }
 
-      "delete entry" in new DatabaseFixture with SampleEntries {
+      "delete entry" in new SampleEntries {
         whenReady(insert(libraryService)) { _ should contain theSameElementsAs Seq(1, 1, 1) }
 
         val expectedRecord2 = LibraryEntryRoutesDto("nameE2", "authorE2", Some("name@service.com"), "descriptionE2", "michelineE2", "michelsonE2")
@@ -245,7 +240,7 @@ class LibrarySpec
         }
       }
 
-      "display full library to admins" in new DatabaseFixture with SampleEntries {
+      "display full library to admins" in new SampleEntries {
 
         whenReady(insert(libraryService)) {
           _ should contain theSameElementsAs Seq(1, 1, 1)
@@ -259,7 +254,7 @@ class LibrarySpec
         }
       }
 
-      "correctly paginate results" in new DatabaseFixture with SampleEntries {
+      "correctly paginate results" in new SampleEntries {
 
         whenReady(insert(libraryService)) {
           _ should contain theSameElementsAs Seq(1, 1, 1)
@@ -274,14 +269,14 @@ class LibrarySpec
           Get(s"/library?limit=2").withHeaders(Authorization(OAuth2BearerToken(bearerToken))) ~> libraryRoute ~> check {
             status shouldBe StatusCodes.OK
             val actualPaginatedRecords = responseAs[List[LibraryEntryRoutesDto]]
-            actualPaginatedRecords should contain theSameElementsAs (actualAllRecords.slice(0, 2))
+            actualPaginatedRecords should contain theSameElementsAs actualAllRecords.slice(0, 2)
 
           }
 
           Get(s"/library?limit=2&offset=2").withHeaders(Authorization(OAuth2BearerToken(bearerToken))) ~> libraryRoute ~> check {
             status shouldBe StatusCodes.OK
             val actualPaginatedRecords = responseAs[List[LibraryEntryRoutesDto]]
-            actualPaginatedRecords should contain theSameElementsAs (actualAllRecords.slice(2, 4))
+            actualPaginatedRecords should contain theSameElementsAs actualAllRecords.slice(2, 4)
           }
         }
       }

@@ -3,7 +3,6 @@ package io.scalac.tezos.translator
 import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.server.Route
 import akka.http.scaladsl.testkit.ScalatestRouteTest
-import com.dimafeng.testcontainers.{ForEachTestContainer, PostgreSQLContainer}
 import io.scalac.tezos.translator.config.CaptchaConfig
 import io.scalac.tezos.translator.model.Errors
 import io.scalac.tezos.translator.repository.Emails2SendRepository
@@ -12,9 +11,8 @@ import io.scalac.tezos.translator.routes.dto.SendEmailRoutesDto
 import io.scalac.tezos.translator.routes.{JsonHelper, MessageRoutes}
 import io.scalac.tezos.translator.schema.Emails2SendTable
 import io.scalac.tezos.translator.service.Emails2SendService
-import org.scalatest.{Assertion, BeforeAndAfterAll, Matchers, WordSpec}
+import org.scalatest.{Assertion, BeforeAndAfterEach, Matchers, WordSpec}
 import slick.jdbc.PostgresProfile.api._
-import slick.jdbc.PostgresProfile
 
 import scala.concurrent.Await
 import scala.concurrent.duration._
@@ -25,37 +23,33 @@ class MessageSpec
   extends WordSpec
   with Matchers
   with ScalatestRouteTest
-  with BeforeAndAfterAll
-  with JsonHelper
-  with ForEachTestContainer {
-  override lazy val container = new PostgreSQLContainer(Some(DbTestBase.postgresVersion))
+  with BeforeAndAfterEach
+  with JsonHelper {
 
-  private trait DatabaseFixture extends DbTestBase {
-    val testDb: PostgresProfile.backend.DatabaseDef = DbTestBase.dbFromContainer(container)
+    override def beforeEach(): Unit = DbTestBase.recreateTables()
+
+    val testDb = DbTestBase.db
+
+    val reCaptchaConfig = CaptchaConfig(checkOn = false, "", "", "")
+    val emails2SendRepo = new Emails2SendRepository
 
     val email2SendService = new Emails2SendService(emails2SendRepo, testDb)
     val messageRoute: Route = new MessageRoutes(email2SendService, system.log, reCaptchaConfig).routes
 
-    recreateTables()
-
-    def checkValidationErrorsWithExpected(dto: SendEmailRoutesDto, expectedErrors: List[String]): Assertion = {
+    private def checkValidationErrorsWithExpected(dto: SendEmailRoutesDto, expectedErrors: List[String]): Assertion = {
       Post("/message", dto) ~> messageRoute ~> check {
         status shouldBe StatusCodes.BadRequest
         responseAs[Errors].errors should contain theSameElementsAs expectedErrors
       }
     }
 
-    def getAllSendEmailsFromDb: Seq[SendEmailDbDto] = {
+    private def getAllSendEmailsFromDb: Seq[SendEmailDbDto] = {
       val queryFuture = testDb.run(Emails2SendTable.emails2Send.result)
       Await.result(queryFuture, 1 second)
     }
-  }
-
-    val reCaptchaConfig = CaptchaConfig(checkOn = false, "", "", "")
-    val emails2SendRepo = new Emails2SendRepository
 
     "message endpoint" should {
-      "validate dto before storing" in new DatabaseFixture {
+      "validate dto before storing" in {
         val invalidDto = SendEmailRoutesDto("", "", "", "")
         val expectedErrorsList1 = List("name field is empty", "phone field is empty", "email field is empty", "content field is empty")
         checkValidationErrorsWithExpected(invalidDto, expectedErrorsList1)
@@ -80,7 +74,7 @@ class MessageSpec
         tableActual.isEmpty shouldBe true
       }
 
-      "save proper dto" in new DatabaseFixture {
+      "save proper dto" in {
         val validDto = SendEmailRoutesDto("name", "+77072123434", "email@gmail.com", "I wanna pizza")
         Post("/message", validDto) ~> messageRoute ~> check {
           status shouldBe StatusCodes.OK

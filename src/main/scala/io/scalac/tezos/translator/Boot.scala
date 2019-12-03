@@ -7,6 +7,7 @@ import com.typesafe.config.ConfigFactory
 import io.scalac.tezos.translator.actor.EmailSender
 import io.scalac.tezos.translator.config.Configuration
 import io.scalac.tezos.translator.repository.{Emails2SendRepository, LibraryRepository, UserRepository}
+import io.scalac.tezos.translator.routes.util.MMTranslator
 import io.scalac.tezos.translator.service.{Emails2SendService, LibraryService, UserService}
 import slick.jdbc.PostgresProfile
 import slick.jdbc.PostgresProfile.api._
@@ -37,7 +38,7 @@ object Boot {
     val userService = new UserService(userRepository, db)
     val cronEmailSender = EmailSender(email2SendService, configuration, log)
 
-    val routes = new Routes(email2SendService, libraryService, userService, log, configuration)
+    val routes = new Routes(email2SendService, libraryService, userService, MMTranslator, log, configuration)
 
     val bindingFuture: Future[Http.ServerBinding] = Http().bindAndHandle(routes.allRoutes, host, port)
 
