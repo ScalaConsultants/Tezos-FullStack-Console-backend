@@ -2,7 +2,7 @@ package io.scalac.tezos.translator
 
 import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.server.{Directives, Route}
-import akka.http.scaladsl.testkit.ScalatestRouteTest
+import akka.http.scaladsl.testkit.{RouteTestTimeout, ScalatestRouteTest}
 import com.github.tomakehurst.wiremock.WireMockServer
 import com.github.tomakehurst.wiremock.client.WireMock
 import com.github.tomakehurst.wiremock.client.WireMock.{post => expectedPost, _}
@@ -11,6 +11,8 @@ import io.scalac.tezos.translator.config.CaptchaConfig
 import io.scalac.tezos.translator.routes.JsonHelper
 import io.scalac.tezos.translator.routes.directives.ReCaptchaDirective
 import org.scalatest.{BeforeAndAfterAll, Matchers, WordSpec}
+
+import scala.concurrent.duration._
 
 class CaptchaDirectiveSpec extends WordSpec with Matchers with ScalatestRouteTest with BeforeAndAfterAll with JsonHelper with Directives {
 
@@ -22,6 +24,8 @@ class CaptchaDirectiveSpec extends WordSpec with Matchers with ScalatestRouteTes
   val headerName          = "CAPTCHA"
 
   lazy val wireMockServer = new WireMockServer(wireMockConfig().port(testCaptchaPort))
+
+  implicit def default: RouteTestTimeout = RouteTestTimeout(5.seconds)
 
   override def beforeAll: Unit = {
     wireMockServer.start()
