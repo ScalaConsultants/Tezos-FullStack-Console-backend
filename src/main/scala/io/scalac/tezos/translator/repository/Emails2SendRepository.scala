@@ -3,7 +3,7 @@ package io.scalac.tezos.translator.repository
 import io.scalac.tezos.translator.repository.dto.SendEmailDbDto
 import io.scalac.tezos.translator.schema.Emails2SendTable
 import slick.dbio.Effect
-import slick.jdbc.MySQLProfile.api._
+import slick.jdbc.PostgresProfile.api._
 import slick.sql.FixedSqlAction
 
 import scala.concurrent.ExecutionContext

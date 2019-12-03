@@ -3,7 +3,7 @@ package io.scalac.tezos.translator.schema
 import java.sql.Timestamp
 
 import io.scalac.tezos.translator.repository.dto.SendEmailDbDto
-import slick.jdbc.MySQLProfile.api._
+import slick.jdbc.PostgresProfile.api._
 import slick.lifted.{ProvenShape, Tag}
 import slick.sql.SqlProfile.ColumnOption.NotNull
 
@@ -17,11 +17,11 @@ class Emails2SendTable(tag: Tag) extends Table[SendEmailDbDto](tag, "emails2send
 
   def uid: Rep[String] = column[String]("uid", NotNull, O.Unique, O.SqlType("VARCHAR(36)"))
 
-  def name: Rep[String] = column[String]("name", NotNull, O.SqlType("TINYTEXT"))
+  def name: Rep[String] = column[String]("name", NotNull, O.SqlType("TEXT"))
 
-  def phone: Rep[String] = column[String]("phone", NotNull, O.SqlType("TINYTEXT"))
+  def phone: Rep[String] = column[String]("phone", NotNull, O.SqlType("TEXT"))
 
-  def email: Rep[String] = column[String]("email", NotNull, O.SqlType("TINYTEXT"))
+  def email: Rep[String] = column[String]("email", NotNull, O.SqlType("TEXT"))
 
   def content: Rep[String] = column[String]("content", NotNull, O.SqlType("TEXT"))
 

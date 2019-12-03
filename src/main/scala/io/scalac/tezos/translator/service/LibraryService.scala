@@ -4,8 +4,8 @@ import io.scalac.tezos.translator.model.{LibraryEntry, Uid}
 import io.scalac.tezos.translator.model.LibraryEntry._
 import io.scalac.tezos.translator.repository.LibraryRepository
 import io.scalac.tezos.translator.repository.dto.LibraryEntryDbDto
+import slick.jdbc.PostgresProfile.api._
 import io.scalac.tezos.translator.service.LibraryService.UidNotExists
-import slick.jdbc.MySQLProfile.api._
 
 import scala.concurrent.{ExecutionContext, Future}
 

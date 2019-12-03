@@ -1,7 +1,7 @@
 package io.scalac.tezos.translator.schema
 
 import io.scalac.tezos.translator.model.UserModel
-import slick.jdbc.MySQLProfile.api._
+import slick.jdbc.PostgresProfile.api._
 import slick.lifted.{ProvenShape, Tag}
 import slick.sql.SqlProfile.ColumnOption.NotNull
 

@@ -9,4 +9,4 @@ docker run -i --rm \
 
 docker build -t tezos-fullstack-console-backend .
 
-docker-compose up -d
+docker-compose -f ./docker-compose-local.yml up -d

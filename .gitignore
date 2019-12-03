@@ -11,4 +11,4 @@ node_modules/
 /.classpath
 /.project
 
-mysql/data
+postgres/data/*

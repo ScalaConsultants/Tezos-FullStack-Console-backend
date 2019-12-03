@@ -1,11 +1,11 @@
 package io.scalac.tezos.translator
 
-import com.dimafeng.testcontainers.MySQLContainer
+import com.dimafeng.testcontainers.PostgreSQLContainer
 import io.scalac.tezos.translator.model.UserModel
 import io.scalac.tezos.translator.schema._
 import slick.dbio.{DBIOAction, NoStream}
-import slick.jdbc.MySQLProfile.api._
-import slick.jdbc.{JdbcBackend, MySQLProfile}
+import slick.jdbc.PostgresProfile.api._
+import slick.jdbc.{JdbcBackend, PostgresProfile}
 
 import scala.concurrent.{Await, ExecutionContext}
 import scala.concurrent.duration._
@@ -47,7 +47,7 @@ trait DbTestBase {
 }
 
 object DbTestBase {
-  def dbFromContainer(container: MySQLContainer): MySQLProfile.backend.DatabaseDef = {
+  def dbFromContainer(container: PostgreSQLContainer): PostgresProfile.backend.DatabaseDef = {
     Database.forURL(
       container.jdbcUrl,
       container.username,
@@ -55,5 +55,5 @@ object DbTestBase {
       executor = AsyncExecutor("exec", 10, 10, 1000, 10))
   }
 
-  val mySqlVersion = "mysql:8.0.18"
+  val postgresVersion = "postgres:9.6-alpine"
 }

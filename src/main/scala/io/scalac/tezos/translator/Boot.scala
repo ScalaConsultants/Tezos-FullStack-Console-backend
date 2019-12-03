@@ -8,8 +8,8 @@ import io.scalac.tezos.translator.actor.EmailSender
 import io.scalac.tezos.translator.config.Configuration
 import io.scalac.tezos.translator.repository.{Emails2SendRepository, LibraryRepository, UserRepository}
 import io.scalac.tezos.translator.service.{Emails2SendService, LibraryService, UserService}
-import slick.jdbc.MySQLProfile
-import slick.jdbc.MySQLProfile.api._
+import slick.jdbc.PostgresProfile
+import slick.jdbc.PostgresProfile.api._
 
 import scala.concurrent.{ExecutionContextExecutor, Future}
 import scala.io.StdIn
@@ -28,8 +28,7 @@ object Boot {
     val configuration = Configuration.getConfig(log)
     log.info(s"Config loaded - $configuration")
 
-    implicit val db: MySQLProfile.backend.Database = Database.forConfig("tezos-db")
-    log.info(s"DB config: ${ConfigFactory.load().getConfig("tezos-db")}")
+    implicit val db: PostgresProfile.backend.Database = Database.forConfig("tezos-db")
     val emails2SendRepo = new Emails2SendRepository
     val libraryRepo     = new LibraryRepository
     val userRepository = new UserRepository

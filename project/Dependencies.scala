@@ -2,24 +2,25 @@ import sbt._
 
 object Version {
 
-  val akkaHttp     = "10.1.10"
-  val akkaHttpCors = "0.4.1"
-  val akkaStream   = "2.5.23"
-  val cats         = "2.0.0"
-  val courier      = "2.0.0"
-  val greenMail    = "1.5.11"
-  val jodaTime     = "2.10.4"
-  val logback      = "1.2.3"
-  val mySql        = "8.0.17"
-  val pureConfig   = "0.12.1"
-  val scalactic    = "3.0.5"
-  val scalaTest    = "3.0.5"
-  val sl4j         = "1.7.26"
-  val slick        = "3.3.1"
-  val tesozFCTM    = "0.1"
-  val wireMock     = "1.58"
-  val testContainersScala = "0.32.0"
-  val testContainersMySQL = "1.12.1"
+  val akkaHttp                = "10.1.10"
+  val akkaHttpCors            = "0.4.1"
+  val akkaStream              = "2.5.23"
+  val cats                    = "2.0.0"
+  val courier                 = "2.0.0"
+  val greenMail               = "1.5.11"
+  val jodaTime                = "2.10.4"
+  val logback                 = "1.2.3"
+  val postgres                = "42.2.8"
+  val pureConfig              = "0.12.1"
+  val scalactic               = "3.0.5"
+  val scalaTest               = "3.0.5"
+  val sl4j                    = "1.7.26"
+  val slick                   = "3.3.1"
+  val tesozFCTM               = "0.1"
+  val wireMock                = "1.58"
+  val testContainersScala     = "0.32.0"
+  val testContainersPostgres  = "1.12.1"
+  val bCrypt                  = "4.1"
 
 }
 
@@ -60,8 +61,8 @@ object Dependencies {
     "ch.qos.logback" % "logback-classic" % Version.logback
   )
 
-  val mySql: Seq[ModuleID] = Seq(
-    "mysql" % "mysql-connector-java" % Version.mySql
+  val postgres: Seq[ModuleID] = Seq(
+    "org.postgresql" % "postgresql" % Version.postgres
   )
 
   val pureConfig: Seq[ModuleID] = Seq(
@@ -94,11 +95,11 @@ object Dependencies {
   )
   
   val testContainers: Seq[ModuleID] = Seq(
-    "com.dimafeng"        %%  "testcontainers-scala"  % Version.testContainersScala % "it,test",
-    "org.testcontainers"  %   "mysql"                 % Version.testContainersMySQL % "it,test"
+    "com.dimafeng"        %%  "testcontainers-scala"  % Version.testContainersScala     % "it,test",
+    "org.testcontainers"  %   "postgresql"            % Version.testContainersPostgres  % "it,test"
   )
 
   val bcrypt:Seq[ModuleID] = Seq(
-    "com.github.t3hnar" %% "scala-bcrypt" % "4.1"
+    "com.github.t3hnar" %% "scala-bcrypt" % Version.bCrypt
   )
 }

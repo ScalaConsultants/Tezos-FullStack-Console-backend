@@ -4,7 +4,7 @@ import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.model.headers.{Authorization, OAuth2BearerToken}
 import akka.http.scaladsl.server.Route
 import akka.http.scaladsl.testkit.ScalatestRouteTest
-import com.dimafeng.testcontainers.{ForEachTestContainer, MySQLContainer}
+import com.dimafeng.testcontainers.{ForEachTestContainer, PostgreSQLContainer}
 import io.scalac.tezos.translator.config.{CaptchaConfig, Configuration}
 import io.scalac.tezos.translator.model.LibraryEntry._
 import io.scalac.tezos.translator.model._
@@ -16,8 +16,8 @@ import io.scalac.tezos.translator.schema.LibraryTable
 import io.scalac.tezos.translator.service.{LibraryService, UserService}
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.{Assertion, Matchers, WordSpec}
-import slick.jdbc.MySQLProfile
-import slick.jdbc.MySQLProfile.api._
+import slick.jdbc.PostgresProfile.api._
+import slick.jdbc.PostgresProfile
 
 import scala.collection.immutable
 import scala.concurrent.duration._
@@ -32,10 +32,10 @@ class LibrarySpec
   with ScalaFutures
   with JsonHelper
   with ForEachTestContainer {
-    override lazy val container = MySQLContainer(mysqlImageVersion = DbTestBase.mySqlVersion)
+    override lazy val container = new PostgreSQLContainer(Some(DbTestBase.postgresVersion))
 
     private trait DatabaseFixture extends DbTestBase {
-      val testDb: MySQLProfile.backend.Database = DbTestBase.dbFromContainer(container)
+      val testDb: PostgresProfile.backend.DatabaseDef = DbTestBase.dbFromContainer(container)
 
       val userService = new UserService(new UserRepository, testDb)
       val libraryService = new LibraryService(libraryRepo, testDb)

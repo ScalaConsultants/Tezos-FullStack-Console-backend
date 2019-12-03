@@ -4,7 +4,7 @@ import java.sql.Timestamp
 
 import io.scalac.tezos.translator.repository.dto.LibraryEntryDbDto
 import slick.lifted.{ProvenShape, Tag}
-import slick.jdbc.MySQLProfile.api._
+import slick.jdbc.PostgresProfile.api._
 import slick.sql.SqlProfile.ColumnOption.NotNull
 
 object LibraryTable {
@@ -17,11 +17,11 @@ class LibraryTable(tag: Tag) extends Table[LibraryEntryDbDto](tag, "library") {
 
   def uid: Rep[String] = column[String]("uid", NotNull, O.Unique, O.SqlType("VARCHAR(36)"))
 
-  def name: Rep[String] = column[String]("name", NotNull, O.SqlType("TINYTEXT"))
+  def name: Rep[String] = column[String]("name", NotNull, O.SqlType("TEXT"))
 
-  def author: Rep[String] = column[String]("author", NotNull, O.SqlType("TINYTEXT"))
+  def author: Rep[String] = column[String]("author", NotNull, O.SqlType("TEXT"))
 
-  def email: Rep[Option[String]] = column[Option[String]]("email", O.SqlType("TINYTEXT"))
+  def email: Rep[Option[String]] = column[Option[String]]("email", O.SqlType("TEXT"))
 
   def description: Rep[String] = column[String]("description", NotNull, O.SqlType("TEXT"))
 
@@ -31,7 +31,7 @@ class LibraryTable(tag: Tag) extends Table[LibraryEntryDbDto](tag, "library") {
 
   def createdAt: Rep[Timestamp] = column[Timestamp]("created_at", NotNull, O.SqlType("TIMESTAMP(6) DEFAULT CURRENT_TIMESTAMP(6)"))
 
-  def status: Rep[Int] = column[Int]("status", NotNull, O.SqlType("INT(2)"))
+  def status: Rep[Int] = column[Int]("status", NotNull, O.SqlType("SMALLINT"))
 
   override def * : ProvenShape[LibraryEntryDbDto] = (uid, name, author, email, description, micheline, michelson, createdAt, status) <> ((LibraryEntryDbDto.apply _).tupled, LibraryEntryDbDto.unapply)
 }
