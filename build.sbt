@@ -13,7 +13,8 @@ lazy val root = (project in file(".")).settings(
   
   Defaults.itSettings,
 
-  parallelExecution in IntegrationTest := true,
+  parallelExecution in Test := false,
+  parallelExecution in IntegrationTest := false,
   // No need to run tests while building jar
   test in assembly := {},
   // Simple and constant jar name
@@ -29,4 +30,4 @@ lazy val root = (project in file(".")).settings(
 
 ).configs(IntegrationTest)
 
-
+addCommandAlias("testAll", ";test;it:test")

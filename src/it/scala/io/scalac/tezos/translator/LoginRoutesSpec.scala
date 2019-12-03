@@ -4,80 +4,71 @@ import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.model.headers.{Authorization, OAuth2BearerToken}
 import akka.http.scaladsl.server.Route
 import akka.http.scaladsl.testkit.ScalatestRouteTest
-import com.dimafeng.testcontainers.{ForEachTestContainer, PostgreSQLContainer}
-import com.github.t3hnar.bcrypt._
-import io.scalac.tezos.translator.model.{UserCredentials, UserModel}
+import io.scalac.tezos.translator.model.UserCredentials
 import io.scalac.tezos.translator.repository.UserRepository
 import io.scalac.tezos.translator.routes.{JsonHelper, LoginRoutes}
-import io.scalac.tezos.translator.schema.UsersTable
 import io.scalac.tezos.translator.service.UserService
 import org.scalatest.concurrent.ScalaFutures
-import org.scalatest.{FlatSpec, Matchers}
-import slick.jdbc.PostgresProfile
-import slick.jdbc.PostgresProfile.api._
+import org.scalatest.{BeforeAndAfterEach, FlatSpec, Matchers}
 
 import scala.language.postfixOps
 
 class LoginRoutesSpec
   extends FlatSpec
-    with Matchers
-    with ScalatestRouteTest
-    with JsonHelper
-    with ScalaFutures
-    with ForEachTestContainer {
+  with Matchers
+  with ScalatestRouteTest
+  with JsonHelper
+  with ScalaFutures
+  with BeforeAndAfterEach {
 
-  override lazy val container = new PostgreSQLContainer(Some(DbTestBase.postgresVersion))
+    override def beforeEach(): Unit = DbTestBase.recreateTables()
+    val testDb = DbTestBase.db
 
-  private trait DatabaseFixture extends DbTestBase {
-    val testDb: PostgresProfile.backend.Database = DbTestBase.dbFromContainer(container)
     val loginRoute: Route = new LoginRoutes(new UserService(new UserRepository, testDb), system.log).routes
 
-    createTables()
-  }
-
-  "LoginRoute" should "reject wrong credentials" in new DatabaseFixture {
-    Post("/login", UserCredentials("asdf", "asdf")) ~> loginRoute ~> check {
-      status shouldBe StatusCodes.Forbidden
-    }
-  }
-
-  it should "accept correct credentials and return token" in new DatabaseFixture {
-    Post("/login", UserCredentials("asdf", "zxcv")) ~> loginRoute ~> check {
-      status shouldBe StatusCodes.OK
-      responseAs[String] should not be empty
-    }
-  }
-
-  it should "handle non-existing username gracefully" in new DatabaseFixture {
-    Post("/login", UserCredentials("zxcv", "zxcv")) ~> loginRoute ~> check {
-      status shouldBe StatusCodes.Forbidden
-    }
-  }
-
-  it should "allow to logout" in new DatabaseFixture {
-    Post("/login", UserCredentials("asdf", "zxcv")) ~> loginRoute ~> check {
-      val token = responseAs[String]
-      Post("/logout").withHeaders(Authorization(OAuth2BearerToken(token))) ~> loginRoute ~> check {
-        status shouldBe StatusCodes.OK
+    "LoginRoute" should "reject wrong credentials" in {
+      Post("/login", UserCredentials("asdf", "asdf")) ~> loginRoute ~> check {
+        status shouldBe StatusCodes.Forbidden
       }
     }
-  }
 
-  it should "only allowed logout for users who are logged in" in new DatabaseFixture {
-    Post("/logout").withHeaders(Authorization(OAuth2BearerToken("someRandomToken"))) ~> Route.seal(loginRoute) ~> check {
-      status shouldBe StatusCodes.Unauthorized
-    }
-  }
-
-  it should "not allow to logout twice" in new DatabaseFixture {
-    Post("/login", UserCredentials("asdf", "zxcv")) ~> loginRoute ~> check {
-      val token = responseAs[String]
-      Post("/logout").withHeaders(Authorization(OAuth2BearerToken(token))) ~> loginRoute ~> check {
+    it should "accept correct credentials and return token" in {
+      Post("/login", UserCredentials("asdf", "zxcv")) ~> loginRoute ~> check {
         status shouldBe StatusCodes.OK
+        responseAs[String] should not be empty
       }
-      Post("/logout").withHeaders(Authorization(OAuth2BearerToken(token))) ~> Route.seal(loginRoute) ~> check {
+    }
+
+    it should "handle non-existing username gracefully" in {
+      Post("/login", UserCredentials("zxcv", "zxcv")) ~> loginRoute ~> check {
+        status shouldBe StatusCodes.Forbidden
+      }
+    }
+
+    it should "allow to logout" in {
+      Post("/login", UserCredentials("asdf", "zxcv")) ~> loginRoute ~> check {
+        val token = responseAs[String]
+        Post("/logout").withHeaders(Authorization(OAuth2BearerToken(token))) ~> loginRoute ~> check {
+          status shouldBe StatusCodes.OK
+        }
+      }
+    }
+
+    it should "only allowed logout for users who are logged in" in {
+      Post("/logout").withHeaders(Authorization(OAuth2BearerToken("someRandomToken"))) ~> Route.seal(loginRoute) ~> check {
         status shouldBe StatusCodes.Unauthorized
       }
     }
-  }
+
+    it should "not allow to logout twice" in {
+      Post("/login", UserCredentials("asdf", "zxcv")) ~> loginRoute ~> check {
+        val token = responseAs[String]
+        Post("/logout").withHeaders(Authorization(OAuth2BearerToken(token))) ~> loginRoute ~> check {
+          status shouldBe StatusCodes.OK
+        }
+        Post("/logout").withHeaders(Authorization(OAuth2BearerToken(token))) ~> Route.seal(loginRoute) ~> check {
+          status shouldBe StatusCodes.Unauthorized
+        }
+      }
+    }
 }

@@ -3,7 +3,6 @@ package io.scalac.tezos.translator
 import akka.actor.ActorSystem
 import akka.event.LoggingAdapter
 import akka.testkit.TestKit
-import com.dimafeng.testcontainers.{ForEachTestContainer, PostgreSQLContainer}
 import com.icegreen.greenmail.util.{GreenMail, GreenMailUtil, ServerSetupTest}
 import io.scalac.tezos.translator.actor.EmailSender
 import io.scalac.tezos.translator.config.{Configuration, CronConfiguration, EmailConfiguration}
@@ -13,8 +12,7 @@ import io.scalac.tezos.translator.routes.JsonHelper
 import io.scalac.tezos.translator.routes.dto.SendEmailRoutesDto
 import io.scalac.tezos.translator.service.Emails2SendService
 import org.scalatest.concurrent.ScalaFutures
-import org.scalatest.{Matchers, WordSpecLike}
-import slick.jdbc.PostgresProfile
+import org.scalatest.{BeforeAndAfterAll, Matchers, WordSpecLike}
 
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContextExecutor, Future}
@@ -27,35 +25,32 @@ class EmailSenderSpec
   with ScalaFutures
   with Matchers
   with JsonHelper
-  with ForEachTestContainer {
+  with BeforeAndAfterAll {
+    override implicit val patienceConfig: PatienceConfig = PatienceConfig(30 seconds)
 
-    implicit val ec: ExecutionContextExecutor = system.dispatcher
-    override lazy val container = new PostgreSQLContainer(Some(DbTestBase.postgresVersion))
-    override implicit val patienceConfig: PatienceConfig = PatienceConfig(10 seconds)
-
-    private trait DatabaseFixture extends DbTestBase {
-      val testDb: PostgresProfile.backend.DatabaseDef = DbTestBase.dbFromContainer(container)
-
-      val email2SendService = new Emails2SendService(emails2SendRepo, testDb)
-
-      recreateTables()
+    override def beforeAll(): Unit = {
+      DbTestBase.recreateTables()
       greenMail.setUser(testMailUser, testMailPass)
       greenMail.start()
     }
 
+    val testDb = DbTestBase.db
+
+    implicit val ec: ExecutionContextExecutor = system.dispatcher
     val log: LoggingAdapter = system.log
     val emails2SendRepo = new Emails2SendRepository
+    val email2SendService = new Emails2SendService(emails2SendRepo, testDb)
     val greenMail = new GreenMail(ServerSetupTest.SMTP)
-    val testMailUser = "sender-tezostests@scalac.io"
+    val testMailUser = "sender@mail.some"
     val testMailPass = "6131Zz$*n6z2"
-    val testReceiver = "testrec-tezostests@scalac.io"
+    val testReceiver = "testrec@some.some"
 
-    val testCronConfig = CronConfiguration(cronTaskInterval = 1 seconds)
+    val testCronConfig = CronConfiguration(cronTaskInterval = 3 seconds)
     val testEmailConfig = EmailConfiguration("localhost", 3025, auth = true, testMailUser, testMailPass, receiver = testReceiver)
     val testConfig = Configuration(email = testEmailConfig, cron = testCronConfig)
 
     "Email sender" should {
-      "send emails" in new DatabaseFixture {
+      "send emails" in {
 
         val testName = "testName-tezostests"
         val testPhone = "+79025680396"
@@ -71,7 +66,7 @@ class EmailSenderSpec
 
         whenReady(addMail) { _ shouldBe 1 }
 
-        val messageF = Future(greenMail.waitForIncomingEmail(8000L, 1))
+        val messageF = Future(greenMail.waitForIncomingEmail(20000L, 1))
           .flatMap {
             case false  =>  Future.failed(new Exception("No email was received"))
             case true   =>  Future.successful(())
