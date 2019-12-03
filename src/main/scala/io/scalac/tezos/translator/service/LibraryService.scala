@@ -14,15 +14,15 @@ class LibraryService(repository: LibraryRepository, db: Database)(implicit ec: E
   def addNew(entry: LibraryEntry): Future[Int] =
     db.run(repository.add(LibraryEntryDbDto.fromDomain(entry)))
 
-  def getAccepted(limit: Int): Future[Seq[LibraryEntry]] =
-    getAll(limit, Some(Accepted))
-
-  def getAll(limit: Int = Integer.MAX_VALUE, statusFilter: Option[Status] = None): Future[Seq[LibraryEntry]] =
-    for {
-      entriesDto <- db.run(repository.list(statusFilter, limit))
-      entriesFSeq = entriesDto.map(e => Future.fromTry(e.toDomain))
-      entries <- Future.sequence(entriesFSeq)
-    } yield entries
+  def getRecords(offset: Option[Int] = None, limit: Option[Int] = None, statusFilter: Option[Status] = None): Future[Seq[LibraryEntry]] =
+    if (offset.exists(_ < 0) || limit.exists(_ < 0))
+      Future.failed(new IllegalArgumentException)
+    else
+      for {
+        entriesDto <- db.run(repository.list(statusFilter, offset, limit))
+        entriesFSeq = entriesDto.map(e => Future.fromTry(e.toDomain))
+        entries <- Future.sequence(entriesFSeq)
+      } yield entries
 
 
   def changeStatus(uid: Uid, newStatus: Status): Future[Unit] =

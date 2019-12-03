@@ -30,7 +30,7 @@ object Boot {
 
     implicit val db: PostgresProfile.backend.Database = Database.forConfig("tezos-db")
     val emails2SendRepo = new Emails2SendRepository
-    val libraryRepo     = new LibraryRepository
+    val libraryRepo     = new LibraryRepository(configuration.dbUtility)
     val userRepository = new UserRepository
     val email2SendService = new Emails2SendService(emails2SendRepo, db)
     val libraryService    = new LibraryService(libraryRepo, db)

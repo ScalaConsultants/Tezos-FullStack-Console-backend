@@ -1,20 +1,22 @@
 package io.scalac.tezos.translator.repository
 
+import io.scalac.tezos.translator.config.DBUtilityConfiguration
 import io.scalac.tezos.translator.model.LibraryEntry.Status
 import io.scalac.tezos.translator.model.Uid
 import io.scalac.tezos.translator.repository.dto.LibraryEntryDbDto
 import io.scalac.tezos.translator.schema.LibraryTable
 import slick.jdbc.PostgresProfile.api._
 
-class LibraryRepository {
+class LibraryRepository(config: DBUtilityConfiguration) {
 
   def add(translation: LibraryEntryDbDto): DBIO[Int] =
     LibraryTable.library += translation
 
-  def list(status: Option[Status], limit: Int): DBIO[Seq[LibraryEntryDbDto]] =
+  def list(status: Option[Status], offset: Option[Int], limit: Option[Int]): DBIO[Seq[LibraryEntryDbDto]] =
     LibraryTable.library.filterOpt(status){ case (row, s) =>  row.status === s.value}
       .sortBy(_.createdAt.desc)
-      .take(limit)
+      .drop(offset.getOrElse(0))
+      .take(limit.getOrElse(config.defaultLimit))
       .result
 
   def updateStatus(uid: Uid, newStatus: Status): DBIO[Int] = {

@@ -80,7 +80,7 @@ class LibrarySpec
 
     val reCaptchaConfig = CaptchaConfig(checkOn = false, "", "", "")
     val config          = Configuration(reCaptcha = reCaptchaConfig)
-    val libraryRepo = new LibraryRepository
+  val libraryRepo = new LibraryRepository(config.dbUtility)
     val longField: String = "qwertyuiopqwertyuiopqwertyuiopqwertyuiopqwertyuiopqwertyuiopqwertyuiopqwertyuiopqwertyuiop" +
       "qwertyuiopqwertyuiopqwertyuiopqwertyuiopqwertyuiopqwertyuiopqwertyuiopqwertyuiopqwertyuiopqwertyuiopqwertyuiopqw" +
       "ertyuiopqwertyuiopqwertyuiopqwertyuiopqwertyuiopqwertyuiop"
@@ -118,15 +118,19 @@ class LibrarySpec
         addedRecord.status      shouldBe PendingApproval.value
       }
 
-      "show only accepted records" in new DatabaseFixture with SampleEntries {
+      "correctly filter records" in new DatabaseFixture with SampleEntries {
 
         whenReady(insert(libraryService)) { _ should contain theSameElementsAs Seq(1, 1, 1) }
 
         // it was the only one accepted
         val expectedRecord2 = LibraryEntryRoutesDto("nameE2", "authorE2", Some("name@service.com"), "descriptionE2", "michelineE2", "michelsonE2")
 
-        whenReady(libraryService.getAll(5)) { _ should contain theSameElementsAs toInsert }
-        whenReady(libraryService.getAccepted(5)) { _ should contain theSameElementsAs Seq(record2) }
+        whenReady(libraryService.getRecords()) {
+          _ should contain theSameElementsAs toInsert
+        }
+        whenReady(libraryService.getRecords(statusFilter = Some(Accepted))) {
+          _ should contain theSameElementsAs Seq(record2)
+        }
 
         Get("/library") ~> libraryRoute ~> check {
           status shouldBe StatusCodes.OK
@@ -194,7 +198,9 @@ class LibrarySpec
 
 
         val expectedNewStatuses = Seq(record1.copy(status = Accepted), record2.copy(status = Declined), record3.copy(status = PendingApproval))
-        whenReady(libraryService.getAll(5)) { _ should contain theSameElementsAs expectedNewStatuses }
+        whenReady(libraryService.getRecords(limit = Some(5))) {
+          _ should contain theSameElementsAs expectedNewStatuses
+        }
 
         val expectedRecord1 = LibraryEntryRoutesDto("nameE1", "authorE1", None, "descriptionE1", "michelineE1", "michelsonE1")
 
@@ -239,17 +245,44 @@ class LibrarySpec
         }
       }
 
-      "display full library to admins" in new DatabaseFixture {
-        val defaultLimit: Int = config.dbUtility.defaultLimit
+      "display full library to admins" in new DatabaseFixture with SampleEntries {
 
-        whenReady(insertDummiesToDb(defaultLimit + 1, None)) {
-          _.length shouldBe defaultLimit + 1
+        whenReady(insert(libraryService)) {
+          _ should contain theSameElementsAs Seq(1, 1, 1)
         }
 
-        Get(s"/library").withHeaders(Authorization(OAuth2BearerToken("correctToken"))) ~> libraryRoute ~> check {
+        val bearerToken = getToken(userService, UserCredentials("asdf", "zxcv"))
+        Get(s"/library").withHeaders(Authorization(OAuth2BearerToken(bearerToken))) ~> libraryRoute ~> check {
           status shouldBe StatusCodes.OK
           val actualRecords = responseAs[List[LibraryEntryRoutesDto]]
-          actualRecords.size shouldBe defaultLimit + 1
+          actualRecords.size shouldBe toInsert.length
+        }
+      }
+
+      "correctly paginate results" in new DatabaseFixture with SampleEntries {
+
+        whenReady(insert(libraryService)) {
+          _ should contain theSameElementsAs Seq(1, 1, 1)
+        }
+
+        val bearerToken = getToken(userService, UserCredentials("asdf", "zxcv"))
+        Get(s"/library").withHeaders(Authorization(OAuth2BearerToken(bearerToken))) ~> libraryRoute ~> check {
+          status shouldBe StatusCodes.OK
+          val actualAllRecords = responseAs[List[LibraryEntryRoutesDto]]
+          actualAllRecords.size shouldBe toInsert.length
+
+          Get(s"/library?limit=2").withHeaders(Authorization(OAuth2BearerToken(bearerToken))) ~> libraryRoute ~> check {
+            status shouldBe StatusCodes.OK
+            val actualPaginatedRecords = responseAs[List[LibraryEntryRoutesDto]]
+            actualPaginatedRecords should contain theSameElementsAs (actualAllRecords.slice(0, 2))
+
+          }
+
+          Get(s"/library?limit=2&offset=2").withHeaders(Authorization(OAuth2BearerToken(bearerToken))) ~> libraryRoute ~> check {
+            status shouldBe StatusCodes.OK
+            val actualPaginatedRecords = responseAs[List[LibraryEntryRoutesDto]]
+            actualPaginatedRecords should contain theSameElementsAs (actualAllRecords.slice(2, 4))
+          }
         }
       }
 
