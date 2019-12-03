@@ -33,11 +33,6 @@ class LoginRoutesSpec
     val loginRoute: Route = new LoginRoutes(new UserService(new UserRepository, testDb), system.log).routes
 
     createTables()
-    val insertUser: Int = runDB(
-      UsersTable.users += UserModel("asdf", "zxcv".bcrypt)
-    )
-
-    insertUser shouldBe 1
   }
 
   "LoginRoute" should "reject wrong credentials" in new DatabaseFixture {
