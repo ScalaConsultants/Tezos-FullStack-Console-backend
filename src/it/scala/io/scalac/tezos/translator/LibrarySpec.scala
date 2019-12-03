@@ -240,7 +240,7 @@ class LibrarySpec
         }
       }
 
-      "display full library to admins" in new DatabaseFixture with SampleEntries {
+      "display full library to admins" in new SampleEntries {
 
         whenReady(insert(libraryService)) {
           _ should contain theSameElementsAs Seq(1, 1, 1)
@@ -254,7 +254,7 @@ class LibrarySpec
         }
       }
 
-      "correctly paginate results" in new DatabaseFixture with SampleEntries {
+      "correctly paginate results" in new SampleEntries {
 
         whenReady(insert(libraryService)) {
           _ should contain theSameElementsAs Seq(1, 1, 1)
@@ -269,14 +269,14 @@ class LibrarySpec
           Get(s"/library?limit=2").withHeaders(Authorization(OAuth2BearerToken(bearerToken))) ~> libraryRoute ~> check {
             status shouldBe StatusCodes.OK
             val actualPaginatedRecords = responseAs[List[LibraryEntryRoutesDto]]
-            actualPaginatedRecords should contain theSameElementsAs (actualAllRecords.slice(0, 2))
+            actualPaginatedRecords should contain theSameElementsAs actualAllRecords.slice(0, 2)
 
           }
 
           Get(s"/library?limit=2&offset=2").withHeaders(Authorization(OAuth2BearerToken(bearerToken))) ~> libraryRoute ~> check {
             status shouldBe StatusCodes.OK
             val actualPaginatedRecords = responseAs[List[LibraryEntryRoutesDto]]
-            actualPaginatedRecords should contain theSameElementsAs (actualAllRecords.slice(2, 4))
+            actualPaginatedRecords should contain theSameElementsAs actualAllRecords.slice(2, 4)
           }
         }
       }
