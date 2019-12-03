@@ -27,11 +27,11 @@ class TranslationTest extends WordSpec with MustMatchers with ScalaFutures with 
     recreateTables()
   }
 
-  val emails2SendRepo = new Emails2SendRepository
-  val libraryRepo     = new LibraryRepository
-
   val log: LoggingAdapter = system.log
   val config: Configuration = Configuration.getConfig(log)
+  val emails2SendRepo = new Emails2SendRepository
+  val libraryRepo     = new LibraryRepository(config.dbUtility)
+
 
 
   "A Routes" can {
