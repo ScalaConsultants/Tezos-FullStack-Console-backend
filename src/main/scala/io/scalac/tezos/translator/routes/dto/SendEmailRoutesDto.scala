@@ -1,5 +1,6 @@
 package io.scalac.tezos.translator.routes.dto
 
+import io.scalac.tezos.translator.model.SendEmail.{AdminEmail, ContactFormContent, MmtServiceEmail}
 import io.scalac.tezos.translator.model.{SendEmail, Uid}
 
 case class SendEmailRoutesDto(
@@ -12,20 +13,14 @@ case class SendEmailRoutesDto(
   def toDomain: SendEmail =
     SendEmail(
       uid = Uid(),
-      name = name,
-      phone = phone,
-      email = email,
-      content = content
-    )
-}
-
-object SendEmailRoutesDto {
-
-  def fromDomain(v: SendEmail): SendEmailRoutesDto =
-    SendEmailRoutesDto(
-      name = v.name,
-      phone = v.phone,
-      email = v.email,
-      content = v.content
+      from = MmtServiceEmail,
+      to = AdminEmail,
+      subject = "Contact request",
+      content = ContactFormContent(
+        name: String,
+        phone: String,
+        email: String,
+        content: String
+      )
     )
 }

@@ -5,6 +5,7 @@ import akka.http.scaladsl.server.Route
 import akka.http.scaladsl.testkit.ScalatestRouteTest
 import io.scalac.tezos.translator.config.CaptchaConfig
 import io.scalac.tezos.translator.model.Errors
+import io.scalac.tezos.translator.model.SendEmail.ContactFormContent
 import io.scalac.tezos.translator.repository.Emails2SendRepository
 import io.scalac.tezos.translator.repository.dto.SendEmailDbDto
 import io.scalac.tezos.translator.routes.dto.SendEmailRoutesDto
@@ -17,6 +18,7 @@ import slick.jdbc.PostgresProfile.api._
 import scala.concurrent.Await
 import scala.concurrent.duration._
 import scala.language.postfixOps
+import scala.util.Success
 
 //noinspection TypeAnnotation
 class MessageSpec
@@ -83,10 +85,18 @@ class MessageSpec
 
         tableActual.headOption.isEmpty shouldBe false
         val addedRecord = tableActual.head
-        addedRecord.name shouldBe "name"
-        addedRecord.phone shouldBe "+77072123434"
-        addedRecord.email shouldBe "email@gmail.com"
-        addedRecord.content shouldBe "I wanna pizza"
+        val maybeSendEmailModel = addedRecord.toDomain
+        maybeSendEmailModel shouldBe a[Success[_]]
+
+        val sendEmailModel = maybeSendEmailModel.get
+        sendEmailModel.content shouldBe a[ContactFormContent]
+
+        val content = sendEmailModel.content.asInstanceOf[ContactFormContent]
+
+        content.name shouldBe "name"
+        content.phone shouldBe "+77072123434"
+        content.email shouldBe "email@gmail.com"
+        content.content shouldBe "I wanna pizza"
       }
     }
 }

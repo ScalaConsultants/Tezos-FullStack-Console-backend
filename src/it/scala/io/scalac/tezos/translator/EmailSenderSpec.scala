@@ -8,7 +8,6 @@ import io.scalac.tezos.translator.actor.EmailSender
 import io.scalac.tezos.translator.config.{Configuration, CronConfiguration, EmailConfiguration}
 import io.scalac.tezos.translator.model.SendEmail
 import io.scalac.tezos.translator.repository.Emails2SendRepository
-import io.scalac.tezos.translator.routes.JsonHelper
 import io.scalac.tezos.translator.routes.dto.SendEmailRoutesDto
 import io.scalac.tezos.translator.service.Emails2SendService
 import org.scalatest.concurrent.ScalaFutures
@@ -24,7 +23,6 @@ class EmailSenderSpec
   with WordSpecLike
   with ScalaFutures
   with Matchers
-  with JsonHelper
   with BeforeAndAfterAll {
     override implicit val patienceConfig: PatienceConfig = PatienceConfig(30 seconds)
 

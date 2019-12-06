@@ -6,9 +6,12 @@ import courier._
 import io.scalac.tezos.translator.actor.EmailSender.SendEmails
 import io.scalac.tezos.translator.config.{Configuration, EmailConfiguration}
 import io.scalac.tezos.translator.model.SendEmail
+import io.scalac.tezos.translator.model.SendEmail.{AdminEmail, Content, EmailAddress, MmtServiceEmail, UserEmail}
 import io.scalac.tezos.translator.service.Emails2SendService
+import javax.mail.internet.InternetAddress
 
 import scala.concurrent.{ExecutionContext, ExecutionContextExecutor, Future}
+import scala.util.Try
 
 class EmailSender(service: Emails2SendService,
                   config: EmailConfiguration,
@@ -32,31 +35,36 @@ class EmailSender(service: Emails2SendService,
     } yield ()
 
   protected def sendSingleMail(sendEmailModel: SendEmail): Future[Unit] = {
-    mailer(
-      Envelope
-        .from(config.user.addr)
-        .to(config.receiver.addr)
-        .subject(config.subjectPrefix + s" from:${sendEmailModel.name}")
-        .content(textMessageFromSendEmailModel(sendEmailModel))
-    ).flatMap { _ =>
-      service
-        .removeSentMessage(sendEmailModel.uid)
-        .map(_ => log.debug(s"Message sent - $sendEmailModel"))
-        .recover { case err => log.error(s"Can't remove sent message from db - $sendEmailModel, error - $err") }
-    }.recover {
+    val sendAndDelete = for {
+      addressFrom   <-  Future.fromTry(getInternetAddress(sendEmailModel.from))
+      addressTo     <-  Future.fromTry(getInternetAddress(sendEmailModel.to))
+      _             <-  mailer(
+                          Envelope
+                            .from(addressFrom)
+                            .to(addressTo)
+                            .subject(sendEmailModel.subject)
+                            .content(Text(Content.toPrettyString(sendEmailModel.content)))
+                        )
+      _             <-  service
+                          .removeSentMessage(sendEmailModel.uid)
+                          .map(_ => log.debug(s"Message sent - $sendEmailModel"))
+                          .recover { case err => log.error(s"Can't remove sent message from db - $sendEmailModel, error - $err") }
+    } yield ()
+
+    sendAndDelete.recover {
       case err => log.error(s"Can't send message - $sendEmailModel, error - $err")
     }
   }
 
-  protected def textMessageFromSendEmailModel(mail: SendEmail): Text =
-    Text(
-      s"""
-         |name: ${mail.name}
-         |phone: ${mail.phone}
-         |email: ${mail.email}
-         |content: ${mail.content}
-         |""".stripMargin
-    )
+  private def getInternetAddress(email: EmailAddress): Try[InternetAddress] = {
+    val emailStr = email match {
+      case AdminEmail => config.receiver
+      case MmtServiceEmail => config.user
+      case UserEmail(v) => v
+    }
+
+    Try(new InternetAddress(emailStr, true))
+  }
 
 }
 

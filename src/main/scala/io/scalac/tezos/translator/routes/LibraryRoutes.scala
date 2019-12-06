@@ -6,14 +6,14 @@ import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.server.{Directive, Route, StandardRoute}
 import io.scalac.tezos.translator.config.Configuration
 import io.scalac.tezos.translator.model.LibraryEntry.{Accepted, Status}
-import io.scalac.tezos.translator.model.{Error, Uid}
+import io.scalac.tezos.translator.model.{Error, SendEmail, Uid}
 import io.scalac.tezos.translator.routes.directives.DTOValidationDirective._
 import io.scalac.tezos.translator.routes.directives.ReCaptchaDirective._
 import io.scalac.tezos.translator.routes.dto.{LibraryEntryRoutesAdminDto, LibraryEntryRoutesDto}
 import io.scalac.tezos.translator.service.LibraryService.UidNotExists
-import io.scalac.tezos.translator.service.{LibraryService, UserService}
+import io.scalac.tezos.translator.service.{Emails2SendService, LibraryService, UserService}
 
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success}
 
 class LibraryRoutes(
