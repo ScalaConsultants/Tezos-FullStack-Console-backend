@@ -9,7 +9,7 @@ import io.scalac.tezos.translator.model.LibraryEntry.{Accepted, Status}
 import io.scalac.tezos.translator.model.{Error, Uid}
 import io.scalac.tezos.translator.routes.directives.DTOValidationDirective._
 import io.scalac.tezos.translator.routes.directives.ReCaptchaDirective._
-import io.scalac.tezos.translator.routes.dto.LibraryEntryRoutesDto
+import io.scalac.tezos.translator.routes.dto.{LibraryEntryRoutesAdminDto, LibraryEntryRoutesDto}
 import io.scalac.tezos.translator.service.LibraryService.UidNotExists
 import io.scalac.tezos.translator.service.{LibraryService, UserService}
 
@@ -38,7 +38,7 @@ class LibraryRoutes(
           & parameters('offset.as[Int].?, 'limit.as[Int].?)) { case (_, offset, limit) =>
           val operationPerformed = service.getRecords(offset, limit)
           onComplete(operationPerformed) {
-            case Success(libraryEntries) => complete(libraryEntries.map(LibraryEntryRoutesDto.fromDomain))
+            case Success(libraryEntries) => complete(libraryEntries.map(LibraryEntryRoutesAdminDto.fromDomain))
             case Failure(err) =>
               log.error(s"Can't show accepted library models, error - $err")
               complete(StatusCodes.InternalServerError, Error("Can't get records"))

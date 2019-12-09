@@ -23,6 +23,12 @@ object LibraryEntry {
       case Accepted         =>  1
       case Declined         =>  2
     }
+
+    override def toString: String = this match {
+      case PendingApproval  =>  "pending_approval"
+      case Accepted         =>  "accepted"
+      case Declined         =>  "declined"
+    }
   }
 
   object Status {
