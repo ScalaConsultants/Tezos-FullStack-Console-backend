@@ -9,7 +9,7 @@ import io.scalac.tezos.translator.model.LibraryEntry._
 import io.scalac.tezos.translator.model._
 import io.scalac.tezos.translator.repository.dto.LibraryEntryDbDto
 import io.scalac.tezos.translator.repository.{LibraryRepository, UserRepository}
-import io.scalac.tezos.translator.routes.dto.LibraryEntryRoutesDto
+import io.scalac.tezos.translator.routes.dto.{LibraryEntryRoutesAdminDto, LibraryEntryRoutesDto}
 import io.scalac.tezos.translator.routes.{JsonHelper, LibraryRoutes}
 import io.scalac.tezos.translator.schema.LibraryTable
 import io.scalac.tezos.translator.service.{LibraryService, UserService}
@@ -246,11 +246,15 @@ class LibrarySpec
           _ should contain theSameElementsAs Seq(1, 1, 1)
         }
 
+        val expected = toInsert.map(LibraryEntryRoutesAdminDto.fromDomain)
+
         val bearerToken = getToken(userService, UserCredentials("asdf", "zxcv"))
         Get(s"/library").withHeaders(Authorization(OAuth2BearerToken(bearerToken))) ~> libraryRoute ~> check {
           status shouldBe StatusCodes.OK
-          val actualRecords = responseAs[List[LibraryEntryRoutesDto]]
+          val actualRecords = responseAs[List[LibraryEntryRoutesAdminDto]]
           actualRecords.size shouldBe toInsert.length
+
+          actualRecords should contain theSameElementsAs expected
         }
       }
 
