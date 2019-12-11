@@ -4,7 +4,7 @@ import akka.event.LoggingAdapter
 import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.server.{Directive, Route}
 import io.scalac.tezos.translator.config.CaptchaConfig
-import io.scalac.tezos.translator.model.Error
+import io.scalac.tezos.translator.model.{Error, SendEmail}
 import io.scalac.tezos.translator.routes.directives.DTOValidationDirective._
 import io.scalac.tezos.translator.routes.directives.ReCaptchaDirective._
 import io.scalac.tezos.translator.routes.dto.SendEmailRoutesDto
@@ -20,7 +20,7 @@ class MessageRoutes(service: Emails2SendService,
   override def routes: Route =
     (path ("message") & pathEndOrSingleSlash & withReCaptchaVerify(log, reCaptchaConfig)(actorSystem)
       & withSendMessageValidation & post) { sendEmail =>
-      val operationPerformed = service.addNewEmail2Send(sendEmail.toDomain)
+      val operationPerformed = service.addNewEmail2Send(SendEmail.fromSendEmailRoutesDto(sendEmail))
       onComplete(operationPerformed) {
         case Success(_)   => complete(StatusCodes.OK)
         case Failure(err) =>

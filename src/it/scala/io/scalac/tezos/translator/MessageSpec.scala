@@ -4,8 +4,7 @@ import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.server.Route
 import akka.http.scaladsl.testkit.ScalatestRouteTest
 import io.scalac.tezos.translator.config.CaptchaConfig
-import io.scalac.tezos.translator.model.Errors
-import io.scalac.tezos.translator.model.SendEmail.ContactFormContent
+import io.scalac.tezos.translator.model.{ContactFormContent, Errors, SendEmail}
 import io.scalac.tezos.translator.repository.Emails2SendRepository
 import io.scalac.tezos.translator.repository.dto.SendEmailDbDto
 import io.scalac.tezos.translator.routes.dto.SendEmailRoutesDto
@@ -85,7 +84,7 @@ class MessageSpec
 
         tableActual.headOption.isEmpty shouldBe false
         val addedRecord = tableActual.head
-        val maybeSendEmailModel = addedRecord.toDomain
+        val maybeSendEmailModel = SendEmail.fromSendEmailDbDto(addedRecord)
         maybeSendEmailModel shouldBe a[Success[_]]
 
         val sendEmailModel = maybeSendEmailModel.get

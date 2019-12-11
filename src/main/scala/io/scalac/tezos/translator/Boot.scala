@@ -8,7 +8,7 @@ import io.scalac.tezos.translator.actor.EmailSender
 import io.scalac.tezos.translator.config.Configuration
 import io.scalac.tezos.translator.repository.{Emails2SendRepository, LibraryRepository, UserRepository}
 import io.scalac.tezos.translator.routes.util.MMTranslator
-import io.scalac.tezos.translator.service.{Emails2SendService, LibraryService, UserService}
+import io.scalac.tezos.translator.service.{Emails2SendService, LibraryService, SendEmailsServiceImpl, UserService}
 import slick.jdbc.PostgresProfile
 import slick.jdbc.PostgresProfile.api._
 
@@ -31,12 +31,13 @@ object Boot {
 
     implicit val db: PostgresProfile.backend.Database = Database.forConfig("tezos-db")
     val emails2SendRepo = new Emails2SendRepository
-    val libraryRepo     = new LibraryRepository(configuration.dbUtility)
+    val libraryRepo     = new LibraryRepository(configuration.dbUtility, db)
     val userRepository = new UserRepository
     val email2SendService = new Emails2SendService(emails2SendRepo, db)
-    val libraryService    = new LibraryService(libraryRepo, db)
+    val libraryService    = new LibraryService(libraryRepo, log)
     val userService = new UserService(userRepository, db)
-    val cronEmailSender = EmailSender(email2SendService, configuration, log)
+    val sendEmailsService = SendEmailsServiceImpl(email2SendService, log, configuration)
+    val cronEmailSender = EmailSender(sendEmailsService, configuration.cron)
 
     val routes = new Routes(email2SendService, libraryService, userService, MMTranslator, log, configuration)
 

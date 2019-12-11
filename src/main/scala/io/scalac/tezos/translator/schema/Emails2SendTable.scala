@@ -17,8 +17,6 @@ class Emails2SendTable(tag: Tag) extends Table[SendEmailDbDto](tag, "emails2send
 
   def uid: Rep[String] = column[String]("uid", NotNull, O.Unique, O.SqlType("VARCHAR(36)"))
 
-  def from: Rep[String] = column[String]("from", NotNull, O.SqlType("TEXT"))
-
   def to: Rep[String] = column[String]("to", NotNull, O.SqlType("TEXT"))
 
   def subject: Rep[String] = column[String]("subject", NotNull, O.SqlType("TEXT"))
@@ -27,6 +25,6 @@ class Emails2SendTable(tag: Tag) extends Table[SendEmailDbDto](tag, "emails2send
 
   def createdAt: Rep[Timestamp] = column[Timestamp]("created_at", NotNull, O.SqlType("TIMESTAMP(6) DEFAULT CURRENT_TIMESTAMP(6)"))
 
-  override def * : ProvenShape[SendEmailDbDto] = (uid, from, to, subject, content, createdAt) <> ((SendEmailDbDto.apply _).tupled, SendEmailDbDto.unapply)
+  override def * : ProvenShape[SendEmailDbDto] = (uid, to, subject, content, createdAt) <> ((SendEmailDbDto.apply _).tupled, SendEmailDbDto.unapply)
 
 }

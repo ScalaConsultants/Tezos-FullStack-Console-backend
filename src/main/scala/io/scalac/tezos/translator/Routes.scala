@@ -10,6 +10,8 @@ import io.scalac.tezos.translator.routes._
 import io.scalac.tezos.translator.routes.util.Translator
 import io.scalac.tezos.translator.service.{Emails2SendService, LibraryService, UserService}
 
+import scala.concurrent.ExecutionContext
+
 class Routes(
   emails2SendService: Emails2SendService,
   libraryService: LibraryService,
@@ -17,7 +19,7 @@ class Routes(
   translator: Translator,
   log: LoggingAdapter,
   config: Configuration
-)(implicit as: ActorSystem) {
+)(implicit as: ActorSystem, ec: ExecutionContext) {
 
   private val reCaptchaConfig = config.reCaptcha
 
@@ -25,7 +27,7 @@ class Routes(
     List(
       new TranslatorRoutes(translator, log, reCaptchaConfig),
       new MessageRoutes(emails2SendService, log, reCaptchaConfig),
-      new LibraryRoutes(libraryService, userService, log, config),
+      new LibraryRoutes(libraryService, userService, emails2SendService, log, config),
       new LoginRoutes(userService, log)
     )
 

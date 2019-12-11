@@ -1,6 +1,5 @@
 CREATE TABLE emails2send (
     "uid" VARCHAR(36) UNIQUE NOT NULL,
-    "from" TEXT NOT NULL,
     "to" TEXT NOT NULL,
     "subject" TEXT NOT NULL,
     "content" TEXT NOT NULL,

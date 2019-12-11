@@ -5,12 +5,11 @@ import akka.event.LoggingAdapter
 import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.server.{Directive, Route, StandardRoute}
 import io.scalac.tezos.translator.config.Configuration
-import io.scalac.tezos.translator.model.LibraryEntry.{Accepted, Status}
-import io.scalac.tezos.translator.model.{Error, SendEmail, Uid}
+import io.scalac.tezos.translator.model.LibraryEntry.{Accepted, PendingApproval, Status}
+import io.scalac.tezos.translator.model.{Error, SendEmail, Uid, UserEmail}
 import io.scalac.tezos.translator.routes.directives.DTOValidationDirective._
 import io.scalac.tezos.translator.routes.directives.ReCaptchaDirective._
 import io.scalac.tezos.translator.routes.dto.{LibraryEntryRoutesAdminDto, LibraryEntryRoutesDto}
-import io.scalac.tezos.translator.service.LibraryService.UidNotExists
 import io.scalac.tezos.translator.service.{Emails2SendService, LibraryService, UserService}
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -19,13 +18,28 @@ import scala.util.{Failure, Success}
 class LibraryRoutes(
   service: LibraryService,
   userService: UserService,
+  emails2SendService: Emails2SendService,
   log: LoggingAdapter,
   config: Configuration
-)(implicit as: ActorSystem) extends HttpRoutes with JsonHelper {
+)(implicit as: ActorSystem, ec: ExecutionContext) extends HttpRoutes with JsonHelper {
   override def routes: Route =
     (path("library") & pathEndOrSingleSlash) {
       (post & withReCaptchaVerify(log, config.reCaptcha)(as) & withLibraryDTOValidation) { libraryDto =>
-        val operationPerformed = service.addNew(libraryDto.toDomain)
+        val sendEmailF = libraryDto.email match {
+          case Some(_) =>
+            val e = SendEmail.approvalRequest(libraryDto)
+            emails2SendService
+              .addNewEmail2Send(e)
+              .recover { case err => log.error(s"Can't add new email to send, error - $err") }
+
+          case None => Future.successful(())
+        }
+
+        val operationPerformed = for {
+          addResult   <-  service.addNew(libraryDto.toDomain)
+          _           <-  sendEmailF
+        } yield addResult
+
         onComplete(operationPerformed) {
           case Success(_) => complete(StatusCodes.OK)
           case Failure(err) =>
@@ -57,17 +71,32 @@ class LibraryRoutes(
           put &
           parameters('uid.as[String], 'status.as[String])
           ) { case (_, uid, status) =>
-            val statusChangeResult = for {
-              u <- Uid.fromString(uid)
-              s <- Status.fromString(status)
-            } yield service.changeStatus(u, s)
 
-            onComplete(Future.fromTry(statusChangeResult).flatten) {
+            val statusChangeWithEmail =
+              for {
+                u             <-  Future.fromTry(Uid.fromString(uid))
+                parsedStatus  =   Status.fromString(status) match {
+                                    case Success(PendingApproval) => Failure(new IllegalArgumentException("Cannot change status to 'pending_approval' !"))
+                                    case other => other
+                                  }
+                s             <-  Future.fromTry(parsedStatus)
+                updatedEntry  <-  service.changeStatus(u, s)
+                _             <-  updatedEntry.email match {
+                                    case Some(email) =>
+                                      val e = SendEmail.statusChange(UserEmail(email), s)
+                                      emails2SendService
+                                        .addNewEmail2Send(e)
+                                        .recover { case err => log.error(s"Can't add new email to send, error - $err") }
+                                    case None => Future.successful(())
+                                  }
+              } yield updatedEntry
+
+            onComplete(statusChangeWithEmail) {
               case Success(_) =>
                 complete(StatusCodes.OK)
 
               case Failure(err) =>
-                log.error(s"Can't update library entry, uid: $uid, error - $err")
+                log.error(s"Cannot update library entry, uid: $uid, error - $err")
                 handleError(err)
             }
         } ~
@@ -90,8 +119,7 @@ class LibraryRoutes(
 
   private def handleError(t: Throwable): StandardRoute =
     t match {
-      case _: IllegalArgumentException => complete(StatusCodes.BadRequest, Error(t.getMessage))
-      case UidNotExists(msg) => complete(StatusCodes.Forbidden, Error(msg))
+      case _: IllegalArgumentException => complete(StatusCodes.NotFound, Error(t.getMessage))
       case _ => complete(StatusCodes.InternalServerError, Error("Can't update"))
     }
 

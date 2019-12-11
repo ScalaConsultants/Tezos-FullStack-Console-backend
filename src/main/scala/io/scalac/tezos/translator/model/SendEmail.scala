@@ -1,65 +1,70 @@
 package io.scalac.tezos.translator.model
 
-import io.circe.generic.auto._
-import io.circe.parser._
-import io.circe.syntax._
-import io.scalac.tezos.translator.model.SendEmail._
+import io.scalac.tezos.translator.model.LibraryEntry.Status
+import io.scalac.tezos.translator.repository.dto.SendEmailDbDto
+import io.scalac.tezos.translator.routes.dto.{LibraryEntryRoutesDto, SendEmailRoutesDto}
 
 import scala.util.Try
 
-case class SendEmail(
+sealed abstract case class SendEmail(
   uid: Uid,
-  from: EmailAddress,
   to: EmailAddress,
   subject: String,
-  content: Content
+  content: EmailContent
 )
 
 object SendEmail {
-  sealed trait Content extends Product with Serializable
 
-  case class ContactFormContent(
-    name: String,
-    phone: String,
-    email: String,
-    content: String
-  ) extends Content
-
-  case class TextContent(msg: String) extends Content
-
-  object Content {
-    def toJson(c: Content): String = c.asJson.noSpaces
-    def fromJson(s: String): Try[Content] = decode[Content](s).toTry
-
-    def toPrettyString(c: Content): String = c match {
-      case c: ContactFormContent =>
-        s"""
-           |name: ${c.name}
-           |phone: ${c.phone}
-           |email: ${c.email}
-           |content: ${c.content}
-           |""".stripMargin
-
-      case t: TextContent => t.msg
+  def approvalRequest(libraryDto: LibraryEntryRoutesDto): SendEmail = {
+    val uid = Uid()
+    val subject = "Library approval request"
+    val message = TextContent {
+      s"""
+        |Please add my translation to your library:
+        |Title: ${libraryDto.name}
+        |Description: ${libraryDto.description}
+        |Uid: ${uid.value}
+      """.stripMargin
     }
+    new SendEmail(Uid(), AdminEmail, subject, message) {}
   }
 
-  sealed trait EmailAddress extends Product with Serializable
-  case object AdminEmail extends EmailAddress
-  case object MmtServiceEmail extends EmailAddress
-  case class UserEmail(v: String) extends EmailAddress
+  def statusChange(emailAddress: UserEmail, newStatus: Status): SendEmail = {
+    val uid = Uid()
+    val subject = "Acceptance status of your Translation has changed"
+    val message = TextContent(s"Acceptance status of your Translation has changed to: $newStatus")
 
-  object EmailAddress {
-    def toString(a: EmailAddress): String = a match {
-      case AdminEmail => "admin"
-      case MmtServiceEmail => "mmt_service"
-      case UserEmail(v) => v
-    }
-
-    def fromString(s: String): EmailAddress = s match {
-      case "admin" => AdminEmail
-      case "mmt_service" => MmtServiceEmail
-      case other => UserEmail(other)
-    }
+    new SendEmail(uid, emailAddress, subject, message) {}
   }
+
+  def fromSendEmailRoutesDto(dto: SendEmailRoutesDto): SendEmail =
+    new SendEmail(
+      uid = Uid(),
+      to = AdminEmail,
+      subject = "Contact request",
+      content = ContactFormContent(
+        name = dto.name,
+        phone = dto.phone,
+        email = dto.email,
+        content = dto.content
+      )
+    ) {}
+
+  def fromSendEmailDbDto(dto: SendEmailDbDto): Try[SendEmail] =
+    for {
+      uid <- Uid.fromString(dto.uid)
+      c <- EmailContent.fromJson(dto.content)
+    } yield
+      new SendEmail(
+        uid = uid,
+        to = emailAddressFromString(dto.to),
+        subject = dto.subject,
+        content = c
+      ) {}
+
+  private def emailAddressFromString(s: String): EmailAddress = s match {
+    case "admin" => AdminEmail
+    case other => UserEmail(other)
+  }
+
 }
