@@ -5,7 +5,8 @@ import akka.event.LoggingAdapter
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
 import ch.megard.akka.http.cors.scaladsl.CorsDirectives._
-import io.scalac.tezos.translator.config.Configuration
+import io.scalac.tezos.translator.config.CaptchaConfig
+import io.scalac.tezos.translator.model.EmailAddress
 import io.scalac.tezos.translator.routes._
 import io.scalac.tezos.translator.routes.util.Translator
 import io.scalac.tezos.translator.service.{Emails2SendService, LibraryService, UserService}
@@ -18,16 +19,15 @@ class Routes(
   userService: UserService,
   translator: Translator,
   log: LoggingAdapter,
-  config: Configuration
+  captchaConfig: CaptchaConfig,
+  adminEmail: EmailAddress
 )(implicit as: ActorSystem, ec: ExecutionContext) {
-
-  private val reCaptchaConfig = config.reCaptcha
 
   private val apis: List[HttpRoutes] =
     List(
-      new TranslatorRoutes(translator, log, reCaptchaConfig),
-      new MessageRoutes(emails2SendService, log, reCaptchaConfig),
-      new LibraryRoutes(libraryService, userService, emails2SendService, log, config),
+      new TranslatorRoutes(translator, log, captchaConfig),
+      new MessageRoutes(emails2SendService, log, captchaConfig, adminEmail),
+      new LibraryRoutes(libraryService, userService, emails2SendService, log, captchaConfig, adminEmail),
       new LoginRoutes(userService, log)
     )
 

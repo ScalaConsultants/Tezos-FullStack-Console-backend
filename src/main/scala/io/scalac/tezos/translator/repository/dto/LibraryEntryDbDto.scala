@@ -3,10 +3,10 @@ package io.scalac.tezos.translator.repository.dto
 import java.sql.Timestamp
 import java.time.Instant
 
-import io.scalac.tezos.translator.model.{LibraryEntry, Uid}
+import io.scalac.tezos.translator.model.{EmailAddress, LibraryEntry, Uid}
 import io.scalac.tezos.translator.model.LibraryEntry.Status
 
-import scala.util.Try
+import scala.util.{Success, Try}
 
 case class LibraryEntryDbDto(
   uid: String,
@@ -20,19 +20,25 @@ case class LibraryEntryDbDto(
   status: Int = 1
 ) {
 
-  def toDomain: Try[LibraryEntry] = for {
-    status <- Status.fromInt(status)
-    uid <- Uid.fromString(uid)
-  } yield LibraryEntry(
-    uid = uid,
-    name = name,
-    author = author,
-    email = email,
-    description = description,
-    micheline = micheline,
-    michelson = michelson,
-    status = status
-  )
+  def toDomain: Try[LibraryEntry] =
+    for {
+      status        <-  Status.fromInt(status)
+      uid           <-  Uid.fromString(uid)
+      emailAddress  <-  email match {
+                          case Some(e) => EmailAddress.fromString(e).map(Some(_))
+                          case None => Success(None)
+                        }
+    } yield
+      LibraryEntry(
+        uid = uid,
+        name = name,
+        author = author,
+        email = emailAddress,
+        description = description,
+        micheline = micheline,
+        michelson = michelson,
+        status = status
+      )
 }
 
 object LibraryEntryDbDto {
@@ -42,7 +48,7 @@ object LibraryEntryDbDto {
       uid = v.uid.value,
       name = v.name,
       author = v.author,
-      email = v.email,
+      email = v.email.map(_.toString),
       description = v.description,
       micheline = v.micheline,
       michelson = v.michelson,

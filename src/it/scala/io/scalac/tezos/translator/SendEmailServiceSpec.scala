@@ -6,7 +6,7 @@ import akka.testkit.TestKit
 import com.icegreen.greenmail.util.{GreenMail, GreenMailUtil, ServerSetupTest}
 import io.scalac.tezos.translator.config.{Configuration, CronConfiguration, EmailConfiguration}
 import io.scalac.tezos.translator.model.LibraryEntry.Accepted
-import io.scalac.tezos.translator.model.{SendEmail, UserEmail}
+import io.scalac.tezos.translator.model.{EmailAddress, SendEmail}
 import io.scalac.tezos.translator.repository.Emails2SendRepository
 import io.scalac.tezos.translator.routes.dto.{LibraryEntryRoutesDto, SendEmailRoutesDto}
 import io.scalac.tezos.translator.service.{Emails2SendService, SendEmailsServiceImpl}
@@ -17,6 +17,7 @@ import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, FlatSpecLike, Match
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.concurrent.duration._
+import scala.util.Success
 
 
 //noinspection TypeAnnotation
@@ -54,14 +55,15 @@ class SendEmailServiceSpec
 
   val testMailUser = "sender@mail.some"
   val testMailPass = "6131Zz$*n6z2"
-  val testReceiver = "testrec@some.some"
+  val testAdmin = "testrec@some.some"
+  val testAdminEmail = unsafeEmailAddress(testAdmin)
 
   val testCronConfig = CronConfiguration(cronTaskInterval = 3 seconds)
-  val testEmailConfig = EmailConfiguration("localhost", 3025, auth = true, testMailUser, testMailPass, receiver = testReceiver)
+  val testEmailConfig = EmailConfiguration("localhost", 3025, auth = true, testMailUser, testMailPass, receiver = testAdmin)
 
   val testConfig = Configuration(email = testEmailConfig, cron = testCronConfig)
 
-  val emailSenderService = SendEmailsServiceImpl(email2SendService, log, testConfig)
+  val emailSenderService = SendEmailsServiceImpl(email2SendService, log, testConfig.email, testConfig.cron).get
 
   behavior of "SendEmailsService.getEmailsToSend"
 
@@ -82,7 +84,8 @@ class SendEmailServiceSpec
   behavior of "SendEmailsService.sendSingleMail"
 
   it should "send an email" in {
-    val email = SendEmail.statusChange(UserEmail("xxx@service.com"), Accepted)
+    val title = "translation title"
+    val email = SendEmail.statusChange(unsafeEmailAddress("xxx@service.com"), "translation title", Accepted)
 
     whenReady(emailSenderService.sendSingleMail(email)) { _ shouldBe () }
 
@@ -102,17 +105,7 @@ class SendEmailServiceSpec
 
     val body = GreenMailUtil.getBody(message.get).replaceAll("\r", "")
 
-    body shouldBe "Acceptance status of your Translation has changed to: accepted"
-  }
-
-  it should "fail to send an email when address is invalid" in {
-    val email = SendEmail.statusChange(UserEmail("xxx"), Accepted)
-
-    // operation should succeed with Unit, but no email should be send
-    whenReady(emailSenderService.sendSingleMail(email)) { _ shouldBe () }
-
-    val received = greenMail.getReceivedMessages
-    received.length shouldBe 0
+    body shouldBe """Acceptance status of your translation: "translation title" has changed to: accepted"""
   }
 
   behavior of "SendEmailsService.sendEmails"
@@ -145,7 +138,7 @@ class SendEmailServiceSpec
 
     val body1 = GreenMailUtil.getBody(e1SendResult).replaceAll("\r", "")
 
-    body1 shouldBe "Acceptance status of your Translation has changed to: accepted"
+    body1 shouldBe """Acceptance status of your translation: "translation title" has changed to: accepted"""
 
 
     received.get(e2.subject) shouldBe 'defined
@@ -156,7 +149,7 @@ class SendEmailServiceSpec
 
     val recipients2 = e2SendResult.getAllRecipients.map(_.toString)
     recipients2.length shouldBe 1
-    recipients2.headOption shouldBe Some(testReceiver) // this should go to "admin", which is testReceiver in here
+    recipients2.headOption shouldBe Some(testAdmin) // this should go to "admin", which is testAdmin in here
 
     val body2 = GreenMailUtil.getBody(e2SendResult).replaceAll("\r", "")
 
@@ -176,7 +169,7 @@ class SendEmailServiceSpec
 
     val recipients3 = e3SendResult.getAllRecipients.map(_.toString)
     recipients3.length shouldBe 1
-    recipients3.headOption shouldBe Some(testReceiver) // this should go to "admin", which is testReceiver in here
+    recipients3.headOption shouldBe Some(testAdmin) // this should go to "admin", which is testAdmin in here
 
     val body3 = GreenMailUtil.getBody(e3SendResult).replaceAll("\r", "")
 
@@ -189,43 +182,20 @@ class SendEmailServiceSpec
 
   }
 
-  it should "send all correct emails" in {
-    val a = SendEmail.statusChange(UserEmail("ok1@service.com"), Accepted)
-    val b = SendEmail.statusChange(UserEmail("not_correct_email_address"), Accepted)
-    val c = SendEmail.statusChange(UserEmail("ok2@service.com"), Accepted)
-
-    val insertF = Future.sequence(Seq(a, b, c).map(email2SendService.addNewEmail2Send))
-
-    whenReady(insertF) { _ shouldBe Seq(1, 1, 1) }
-
-    whenReady(emailSenderService.sendEmails) { _ shouldBe() }
-
-    val received: Map[String, MimeMessage] =
-      greenMail.getReceivedMessages
-        .toList
-        .map { m =>
-          val recipients = m.getAllRecipients.map(_.toString)
-          recipients.length shouldBe 1
-
-          (recipients.head, m)
-        }.toMap
-
-    received.size shouldBe 2
-
-    received.get("ok1@service.com") shouldBe 'defined
-    received.get("ok2@service.com") shouldBe 'defined
-    received.get("not_correct_email_address") shouldBe None
-
-  }
-
   private trait SampleEmails {
-    val e1: SendEmail = SendEmail.statusChange(UserEmail("xxx@service.com"), Accepted)
-    val e2: SendEmail = SendEmail.fromSendEmailRoutesDto(SendEmailRoutesDto("Dude", "666666666", "dude@service.com", "some content"))
-    val e3: SendEmail = SendEmail.approvalRequest(LibraryEntryRoutesDto("contract name", "Thanos", None, "Some description", "micheline", "michelson"))
+    val e1: SendEmail = SendEmail.statusChange(unsafeEmailAddress("xxx@service.com"), "translation title", Accepted)
+    val e2: SendEmail = SendEmail.fromSendEmailRoutesDto(SendEmailRoutesDto("Dude", "666666666", "dude@service.com", "some content"), testAdminEmail)
+    val e3: SendEmail = SendEmail.approvalRequest(LibraryEntryRoutesDto("contract name", "Thanos", None, "Some description", "micheline", "michelson"), testAdminEmail)
 
     val toInsert: Seq[SendEmail] = Seq(e1, e2, e3)
 
     def insert(service: Emails2SendService, toInsert: Seq[SendEmail] = toInsert): Future[Seq[Int]] = Future.sequence(toInsert.map(service.addNewEmail2Send))
+  }
+
+  private def unsafeEmailAddress(s: String): EmailAddress = {
+    val email = EmailAddress.fromString(s)
+    email shouldBe a[Success[_]]
+    email.get
   }
 
 }

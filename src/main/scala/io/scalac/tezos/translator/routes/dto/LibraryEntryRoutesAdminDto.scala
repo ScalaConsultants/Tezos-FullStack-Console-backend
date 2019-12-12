@@ -19,7 +19,7 @@ object LibraryEntryRoutesAdminDto {
       uid = v.uid.value,
       name = v.name,
       author = v.author,
-      email = v.email,
+      email = v.email.map(_.toString),
       description = v.description,
       micheline = v.micheline,
       michelson = v.michelson,

@@ -4,9 +4,9 @@ import akka.actor.ActorSystem
 import akka.event.LoggingAdapter
 import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.server.{Directive, Route, StandardRoute}
-import io.scalac.tezos.translator.config.Configuration
+import io.scalac.tezos.translator.config.CaptchaConfig
 import io.scalac.tezos.translator.model.LibraryEntry.{Accepted, PendingApproval, Status}
-import io.scalac.tezos.translator.model.{Error, SendEmail, Uid, UserEmail}
+import io.scalac.tezos.translator.model.{EmailAddress, Error, SendEmail, Uid}
 import io.scalac.tezos.translator.routes.directives.DTOValidationDirective._
 import io.scalac.tezos.translator.routes.directives.ReCaptchaDirective._
 import io.scalac.tezos.translator.routes.dto.{LibraryEntryRoutesAdminDto, LibraryEntryRoutesDto}
@@ -20,14 +20,15 @@ class LibraryRoutes(
   userService: UserService,
   emails2SendService: Emails2SendService,
   log: LoggingAdapter,
-  config: Configuration
+  captchaConfig: CaptchaConfig,
+  adminEmail: EmailAddress
 )(implicit as: ActorSystem, ec: ExecutionContext) extends HttpRoutes with JsonHelper {
   override def routes: Route =
     (path("library") & pathEndOrSingleSlash) {
-      (post & withReCaptchaVerify(log, config.reCaptcha)(as) & withLibraryDTOValidation) { libraryDto =>
+      (post & withReCaptchaVerify(log, captchaConfig)(as) & withLibraryDTOValidation) { libraryDto =>
         val sendEmailF = libraryDto.email match {
           case Some(_) =>
-            val e = SendEmail.approvalRequest(libraryDto)
+            val e = SendEmail.approvalRequest(libraryDto, adminEmail)
             emails2SendService
               .addNewEmail2Send(e)
               .recover { case err => log.error(s"Can't add new email to send, error - $err") }
@@ -36,7 +37,8 @@ class LibraryRoutes(
         }
 
         val operationPerformed = for {
-          addResult   <-  service.addNew(libraryDto.toDomain)
+          entry       <-  Future.fromTry(libraryDto.toDomain)
+          addResult   <-  service.addNew(entry)
           _           <-  sendEmailF
         } yield addResult
 
@@ -83,7 +85,7 @@ class LibraryRoutes(
                 updatedEntry  <-  service.changeStatus(u, s)
                 _             <-  updatedEntry.email match {
                                     case Some(email) =>
-                                      val e = SendEmail.statusChange(UserEmail(email), s)
+                                      val e = SendEmail.statusChange(email, updatedEntry.name , s)
                                       emails2SendService
                                         .addNewEmail2Send(e)
                                         .recover { case err => log.error(s"Can't add new email to send, error - $err") }

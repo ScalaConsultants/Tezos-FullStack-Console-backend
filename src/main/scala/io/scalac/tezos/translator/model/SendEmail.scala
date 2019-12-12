@@ -15,7 +15,7 @@ sealed abstract case class SendEmail(
 
 object SendEmail {
 
-  def approvalRequest(libraryDto: LibraryEntryRoutesDto): SendEmail = {
+  def approvalRequest(libraryDto: LibraryEntryRoutesDto, adminEmail: EmailAddress): SendEmail = {
     val uid = Uid()
     val subject = "Library approval request"
     val message = TextContent {
@@ -26,21 +26,21 @@ object SendEmail {
         |Uid: ${uid.value}
       """.stripMargin
     }
-    new SendEmail(Uid(), AdminEmail, subject, message) {}
+    new SendEmail(Uid(), adminEmail, subject, message) {}
   }
 
-  def statusChange(emailAddress: UserEmail, newStatus: Status): SendEmail = {
+  def statusChange(emailAddress: EmailAddress, title: String, newStatus: Status): SendEmail = {
     val uid = Uid()
     val subject = "Acceptance status of your Translation has changed"
-    val message = TextContent(s"Acceptance status of your Translation has changed to: $newStatus")
+    val message = TextContent(s"""Acceptance status of your translation: "$title" has changed to: $newStatus""")
 
     new SendEmail(uid, emailAddress, subject, message) {}
   }
 
-  def fromSendEmailRoutesDto(dto: SendEmailRoutesDto): SendEmail =
+  def fromSendEmailRoutesDto(dto: SendEmailRoutesDto, adminEmail: EmailAddress): SendEmail =
     new SendEmail(
       uid = Uid(),
-      to = AdminEmail,
+      to = adminEmail,
       subject = "Contact request",
       content = ContactFormContent(
         name = dto.name,
@@ -52,19 +52,15 @@ object SendEmail {
 
   def fromSendEmailDbDto(dto: SendEmailDbDto): Try[SendEmail] =
     for {
-      uid <- Uid.fromString(dto.uid)
-      c <- EmailContent.fromJson(dto.content)
+      uid <-  Uid.fromString(dto.uid)
+      c   <-  EmailContent.fromJson(dto.content)
+      to  <-  EmailAddress.fromString(dto.to)
     } yield
       new SendEmail(
         uid = uid,
-        to = emailAddressFromString(dto.to),
+        to = to,
         subject = dto.subject,
         content = c
       ) {}
-
-  private def emailAddressFromString(s: String): EmailAddress = s match {
-    case "admin" => AdminEmail
-    case other => UserEmail(other)
-  }
 
 }

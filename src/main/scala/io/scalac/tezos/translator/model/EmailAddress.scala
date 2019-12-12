@@ -1,16 +1,17 @@
 package io.scalac.tezos.translator.model
 
+import javax.mail.internet.InternetAddress
 
-sealed trait EmailAddress extends Product with Serializable
+import scala.util.Try
 
-case object AdminEmail extends EmailAddress
 
-case class UserEmail(v: String) extends EmailAddress
+sealed abstract case class EmailAddress(value: InternetAddress) {
+  override def toString: String = value.getAddress
+}
 
 object EmailAddress {
-  def toString(a: EmailAddress): String = a match {
-    case AdminEmail => "admin"
-    case UserEmail(v) => v
-  }
 
+  def fromString(s: String): Try[EmailAddress] =
+    Try(new InternetAddress(s, true))
+      .map(ia => new EmailAddress(ia) {})
 }

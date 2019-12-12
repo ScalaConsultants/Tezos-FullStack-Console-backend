@@ -2,9 +2,8 @@ package io.scalac.tezos.translator.service
 
 import akka.event.LoggingAdapter
 import courier.{Envelope, Mailer, Text}
-import io.scalac.tezos.translator.config.{Configuration, EmailConfiguration}
+import io.scalac.tezos.translator.config.{CronConfiguration, EmailConfiguration}
 import io.scalac.tezos.translator.model._
-import javax.mail.internet.InternetAddress
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
@@ -27,20 +26,20 @@ class SendEmailsServiceImpl(
   batchSize: Int,
   mailer: Mailer,
   log: LoggingAdapter,
-  config: EmailConfiguration
+  serviceEmail: EmailAddress
 )(implicit ec: ExecutionContext) extends SendEmailsService {
   override def getEmailsToSend: Future[Seq[SendEmail]] = service.getEmails2Send(batchSize)
 
   override def sendSingleMail(sendEmailModel: SendEmail): Future[Unit] = {
     val emailUid = sendEmailModel.uid.value
+    val addressTo = sendEmailModel.to.value
+
 
     val send =
       for {
-        addressFrom   <-  Future.fromTry(strictInternetAddress(config.user))
-        addressTo     <-  Future.fromTry(getInternetAddress(sendEmailModel.to))
         _             <-  mailer(
                             Envelope
-                              .from(addressFrom)
+                              .from(serviceEmail.value)
                               .to(addressTo)
                               .subject(sendEmailModel.subject)
                               .content(Text(EmailContent.toPrettyString(sendEmailModel.content)))
@@ -75,33 +74,22 @@ class SendEmailsServiceImpl(
     send.flatMap(_ => delete).recover { case _ => ()}
   }
 
-  private def getInternetAddress(email: EmailAddress): Try[InternetAddress] = {
-    val emailStr = email match {
-      case AdminEmail => config.receiver
-      case UserEmail(v) => v
-    }
-
-    strictInternetAddress(emailStr)
-  }
-
-  private def strictInternetAddress(s: String): Try[InternetAddress] =
-    Try(new InternetAddress(s, true))
-
 }
 
 object SendEmailsServiceImpl {
   def apply(
     service: Emails2SendService,
     log: LoggingAdapter,
-    configuration: Configuration
-  )(implicit ec: ExecutionContext): SendEmailsServiceImpl = {
-    val emailConfig = configuration.email
+    emailConfig: EmailConfiguration,
+    cronConfig: CronConfiguration
+  )(implicit ec: ExecutionContext): Try[SendEmailsServiceImpl] = {
+    EmailAddress.fromString(emailConfig.user).map { serviceEmail =>
+      val mailer: Mailer = Mailer(emailConfig.host, emailConfig.port)
+        .auth(emailConfig.auth)
+        .as(serviceEmail.toString, emailConfig.pass)
+        .startTls(emailConfig.startTls)()
 
-    val mailer: Mailer = Mailer(emailConfig.host, emailConfig.port)
-      .auth(emailConfig.auth)
-      .as(emailConfig.user, emailConfig.pass)
-      .startTls(emailConfig.startTls)()
-
-    new SendEmailsServiceImpl(service, configuration.cron.cronBatchSize, mailer, log, emailConfig)
+      new SendEmailsServiceImpl(service, cronConfig.cronBatchSize, mailer, log, serviceEmail)
+    }
   }
 }

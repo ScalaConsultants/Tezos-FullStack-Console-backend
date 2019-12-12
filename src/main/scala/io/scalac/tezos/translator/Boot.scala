@@ -6,6 +6,7 @@ import akka.stream.ActorMaterializer
 import com.typesafe.config.ConfigFactory
 import io.scalac.tezos.translator.actor.EmailSender
 import io.scalac.tezos.translator.config.Configuration
+import io.scalac.tezos.translator.model.EmailAddress
 import io.scalac.tezos.translator.repository.{Emails2SendRepository, LibraryRepository, UserRepository}
 import io.scalac.tezos.translator.routes.util.MMTranslator
 import io.scalac.tezos.translator.service.{Emails2SendService, LibraryService, SendEmailsServiceImpl, UserService}
@@ -36,22 +37,24 @@ object Boot {
     val email2SendService = new Emails2SendService(emails2SendRepo, db)
     val libraryService    = new LibraryService(libraryRepo, log)
     val userService = new UserService(userRepository, db)
-    val sendEmailsService = SendEmailsServiceImpl(email2SendService, log, configuration)
-    val cronEmailSender = EmailSender(sendEmailsService, configuration.cron)
 
-    val routes = new Routes(email2SendService, libraryService, userService, MMTranslator, log, configuration)
-
-    val bindingFuture: Future[Http.ServerBinding] = Http().bindAndHandle(routes.allRoutes, host, port)
+    val bindingFuture =
+      for {
+        sendEmailsService <- Future.fromTry(SendEmailsServiceImpl(email2SendService, log, configuration.email, configuration.cron))
+        cronEmailSender = EmailSender(sendEmailsService, configuration.cron)
+        adminEmail <- Future.fromTry(EmailAddress.fromString(configuration.email.receiver))
+        routes = new Routes(email2SendService, libraryService, userService, MMTranslator, log, configuration.reCaptcha, adminEmail)
+        binding <- Http().bindAndHandle(routes.allRoutes, host, port)
+      } yield (cronEmailSender, binding)
 
     log.info(s"Server online at http://$host:$port\nPress RETURN to stop...")
 
     StdIn.readLine()
     bindingFuture
-      .flatMap { binding =>
+      .flatMap { case (cronEmailSender, binding) =>
         cronEmailSender.cancel()
         binding.unbind()
       }
       .onComplete(_ => system.terminate())
-
   }
 }

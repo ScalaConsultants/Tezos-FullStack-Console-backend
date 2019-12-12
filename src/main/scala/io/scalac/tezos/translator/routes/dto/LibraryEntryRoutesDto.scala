@@ -1,7 +1,9 @@
 package io.scalac.tezos.translator.routes.dto
 
 import io.scalac.tezos.translator.model.LibraryEntry.PendingApproval
-import io.scalac.tezos.translator.model.{LibraryEntry, Uid}
+import io.scalac.tezos.translator.model.{EmailAddress, LibraryEntry, Uid}
+
+import scala.util.{Success, Try}
 
 case class LibraryEntryRoutesDto(
   name: String,
@@ -11,16 +13,25 @@ case class LibraryEntryRoutesDto(
   micheline: String,
   michelson: String
 ) {
-  def toDomain: LibraryEntry = LibraryEntry(
-    uid = Uid(),
-    name = name,
-    author = author,
-    email = email,
-    description = description,
-    micheline = micheline,
-    michelson = michelson,
-    status = PendingApproval
-  )
+  def toDomain: Try[LibraryEntry] = {
+    val emailAddress = email match {
+      case Some(v) => EmailAddress.fromString(v).map(Some(_))
+      case None => Success(None)
+    }
+
+    emailAddress.map { ea =>
+      LibraryEntry(
+        uid = Uid(),
+        name = name,
+        author = author,
+        email = ea,
+        description = description,
+        micheline = micheline,
+        michelson = michelson,
+        status = PendingApproval
+      )
+    }
+  }
 }
 
 object LibraryEntryRoutesDto {
@@ -28,7 +39,7 @@ object LibraryEntryRoutesDto {
     LibraryEntryRoutesDto(
       name = v.name,
       author = v.author,
-      email = v.email,
+      email = v.email.map(_.toString),
       description = v.description,
       micheline = v.micheline,
       michelson = v.michelson

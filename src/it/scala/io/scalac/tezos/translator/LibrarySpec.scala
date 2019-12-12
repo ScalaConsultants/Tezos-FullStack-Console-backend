@@ -46,7 +46,8 @@ class LibrarySpec
     val email2SendService = new Emails2SendService(emails2SendRepo, testDb)
     val libraryRepo = new LibraryRepository(config.dbUtility, testDb)
     val libraryService = new LibraryService(libraryRepo, log)
-    val libraryRoute: Route = new LibraryRoutes(libraryService, userService, email2SendService, system.log, config).routes
+    val adminEmail = EmailAddress.fromString("tezos-console-admin@scalac.io").get
+    val libraryRoute: Route = new LibraryRoutes(libraryService, userService, email2SendService, system.log, config.reCaptcha, adminEmail).routes
 
     def insertDummiesToDb(size: Int, status: Option[Status] = Some(Accepted)): Future[immutable.IndexedSeq[Int]] = {
       val inserts =for {
@@ -55,7 +56,7 @@ class LibrarySpec
           Uid(),
           "name",
           "author",
-          Some("email"),
+          EmailAddress.fromString("name@service.com").toOption,
           "description",
           "micheline",
           "michelson",
@@ -305,7 +306,7 @@ class LibrarySpec
 
           val approvalRequest = emails2send.head
 
-          approvalRequest.to shouldBe AdminEmail
+          approvalRequest.to shouldBe adminEmail
           approvalRequest.subject shouldBe "Library approval request"
           EmailContent.toPrettyString(approvalRequest.content) should contain
           """
@@ -345,9 +346,9 @@ class LibrarySpec
 
           val approvalRequest = emails2send.head
 
-          approvalRequest.to shouldBe UserEmail(userEmail)
+          approvalRequest.to.toString shouldBe userEmail
           approvalRequest.subject shouldBe "Acceptance status of your Translation has changed"
-          approvalRequest.content shouldBe TextContent("Acceptance status of your Translation has changed to: accepted")
+          approvalRequest.content shouldBe TextContent("""Acceptance status of your translation: "name" has changed to: accepted""")
 
           email2SendService.removeSentMessage(approvalRequest.uid)
         }
@@ -357,7 +358,7 @@ class LibrarySpec
 
   private trait SampleEntries {
     val record1 = LibraryEntry(Uid.fromString("d7327913-4957-4417-96d2-e5c1d4311f80").get, "nameE1", "authorE1", None, "descriptionE1", "michelineE1", "michelsonE1", PendingApproval)
-    val record2 = LibraryEntry(Uid.fromString("17976f3a-505b-4d66-854a-243a70bb94c0").get, "nameE2", "authorE2", Some("name@service.com"), "descriptionE2", "michelineE2", "michelsonE2", Accepted)
+    val record2 = LibraryEntry(Uid.fromString("17976f3a-505b-4d66-854a-243a70bb94c0").get, "nameE2", "authorE2", Some(EmailAddress.fromString("name@service.com").get), "descriptionE2", "michelineE2", "michelsonE2", Accepted)
     val record3 = LibraryEntry(Uid.fromString("5d8face2-ab24-49e0-b792-a0b99a031645").get, "nameE3", "authorE3", None, "descriptionE3", "michelineE3", "michelsonE3", Declined)
 
     val toInsert = Seq(record1, record2, record3)

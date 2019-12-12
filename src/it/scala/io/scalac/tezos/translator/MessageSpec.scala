@@ -4,7 +4,7 @@ import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.server.Route
 import akka.http.scaladsl.testkit.ScalatestRouteTest
 import io.scalac.tezos.translator.config.CaptchaConfig
-import io.scalac.tezos.translator.model.{ContactFormContent, Errors, SendEmail}
+import io.scalac.tezos.translator.model.{ContactFormContent, EmailAddress, Errors, SendEmail}
 import io.scalac.tezos.translator.repository.Emails2SendRepository
 import io.scalac.tezos.translator.repository.dto.SendEmailDbDto
 import io.scalac.tezos.translator.routes.dto.SendEmailRoutesDto
@@ -35,7 +35,8 @@ class MessageSpec
     val emails2SendRepo = new Emails2SendRepository
 
     val email2SendService = new Emails2SendService(emails2SendRepo, testDb)
-    val messageRoute: Route = new MessageRoutes(email2SendService, system.log, reCaptchaConfig).routes
+    val adminEmail = EmailAddress.fromString("tezos-console-admin@scalac.io").get
+    val messageRoute: Route = new MessageRoutes(email2SendService, system.log, reCaptchaConfig, adminEmail).routes
 
     private def checkValidationErrorsWithExpected(dto: SendEmailRoutesDto, expectedErrors: List[String]): Assertion = {
       Post("/message", dto) ~> messageRoute ~> check {
@@ -88,6 +89,10 @@ class MessageSpec
         maybeSendEmailModel shouldBe a[Success[_]]
 
         val sendEmailModel = maybeSendEmailModel.get
+        sendEmailModel.to shouldBe adminEmail
+
+        sendEmailModel.subject shouldBe "Contact request"
+
         sendEmailModel.content shouldBe a[ContactFormContent]
 
         val content = sendEmailModel.content.asInstanceOf[ContactFormContent]

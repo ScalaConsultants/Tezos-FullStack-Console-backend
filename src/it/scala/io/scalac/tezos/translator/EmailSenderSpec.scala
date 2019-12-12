@@ -6,7 +6,7 @@ import akka.testkit.TestKit
 import com.icegreen.greenmail.util.{GreenMail, GreenMailUtil, ServerSetupTest}
 import io.scalac.tezos.translator.actor.EmailSender
 import io.scalac.tezos.translator.config.{Configuration, CronConfiguration, EmailConfiguration}
-import io.scalac.tezos.translator.model.SendEmail
+import io.scalac.tezos.translator.model.{EmailAddress, SendEmail}
 import io.scalac.tezos.translator.repository.Emails2SendRepository
 import io.scalac.tezos.translator.routes.dto.SendEmailRoutesDto
 import io.scalac.tezos.translator.service.{Emails2SendService, SendEmailsServiceImpl}
@@ -49,10 +49,10 @@ class EmailSenderSpec
     val greenMail = new GreenMail(ServerSetupTest.SMTP)
     val testMailUser = "sender@mail.some"
     val testMailPass = "6131Zz$*n6z2"
-    val testReceiver = "testrec@some.some"
+    val adminEmail = EmailAddress.fromString("tezos-console-admin@scalac.io").get
 
     val testCronConfig = CronConfiguration(cronTaskInterval = 3 seconds)
-    val testEmailConfig = EmailConfiguration("localhost", 3025, auth = true, testMailUser, testMailPass, receiver = testReceiver)
+    val testEmailConfig = EmailConfiguration("localhost", 3025, auth = true, testMailUser, testMailPass, receiver = adminEmail.toString)
     val testConfig = Configuration(email = testEmailConfig, cron = testCronConfig)
 
     override def beforeEach(): Unit = greenMail.purgeEmailFromAllMailboxes()
@@ -63,8 +63,8 @@ class EmailSenderSpec
       val testMail = "some-tezostests@scalac.io"
       val testContent = "some content"
 
-      val newEmail2Send = SendEmail.fromSendEmailRoutesDto(SendEmailRoutesDto(testName, testPhone, testMail, testContent))
-      val emailSenderService = SendEmailsServiceImpl(email2SendService, log, testConfig)
+      val newEmail2Send = SendEmail.fromSendEmailRoutesDto(SendEmailRoutesDto(testName, testPhone, testMail, testContent), adminEmail)
+      val emailSenderService = SendEmailsServiceImpl(email2SendService, log, testConfig.email, testConfig.cron).get
       val cronTask = EmailSender(emailSenderService, testCronConfig)
 
       "send emails" in {
@@ -80,7 +80,7 @@ class EmailSenderSpec
 
           val recipients = message.get.getAllRecipients.map(_.toString)
           recipients.length shouldBe 1
-          recipients.headOption shouldBe Some(testReceiver)
+          recipients.headOption shouldBe Some(adminEmail.toString)
 
           val body = GreenMailUtil.getBody(message.get).replaceAll("\r", "")
 
@@ -103,7 +103,7 @@ class EmailSenderSpec
       }
 
       "not send email when address is incorrect" in {
-        val newEmail2Send = SendEmail.fromSendEmailRoutesDto(SendEmailRoutesDto(testName, testPhone, "xxx", testContent))
+        val newEmail2Send = SendEmail.fromSendEmailRoutesDto(SendEmailRoutesDto(testName, testPhone, "xxx", testContent), adminEmail)
         val addMail: Future[Int] = email2SendService.addNewEmail2Send(newEmail2Send)
 
         whenReady(addMail) { _ shouldBe 1 }
