@@ -13,9 +13,9 @@ trait SendEmailsService {
 
   def sendEmails(implicit ec: ExecutionContext): Future[Unit] =
     for {
-      emailsToSend    <-  getEmailsToSend
-      emailsToSendF   =   emailsToSend.map(sendSingleMail)
-      _               <-  Future.sequence(emailsToSendF)
+      emailsToSend  <-  getEmailsToSend
+      emailsToSendF =   emailsToSend.map(sendSingleMail)
+      _             <-  Future.sequence(emailsToSendF)
     } yield ()
 
   def sendSingleMail(sendEmailModel: SendEmail): Future[Unit]
@@ -36,23 +36,21 @@ class SendEmailsServiceImpl(
 
 
     val send =
-      for {
-        _             <-  mailer(
-                            Envelope
-                              .from(serviceEmail.value)
-                              .to(addressTo)
-                              .subject(sendEmailModel.subject)
-                              .content(Text(EmailContent.toPrettyString(sendEmailModel.content)))
-                          ).transform {
-                            case Success(v) =>
-                              log.debug(s"Message sent - $sendEmailModel")
-                              Success(v)
+      mailer(
+        Envelope
+          .from(serviceEmail.value)
+          .to(addressTo)
+          .subject(sendEmailModel.subject)
+          .content(Text(EmailContent.toPrettyString(sendEmailModel.content)))
+      ).transform {
+        case Success(v) =>
+          log.debug(s"Message sent - $sendEmailModel")
+          Success(v)
 
-                            case Failure(ex) =>
-                              log.error(s"Can't send message - $emailUid, error - ${ex.getMessage}")
-                              Failure(ex)
-                          }
-      } yield ()
+        case Failure(ex) =>
+          log.error(s"Can't send message - $emailUid, error - ${ex.getMessage}")
+          Failure(ex)
+      }
 
     val delete =
       service

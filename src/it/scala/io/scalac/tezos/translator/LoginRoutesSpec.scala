@@ -6,7 +6,7 @@ import akka.http.scaladsl.server.Route
 import akka.http.scaladsl.testkit.ScalatestRouteTest
 import io.scalac.tezos.translator.model.UserCredentials
 import io.scalac.tezos.translator.repository.UserRepository
-import io.scalac.tezos.translator.routes.{JsonHelper, LoginRoutes}
+import io.scalac.tezos.translator.routes.LoginRoutes
 import io.scalac.tezos.translator.service.UserService
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.{BeforeAndAfterEach, FlatSpec, Matchers}
@@ -17,9 +17,10 @@ class LoginRoutesSpec
   extends FlatSpec
   with Matchers
   with ScalatestRouteTest
-  with JsonHelper
   with ScalaFutures
   with BeforeAndAfterEach {
+    import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport._
+    import io.circe.generic.auto._
 
     override def beforeEach(): Unit = DbTestBase.recreateTables()
     val testDb = DbTestBase.db

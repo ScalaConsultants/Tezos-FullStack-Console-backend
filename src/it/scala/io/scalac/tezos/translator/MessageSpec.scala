@@ -7,8 +7,8 @@ import io.scalac.tezos.translator.config.CaptchaConfig
 import io.scalac.tezos.translator.model.{ContactFormContent, EmailAddress, Errors, SendEmail}
 import io.scalac.tezos.translator.repository.Emails2SendRepository
 import io.scalac.tezos.translator.repository.dto.SendEmailDbDto
+import io.scalac.tezos.translator.routes.MessageRoutes
 import io.scalac.tezos.translator.routes.dto.SendEmailRoutesDto
-import io.scalac.tezos.translator.routes.{JsonHelper, MessageRoutes}
 import io.scalac.tezos.translator.schema.Emails2SendTable
 import io.scalac.tezos.translator.service.Emails2SendService
 import org.scalatest.{Assertion, BeforeAndAfterEach, Matchers, WordSpec}
@@ -24,8 +24,9 @@ class MessageSpec
   extends WordSpec
   with Matchers
   with ScalatestRouteTest
-  with BeforeAndAfterEach
-  with JsonHelper {
+  with BeforeAndAfterEach {
+    import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport._
+    import io.circe.generic.auto._
 
     override def beforeEach(): Unit = DbTestBase.recreateTables()
 

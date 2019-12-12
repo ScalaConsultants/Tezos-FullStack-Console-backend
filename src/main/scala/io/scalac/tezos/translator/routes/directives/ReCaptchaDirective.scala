@@ -7,13 +7,18 @@ import akka.http.scaladsl.model.{HttpMethods, HttpRequest, HttpResponse, StatusC
 import akka.http.scaladsl.server.{Directive, Directives, Route, StandardRoute}
 import akka.http.scaladsl.unmarshalling.Unmarshal
 import akka.stream.ActorMaterializer
+import io.circe.Decoder
 import io.scalac.tezos.translator.config.CaptchaConfig
 import io.scalac.tezos.translator.model.{CaptchaVerifyResponse, Error}
-import io.scalac.tezos.translator.routes.JsonHelper
+import org.joda.time.DateTime
+import org.joda.time.format.DateTimeFormat
 
 import scala.concurrent.{ExecutionContext, ExecutionContextExecutor, Future}
+import scala.util.control.NonFatal
 
-object ReCaptchaDirective extends Directives with JsonHelper {
+object ReCaptchaDirective extends Directives {
+  import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport._
+  import io.circe.generic.auto._
 
   def withReCaptchaVerify(log: LoggingAdapter,
                           reCaptchaConfig: CaptchaConfig)
@@ -70,6 +75,16 @@ object ReCaptchaDirective extends Directives with JsonHelper {
                                     log: LoggingAdapter,
                                     inner: Unit => Route)
                                    (implicit am: ActorMaterializer, ec: ExecutionContext): Future[Route] = {
+
+    val dateFormatter = DateTimeFormat.forPattern("yyyyMMdd")
+    implicit val decodeDateTime: Decoder[DateTime] = Decoder.decodeString.emap { s =>
+      try {
+        Right(DateTime.parse(s, dateFormatter))
+      } catch {
+        case NonFatal(e) => Left(e.getMessage)
+      }
+    }
+
     val unmarshalResult = Unmarshal(response).to[CaptchaVerifyResponse]
     unmarshalResult.map { value =>
       if (value.success)

@@ -22,7 +22,10 @@ class LibraryRoutes(
   log: LoggingAdapter,
   captchaConfig: CaptchaConfig,
   adminEmail: EmailAddress
-)(implicit as: ActorSystem, ec: ExecutionContext) extends HttpRoutes with JsonHelper {
+)(implicit as: ActorSystem, ec: ExecutionContext) extends HttpRoutes {
+  import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport._
+  import io.circe.generic.auto._
+
   override def routes: Route =
     (path("library") & pathEndOrSingleSlash) {
       (post & withReCaptchaVerify(log, captchaConfig)(as) & withLibraryDTOValidation) { libraryDto =>

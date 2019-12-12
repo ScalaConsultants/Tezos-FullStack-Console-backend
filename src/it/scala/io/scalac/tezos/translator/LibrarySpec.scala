@@ -11,7 +11,7 @@ import io.scalac.tezos.translator.model._
 import io.scalac.tezos.translator.repository.dto.LibraryEntryDbDto
 import io.scalac.tezos.translator.repository.{Emails2SendRepository, LibraryRepository, UserRepository}
 import io.scalac.tezos.translator.routes.dto.{LibraryEntryRoutesAdminDto, LibraryEntryRoutesDto}
-import io.scalac.tezos.translator.routes.{JsonHelper, LibraryRoutes}
+import io.scalac.tezos.translator.routes.LibraryRoutes
 import io.scalac.tezos.translator.schema.LibraryTable
 import io.scalac.tezos.translator.service.{Emails2SendService, LibraryService, UserService}
 import org.scalatest.concurrent.ScalaFutures
@@ -29,8 +29,9 @@ class LibrarySpec
   with Matchers
   with ScalatestRouteTest
   with ScalaFutures
-  with JsonHelper
   with BeforeAndAfterEach {
+    import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport._
+    import io.circe.generic.auto._
 
     override def beforeEach(): Unit = DbTestBase.recreateTables()
 

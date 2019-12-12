@@ -4,11 +4,12 @@ import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.server.{Directive, Directives}
 import akka.http.scaladsl.unmarshalling.FromEntityUnmarshaller
 import io.scalac.tezos.translator.model.Errors
-import io.scalac.tezos.translator.routes.JsonHelper
 import io.scalac.tezos.translator.routes.dto.DTOValidation
 import io.scalac.tezos.translator.routes.dto.DTOValidation._
 
-object DTOValidationDirective extends Directives with JsonHelper {
+object DTOValidationDirective extends Directives {
+  import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport._
+  import io.circe.generic.auto._
 
   def withDTOValidation[T : FromEntityUnmarshaller : DTOValidation]: Directive[Tuple1[T]] =
     entity(as[T]).flatMap { ent =>

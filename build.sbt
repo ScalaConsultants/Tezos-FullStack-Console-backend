@@ -8,7 +8,7 @@ lazy val root = (project in file(".")).settings(
   resolvers += "typesafe" at "http://repo.typesafe.com/typesafe/releases/",
   resolvers += "Scalac" at "https://raw.githubusercontent.com/ScalaConsultants/mvn-repo/master/",
 
-  libraryDependencies ++= akkaHttp ++ akkaHttpCors ++ akkaStream ++ cats ++ courier ++ greenMail ++ jodaTime ++ logBack ++
+  libraryDependencies ++= akkaHttp ++ akkaHttpCors ++ akkaStream ++ cats ++ circe ++ courier ++ greenMail ++ jodaTime ++ logBack ++
     postgres ++ pureConfig ++ scalactic ++ scalaTest ++ sl4j ++ slick ++ tesozFCTM ++ wireMock ++ testContainers ++ bcrypt,
   
   Defaults.itSettings,

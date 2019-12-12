@@ -17,7 +17,9 @@ class MessageRoutes(
   log: LoggingAdapter,
   reCaptchaConfig: CaptchaConfig,
   adminEmail: EmailAddress
-)(implicit actorSystem: ActorSystem) extends HttpRoutes with JsonHelper {
+)(implicit actorSystem: ActorSystem) extends HttpRoutes {
+  import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport._
+  import io.circe.generic.auto._
 
   override def routes: Route =
     (path ("message") & pathEndOrSingleSlash & withReCaptchaVerify(log, reCaptchaConfig)(actorSystem)
