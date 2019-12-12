@@ -49,7 +49,7 @@ class EmailSenderSpec
     val greenMail = new GreenMail(ServerSetupTest.SMTP)
     val testMailUser = "sender@mail.some"
     val testMailPass = "6131Zz$*n6z2"
-    val adminEmail = EmailAddress.fromString("tezos-console-admin@scalac.io").get
+    val adminEmail = EmailAddress.fromString("tezos-console-admin@service.com").get
 
     val testCronConfig = CronConfiguration(cronTaskInterval = 3 seconds)
     val testEmailConfig = EmailConfiguration("localhost", 3025, auth = true, testMailUser, testMailPass, receiver = adminEmail.toString)
@@ -60,7 +60,7 @@ class EmailSenderSpec
     "Email sender" should {
       val testName = "testName-tezostests"
       val testPhone = "+79025680396"
-      val testMail = "some-tezostests@scalac.io"
+      val testMail = "some-tezostests@service.com"
       val testContent = "some content"
 
       val newEmail2Send = SendEmail.fromSendEmailRoutesDto(SendEmailRoutesDto(testName, testPhone, testMail, testContent), adminEmail)
@@ -73,7 +73,7 @@ class EmailSenderSpec
         whenReady(addMail) { _ shouldBe 1 }
 
         whenReady(getNextEmail) { message =>
-          message shouldBe 'defined
+          message shouldBe defined
 
           val sender = message.get.getFrom.headOption.map(_.toString)
           sender shouldBe Some(testMailUser)

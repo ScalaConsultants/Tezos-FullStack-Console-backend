@@ -46,7 +46,7 @@ class LibrarySpec
     val email2SendService = new Emails2SendService(emails2SendRepo, testDb)
     val libraryRepo = new LibraryRepository(config.dbUtility, testDb)
     val libraryService = new LibraryService(libraryRepo, log)
-    val adminEmail = EmailAddress.fromString("tezos-console-admin@scalac.io").get
+    val adminEmail = EmailAddress.fromString("tezos-console-admin@service.com").get
     val libraryRoute: Route = new LibraryRoutes(libraryService, userService, email2SendService, system.log, config.reCaptcha, adminEmail).routes
 
     def insertDummiesToDb(size: Int, status: Option[Status] = Some(Accepted)): Future[immutable.IndexedSeq[Int]] = {
@@ -76,7 +76,7 @@ class LibrarySpec
     private def getToken(userService: UserService, user: UserCredentials): String = {
       val maybeToken = Await.result(userService.authenticateAndCreateToken(user.username, user.password), 3 seconds)
 
-      maybeToken shouldBe 'defined
+      maybeToken shouldBe defined
 
       maybeToken.get
     }
@@ -324,7 +324,7 @@ class LibrarySpec
 
         val maybeRecord = records.headOption
 
-        maybeRecord shouldBe 'defined
+        maybeRecord shouldBe defined
 
         val recordFromDB = maybeRecord.get
 

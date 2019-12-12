@@ -35,7 +35,7 @@ class MessageSpec
     val emails2SendRepo = new Emails2SendRepository
 
     val email2SendService = new Emails2SendService(emails2SendRepo, testDb)
-    val adminEmail = EmailAddress.fromString("tezos-console-admin@scalac.io").get
+    val adminEmail = EmailAddress.fromString("tezos-console-admin@service.com").get
     val messageRoute: Route = new MessageRoutes(email2SendService, system.log, reCaptchaConfig, adminEmail).routes
 
     private def checkValidationErrorsWithExpected(dto: SendEmailRoutesDto, expectedErrors: List[String]): Assertion = {

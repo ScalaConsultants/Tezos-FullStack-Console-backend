@@ -94,7 +94,7 @@ class SendEmailServiceSpec
 
     val message = received.headOption
 
-    message shouldBe 'defined
+    message shouldBe defined
 
     val sender = message.get.getFrom.headOption.map(_.toString)
     sender shouldBe Some("sender@mail.some")
@@ -126,7 +126,7 @@ class SendEmailServiceSpec
 
     received.size shouldBe 3
 
-    received.get(e1.subject) shouldBe 'defined
+    received.get(e1.subject) shouldBe defined
     val e1SendResult = received(e1.subject)
 
     val sender1 = e1SendResult.getFrom.headOption.map(_.toString)
@@ -141,7 +141,7 @@ class SendEmailServiceSpec
     body1 shouldBe """Acceptance status of your translation: "translation title" has changed to: accepted"""
 
 
-    received.get(e2.subject) shouldBe 'defined
+    received.get(e2.subject) shouldBe defined
     val e2SendResult = received(e2.subject)
 
     val sender2 = e2SendResult.getFrom.headOption.map(_.toString)
@@ -161,7 +161,7 @@ class SendEmailServiceSpec
          |content: some content""".stripMargin
 
 
-    received.get(e3.subject) shouldBe 'defined
+    received.get(e3.subject) shouldBe defined
     val e3SendResult = received(e3.subject)
 
     val sender3 = e3SendResult.getFrom.headOption.map(_.toString)
