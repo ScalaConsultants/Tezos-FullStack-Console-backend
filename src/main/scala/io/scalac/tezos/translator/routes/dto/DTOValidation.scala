@@ -81,21 +81,28 @@ object DTOValidation {
       .parMapN(SendEmailRoutesDto.apply)
   }
 
-  private def checkEmailIsValid(email: String): ValidationResult[String] =
-    checkStringNotEmptyAndLength(email, maxTinyLength, FieldIsEmpty("email"), FieldToLong("email", maxTinyLength))
+  private def checkFieldIsValid(value: String, name: String): ValidationResult[String] = {
+    checkStringNotEmptyAndLength(value, maxTinyLength, FieldIsEmpty(name), FieldToLong(name, maxTinyLength))
       .flatMap(
-        mail => checkStringMatchRegExp(mail, emailRegex, FieldIsInvalid("email", mail))
+        mail => checkStringMatchRegExp(mail, emailRegex, FieldIsInvalid(name, mail))
       )
+  }
+
+  private def checkEmailIsValid(email: String): ValidationResult[String] = checkFieldIsValid(email, "email")
+
+  private def checkAuthorIsValid(author: String): ValidationResult[String] = checkFieldIsValid(author, "author")
+
+  private def checkDescriptionsValid(description: String): ValidationResult[String] = checkFieldIsValid(description, "description")
 
   implicit val LibraryDTOValidation: DTOValidation[LibraryEntryRoutesDto] = { dto =>
     val checkName =
-      checkStringNotEmptyAndLength(dto.name, maxTinyLength, FieldIsEmpty("name"), FieldToLong("name", maxTinyLength))
+      checkStringNotEmptyAndLength(dto.title, maxTinyLength, FieldIsEmpty("name"), FieldToLong("name", maxTinyLength))
     val checkAuthor =
-      checkStringNotEmptyAndLength(dto.author, maxTinyLength, FieldIsEmpty("author"), FieldToLong("author", maxTinyLength))
+      dto.author.map(author => checkAuthorIsValid(author).map(Some(_))).getOrElse(None.asRight)
     val checkEmail =
       dto.email.map(mail => checkEmailIsValid(mail).map(Some(_))).getOrElse(None.asRight)
     val checkDescription =
-      checkStringNotEmpty(dto.description, FieldIsEmpty("description"))
+      dto.description.map(description => checkDescriptionsValid(description).map(Some(_))).getOrElse(None.asRight)
     val checkMicheline =
       checkStringNotEmpty(dto.micheline, FieldIsEmpty("micheline"))
     val checkMichelson =

@@ -25,7 +25,7 @@ object EmailContent {
       s"""
          |name: ${c.name}
          |phone: ${c.contact.getPhone()}
-         |email: ${c.email}
+         |email: ${c.contact.getEmail()}
          |content: ${c.content}
          |""".stripMargin
 

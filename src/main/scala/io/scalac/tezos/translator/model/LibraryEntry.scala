@@ -1,18 +1,19 @@
 package io.scalac.tezos.translator.model
 
 import io.scalac.tezos.translator.model.LibraryEntry.Status
+import io.scalac.tezos.translator.repository.dto.DescriptionText
 
 import scala.util.{Failure, Success, Try}
 
 case class LibraryEntry(
-  uid: Uid,
-  name: String,
-  author: String,
-  email: Option[EmailAddress],
-  description: String,
-  micheline: String,
-  michelson: String,
-  status: Status
+                         uid: Uid,
+                         title: String,
+                         author: Option[AuthorName],
+                         email: Option[EmailAddress],
+                         description: Option[DescriptionText],
+                         micheline: String,
+                         michelson: String,
+                         status: Status
 )
 
 object LibraryEntry {

@@ -88,7 +88,7 @@ class LibraryRoutes(
                 updatedEntry  <-  service.changeStatus(u, s)
                 _             <-  updatedEntry.email match {
                                     case Some(email) =>
-                                      val e = SendEmail.statusChange(email, updatedEntry.name , s)
+                                      val e = SendEmail.statusChange(email, updatedEntry.title , s)
                                       emails2SendService
                                         .addNewEmail2Send(e)
                                         .recover { case err => log.error(s"Can't add new email to send, error - $err") }

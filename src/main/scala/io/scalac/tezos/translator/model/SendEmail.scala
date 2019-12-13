@@ -7,11 +7,11 @@ import io.scalac.tezos.translator.routes.dto.{LibraryEntryRoutesDto, SendEmailRo
 import scala.util.Try
 
 sealed abstract case class SendEmail(
-  uid: Uid,
-  to: EmailAddress,
-  subject: String,
-  content: EmailContent
-)
+                                      uid: Uid,
+                                      to: EmailAddress,
+                                      subject: String,
+                                      content: EmailContent
+                                    )
 
 object SendEmail {
 
@@ -20,10 +20,10 @@ object SendEmail {
     val subject = "Library approval request"
     val message = TextContent {
       s"""
-        |Please add my translation to your library:
-        |Title: ${libraryDto.name}
-        |Description: ${libraryDto.description}
-        |Uid: ${uid.value}
+         |Please add my translation to your library:
+         |Title: ${libraryDto.title}
+         |Description: ${libraryDto.description}
+         |Uid: ${uid.value}
       """.stripMargin
     }
     new SendEmail(Uid(), adminEmail, subject, message) {}
@@ -37,24 +37,24 @@ object SendEmail {
     new SendEmail(uid, emailAddress, subject, message) {}
   }
 
-  def fromSendEmailRoutesDto(dto: SendEmailRoutesDto, adminEmail: EmailAddress): SendEmail =
+  def fromSendEmailRoutesDto(dto: SendEmailRoutesDto, adminEmail: EmailAddress): SendEmail = {
     new SendEmail(
       uid = Uid(),
       to = adminEmail,
       subject = "Contact request",
       content = ContactFormContent(
         name = dto.name,
-        phone = dto.phone,
-        email = dto.email,
+        contact = Contact.tryToCreateContact(dto.phone,dto.email),
         content = dto.content
       )
     ) {}
+  }
 
   def fromSendEmailDbDto(dto: SendEmailDbDto): Try[SendEmail] =
     for {
-      uid <-  Uid.fromString(dto.uid)
-      c   <-  EmailContent.fromJson(dto.content)
-      to  <-  EmailAddress.fromString(dto.to)
+      uid <- Uid.fromString(dto.uid)
+      c <- EmailContent.fromJson(dto.content)
+      to <- EmailAddress.fromString(dto.to)
     } yield
       new SendEmail(
         uid = uid,
