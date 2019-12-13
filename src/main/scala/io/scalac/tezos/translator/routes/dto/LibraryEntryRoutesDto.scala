@@ -8,7 +8,7 @@ import scala.util.{Success, Try}
 case class LibraryEntryRoutesDto(
   name: String,
   author: String,
-  email: Option[String],
+  email: Opption[String],
   description: String,
   micheline: String,
   michelson: String

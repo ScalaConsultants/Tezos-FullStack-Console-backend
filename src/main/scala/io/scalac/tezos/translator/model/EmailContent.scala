@@ -10,8 +10,7 @@ sealed trait EmailContent extends Product with Serializable
 
 case class ContactFormContent(
   name: String,
-  phone: String,
-  email: String,
+  contact:Contact,
   content: String
 ) extends EmailContent
 
@@ -25,7 +24,7 @@ object EmailContent {
     case c: ContactFormContent =>
       s"""
          |name: ${c.name}
-         |phone: ${c.phone}
+         |phone: ${c.contact.getPhone()}
          |email: ${c.email}
          |content: ${c.content}
          |""".stripMargin
