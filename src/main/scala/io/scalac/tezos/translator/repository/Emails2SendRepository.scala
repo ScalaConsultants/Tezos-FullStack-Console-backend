@@ -20,7 +20,7 @@ class Emails2SendRepository(implicit ec: ExecutionContext) {
       .take(batchSize)
       .result
 
-  def removeEmail2Send(uid: String): FixedSqlAction[Int, NoStream, Effect.Write] =
+  def removeEmail2Send(uid: String): DBIO[Int] =
     emails2Send
       .filter(_.uid === uid)
       .delete

@@ -9,15 +9,15 @@ import scala.concurrent.{ExecutionContext, Future}
 
 class Emails2SendService(repository: Emails2SendRepository, db: Database) {
 
-  def addNewEmail2Send(validatedDto: SendEmail): Future[Int] =
+  def addNewEmail2Send(email: SendEmail): Future[Int] =
     db.run(
-      repository.add(SendEmailDbDto.fromDomain(validatedDto))
+      repository.add(SendEmailDbDto.fromDomain(email))
     )
 
   def getEmails2Send(batchSize: Int)(implicit ec: ExecutionContext): Future[Seq[SendEmail]] =
     for {
       entriesDto  <-  db.run(repository.getEmails2Send(batchSize))
-      entriesFSeq =   entriesDto.map(e => Future.fromTry(e.toDomain))
+      entriesFSeq =   entriesDto.map(e => Future.fromTry(SendEmail.fromSendEmailDbDto(e)))
       entries     <-  Future.sequence(entriesFSeq)
     } yield entries
 

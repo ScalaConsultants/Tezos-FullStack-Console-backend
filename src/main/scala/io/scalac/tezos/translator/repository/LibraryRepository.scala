@@ -7,29 +7,45 @@ import io.scalac.tezos.translator.repository.dto.LibraryEntryDbDto
 import io.scalac.tezos.translator.schema.LibraryTable
 import slick.jdbc.PostgresProfile.api._
 
-class LibraryRepository(config: DBUtilityConfiguration) {
+import scala.concurrent.{ExecutionContext, Future}
 
-  def add(translation: LibraryEntryDbDto): DBIO[Int] =
-    LibraryTable.library += translation
+class LibraryRepository(config: DBUtilityConfiguration, db: Database)(implicit ec: ExecutionContext) {
 
-  def list(status: Option[Status], offset: Option[Int], limit: Option[Int]): DBIO[Seq[LibraryEntryDbDto]] =
-    LibraryTable.library.filterOpt(status){ case (row, s) =>  row.status === s.value}
-      .sortBy(_.createdAt.desc)
-      .drop(offset.getOrElse(0))
-      .take(limit.getOrElse(config.defaultLimit))
-      .result
+  def add(translation: LibraryEntryDbDto): Future[Int] =
+    db.run(LibraryTable.library += translation)
 
-  def updateStatus(uid: Uid, newStatus: Status): DBIO[Int] = {
-    val query = for {
-      l <- LibraryTable.library if l.uid === uid.value
-    } yield l.status
+  def list(status: Option[Status], offset: Option[Int], limit: Option[Int]): Future[Seq[LibraryEntryDbDto]] =
+    db.run {
+      LibraryTable.library.filterOpt(status){ case (row, s) =>  row.status === s.value}
+        .sortBy(_.createdAt.desc)
+        .drop(offset.getOrElse(0))
+        .take(limit.getOrElse(config.defaultLimit))
+        .result
+    }
 
-    query.update(newStatus.value)
-  }
-
-  def delete(uid: Uid): DBIO[Int] = {
+  def get(uid: Uid): Future[Option[LibraryEntryDbDto]] = db.run {
     LibraryTable.library
       .filter(_.uid === uid.value)
-      .delete
+      .take(1)
+      .result
+      .headOption
   }
+
+  def update(uid: Uid, libraryEntry: LibraryEntryDbDto): Future[Option[LibraryEntryDbDto]] =
+    db.run {
+      LibraryTable.library
+        .filter(_.uid === uid.value)
+        .update(libraryEntry)
+        .map {
+          case 0 => None
+          case _ => Some(libraryEntry)
+        }
+    }
+
+  def delete(uid: Uid): Future[Int] =
+    db.run {
+      LibraryTable.library
+        .filter(_.uid === uid.value)
+        .delete
+    }
 }

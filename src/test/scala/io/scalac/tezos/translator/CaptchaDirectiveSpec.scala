@@ -8,13 +8,12 @@ import com.github.tomakehurst.wiremock.client.WireMock
 import com.github.tomakehurst.wiremock.client.WireMock.{post => expectedPost, _}
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration._
 import io.scalac.tezos.translator.config.CaptchaConfig
-import io.scalac.tezos.translator.routes.JsonHelper
 import io.scalac.tezos.translator.routes.directives.ReCaptchaDirective
 import org.scalatest.{BeforeAndAfterAll, Matchers, WordSpec}
 
 import scala.concurrent.duration._
 
-class CaptchaDirectiveSpec extends WordSpec with Matchers with ScalatestRouteTest with BeforeAndAfterAll with JsonHelper with Directives {
+class CaptchaDirectiveSpec extends WordSpec with Matchers with ScalatestRouteTest with BeforeAndAfterAll with Directives {
 
   val checkCaptchaUri     = "/check"
   val testCaptchaHost     = "localhost"

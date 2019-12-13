@@ -4,11 +4,11 @@ import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.server.Route
 import akka.http.scaladsl.testkit.ScalatestRouteTest
 import io.scalac.tezos.translator.config.CaptchaConfig
-import io.scalac.tezos.translator.model.Errors
+import io.scalac.tezos.translator.model.{ContactFormContent, EmailAddress, Errors, SendEmail}
 import io.scalac.tezos.translator.repository.Emails2SendRepository
 import io.scalac.tezos.translator.repository.dto.SendEmailDbDto
+import io.scalac.tezos.translator.routes.MessageRoutes
 import io.scalac.tezos.translator.routes.dto.SendEmailRoutesDto
-import io.scalac.tezos.translator.routes.{JsonHelper, MessageRoutes}
 import io.scalac.tezos.translator.schema.Emails2SendTable
 import io.scalac.tezos.translator.service.Emails2SendService
 import org.scalatest.{Assertion, BeforeAndAfterEach, Matchers, WordSpec}
@@ -17,14 +17,16 @@ import slick.jdbc.PostgresProfile.api._
 import scala.concurrent.Await
 import scala.concurrent.duration._
 import scala.language.postfixOps
+import scala.util.Success
 
 //noinspection TypeAnnotation
 class MessageSpec
   extends WordSpec
   with Matchers
   with ScalatestRouteTest
-  with BeforeAndAfterEach
-  with JsonHelper {
+  with BeforeAndAfterEach {
+    import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport._
+    import io.circe.generic.auto._
 
     override def beforeEach(): Unit = DbTestBase.recreateTables()
 
@@ -34,7 +36,8 @@ class MessageSpec
     val emails2SendRepo = new Emails2SendRepository
 
     val email2SendService = new Emails2SendService(emails2SendRepo, testDb)
-    val messageRoute: Route = new MessageRoutes(email2SendService, system.log, reCaptchaConfig).routes
+    val adminEmail = EmailAddress.fromString("tezos-console-admin@service.com").get
+    val messageRoute: Route = new MessageRoutes(email2SendService, system.log, reCaptchaConfig, adminEmail).routes
 
     private def checkValidationErrorsWithExpected(dto: SendEmailRoutesDto, expectedErrors: List[String]): Assertion = {
       Post("/message", dto) ~> messageRoute ~> check {
@@ -83,10 +86,22 @@ class MessageSpec
 
         tableActual.headOption.isEmpty shouldBe false
         val addedRecord = tableActual.head
-        addedRecord.name shouldBe "name"
-        addedRecord.phone shouldBe "+77072123434"
-        addedRecord.email shouldBe "email@gmail.com"
-        addedRecord.content shouldBe "I wanna pizza"
+        val maybeSendEmailModel = SendEmail.fromSendEmailDbDto(addedRecord)
+        maybeSendEmailModel shouldBe a[Success[_]]
+
+        val sendEmailModel = maybeSendEmailModel.get
+        sendEmailModel.to shouldBe adminEmail
+
+        sendEmailModel.subject shouldBe "Contact request"
+
+        sendEmailModel.content shouldBe a[ContactFormContent]
+
+        val content = sendEmailModel.content.asInstanceOf[ContactFormContent]
+
+        content.name shouldBe "name"
+        content.phone shouldBe "+77072123434"
+        content.email shouldBe "email@gmail.com"
+        content.content shouldBe "I wanna pizza"
       }
     }
 }

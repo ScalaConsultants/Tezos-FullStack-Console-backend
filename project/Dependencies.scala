@@ -5,6 +5,8 @@ object Version {
   val akkaHttp                = "10.1.10"
   val akkaHttpCors            = "0.4.1"
   val akkaStream              = "2.5.23"
+  val akkaHttpCirce           = "1.29.1"
+  val circeVersion            = "0.11.1"
   val cats                    = "2.0.0"
   val courier                 = "2.0.0"
   val greenMail               = "1.5.11"
@@ -28,8 +30,14 @@ object Dependencies {
 
   val akkaHttp: Seq[ModuleID] = Seq(
     "com.typesafe.akka" %% "akka-http"            % Version.akkaHttp,
-    "com.typesafe.akka" %% "akka-http-spray-json" % Version.akkaHttp,
+    "de.heikoseeberger" %% "akka-http-circe"      % Version.akkaHttpCirce,
     "com.typesafe.akka" %% "akka-http-testkit"    % Version.akkaHttp % "it,test"
+  )
+
+  val circe: Seq[ModuleID] = Seq(
+    "io.circe" %% "circe-core"    % Version.circeVersion,
+    "io.circe" %% "circe-generic" % Version.circeVersion,
+    "io.circe" %% "circe-parser"  % Version.circeVersion
   )
 
   val akkaHttpCors: Seq[ModuleID] = Seq(

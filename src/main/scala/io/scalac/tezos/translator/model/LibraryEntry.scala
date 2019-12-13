@@ -8,7 +8,7 @@ case class LibraryEntry(
   uid: Uid,
   name: String,
   author: String,
-  email: Option[String],
+  email: Option[EmailAddress],
   description: String,
   micheline: String,
   michelson: String,

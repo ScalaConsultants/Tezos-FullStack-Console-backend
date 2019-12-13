@@ -1,5 +1,6 @@
 package io.scalac.tezos.translator
 
+import akka.event.LoggingAdapter
 import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.model.headers.{Authorization, OAuth2BearerToken}
 import akka.http.scaladsl.server.Route
@@ -8,11 +9,11 @@ import io.scalac.tezos.translator.config.{CaptchaConfig, Configuration}
 import io.scalac.tezos.translator.model.LibraryEntry._
 import io.scalac.tezos.translator.model._
 import io.scalac.tezos.translator.repository.dto.LibraryEntryDbDto
-import io.scalac.tezos.translator.repository.{LibraryRepository, UserRepository}
+import io.scalac.tezos.translator.repository.{Emails2SendRepository, LibraryRepository, UserRepository}
 import io.scalac.tezos.translator.routes.dto.{LibraryEntryRoutesAdminDto, LibraryEntryRoutesDto}
-import io.scalac.tezos.translator.routes.{JsonHelper, LibraryRoutes}
+import io.scalac.tezos.translator.routes.LibraryRoutes
 import io.scalac.tezos.translator.schema.LibraryTable
-import io.scalac.tezos.translator.service.{LibraryService, UserService}
+import io.scalac.tezos.translator.service.{Emails2SendService, LibraryService, UserService}
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.{Assertion, BeforeAndAfterEach, Matchers, WordSpec}
 import slick.jdbc.PostgresProfile.api._
@@ -28,8 +29,9 @@ class LibrarySpec
   with Matchers
   with ScalatestRouteTest
   with ScalaFutures
-  with JsonHelper
   with BeforeAndAfterEach {
+    import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport._
+    import io.circe.generic.auto._
 
     override def beforeEach(): Unit = DbTestBase.recreateTables()
 
@@ -38,11 +40,15 @@ class LibrarySpec
     val reCaptchaConfig = CaptchaConfig(checkOn = false, "", "", "")
     val config          = Configuration(reCaptcha = reCaptchaConfig)
 
-    val userService = new UserService(new UserRepository, testDb)
+    val log: LoggingAdapter = system.log
 
-    val libraryRepo = new LibraryRepository(config.dbUtility)
-    val libraryService = new LibraryService(libraryRepo, testDb)
-    val libraryRoute: Route = new LibraryRoutes(libraryService, userService, system.log, config).routes
+    val userService = new UserService(new UserRepository, testDb)
+    val emails2SendRepo = new Emails2SendRepository
+    val email2SendService = new Emails2SendService(emails2SendRepo, testDb)
+    val libraryRepo = new LibraryRepository(config.dbUtility, testDb)
+    val libraryService = new LibraryService(libraryRepo, log)
+    val adminEmail = EmailAddress.fromString("tezos-console-admin@service.com").get
+    val libraryRoute: Route = new LibraryRoutes(libraryService, userService, email2SendService, system.log, config.reCaptcha, adminEmail).routes
 
     def insertDummiesToDb(size: Int, status: Option[Status] = Some(Accepted)): Future[immutable.IndexedSeq[Int]] = {
       val inserts =for {
@@ -51,7 +57,7 @@ class LibrarySpec
           Uid(),
           "name",
           "author",
-          Some("email"),
+          EmailAddress.fromString("name@service.com").toOption,
           "description",
           "micheline",
           "michelson",
@@ -71,7 +77,7 @@ class LibrarySpec
     private def getToken(userService: UserService, user: UserCredentials): String = {
       val maybeToken = Await.result(userService.authenticateAndCreateToken(user.username, user.password), 3 seconds)
 
-      maybeToken shouldBe a[Some[_]]
+      maybeToken shouldBe defined
 
       maybeToken.get
     }
@@ -179,20 +185,20 @@ class LibrarySpec
         }
         // record3
         Put("/library?uid=5d8face2-ab24-49e0-b792-a0b99a031645&status=pending_approval").withHeaders(Authorization(OAuth2BearerToken(bearerToken))) ~> libraryRoute ~> check {
-          status shouldBe StatusCodes.OK
+          status shouldBe StatusCodes.NotFound // cannot update status to "pending_approval"
         }
 
         // invalid uid
-        Put("/library?uid=aada8ebe&status=pending_approval").withHeaders(Authorization(OAuth2BearerToken(bearerToken))) ~> libraryRoute ~> check {
-          status shouldBe StatusCodes.BadRequest
+        Put("/library?uid=aada8ebe&status=accepted").withHeaders(Authorization(OAuth2BearerToken(bearerToken))) ~> libraryRoute ~> check {
+          status shouldBe StatusCodes.NotFound
         }
         // non exisitng uid
-        Put("/library?uid=4cb9f377-718c-4d5d-be0d-118a5c99e298&status=pending_approval").withHeaders(Authorization(OAuth2BearerToken(bearerToken))) ~> libraryRoute ~> check {
-          status shouldBe StatusCodes.Forbidden
+        Put("/library?uid=4cb9f377-718c-4d5d-be0d-118a5c99e298&status=accepted").withHeaders(Authorization(OAuth2BearerToken(bearerToken))) ~> libraryRoute ~> check {
+          status shouldBe StatusCodes.NotFound
         }
 
 
-        val expectedNewStatuses = Seq(record1.copy(status = Accepted), record2.copy(status = Declined), record3.copy(status = PendingApproval))
+        val expectedNewStatuses = Seq(record1.copy(status = Accepted), record2.copy(status = Declined), record3)
         whenReady(libraryService.getRecords(limit = Some(5))) {
           _ should contain theSameElementsAs expectedNewStatuses
         }
@@ -232,11 +238,11 @@ class LibrarySpec
 
         // invalid uid
         Delete("/library?uid=aada8ebe").withHeaders(Authorization(OAuth2BearerToken(bearerToken))) ~> libraryRoute ~> check {
-          status shouldBe StatusCodes.BadRequest
+          status shouldBe StatusCodes.NotFound
         }
         // non exisitng uid
         Delete("/library?uid=4cb9f377-718c-4d5d-be0d-118a5c99e298").withHeaders(Authorization(OAuth2BearerToken(bearerToken))) ~> libraryRoute ~> check {
-          status shouldBe StatusCodes.Forbidden
+          status shouldBe StatusCodes.NotFound
         }
       }
 
@@ -285,11 +291,75 @@ class LibrarySpec
         }
       }
 
+      "add emails to queue when new library entry added and status changed" in {
+        whenReady(email2SendService.getEmails2Send(10)) { _ shouldBe 'empty }
+
+        val userEmail = "name@service.com"
+        val record = LibraryEntryRoutesDto("name", "author", Some(userEmail), "description", "micheline", "michelson")
+
+
+        Post("/library", record) ~> Route.seal(libraryRoute) ~> check {
+          status shouldBe StatusCodes.OK
+        }
+
+        whenReady(email2SendService.getEmails2Send(10)) { emails2send =>
+          emails2send.length shouldBe 1
+
+          val approvalRequest = emails2send.head
+
+          approvalRequest.to shouldBe adminEmail
+          approvalRequest.subject shouldBe "Library approval request"
+          EmailContent.toPrettyString(approvalRequest.content) should contain
+          """
+            |Please add my translation to your library:
+            |Title: name
+            |Description: description
+          """.stripMargin
+
+          email2SendService.removeSentMessage(approvalRequest.uid)
+        }
+
+        val records = Await.result(libraryService.getRecords(), 3 seconds)
+
+        records.length shouldBe 1
+
+        val maybeRecord = records.headOption
+
+        maybeRecord shouldBe defined
+
+        val recordFromDB = maybeRecord.get
+
+        val bearerToken = getToken(userService, UserCredentials("asdf", "zxcv"))
+
+        Put(s"/library?uid=${recordFromDB.uid.value}&status=accepted").withHeaders(Authorization(OAuth2BearerToken(bearerToken))) ~> libraryRoute ~> check {
+          status shouldBe StatusCodes.OK
+        }
+
+        whenReady(libraryService.getRecords()) { records =>
+          val updatedRecord = records.filter(_.uid == recordFromDB.uid)
+
+          updatedRecord.length shouldBe 1
+          updatedRecord.headOption shouldBe Some(recordFromDB.copy(status = Accepted))
+        }
+
+        whenReady(email2SendService.getEmails2Send(10)) { emails2send =>
+          emails2send.length shouldBe 1
+
+          val approvalRequest = emails2send.head
+
+          approvalRequest.to.toString shouldBe userEmail
+          approvalRequest.subject shouldBe "Acceptance status of your Translation has changed"
+          approvalRequest.content shouldBe TextContent("""Acceptance status of your translation: "name" has changed to: accepted""")
+
+          email2SendService.removeSentMessage(approvalRequest.uid)
+        }
+      }
+
     }
 
   private trait SampleEntries {
     val record1 = LibraryEntry(Uid.fromString("d7327913-4957-4417-96d2-e5c1d4311f80").get, "nameE1", "authorE1", None, "descriptionE1", "michelineE1", "michelsonE1", PendingApproval)
-    val record2 = LibraryEntry(Uid.fromString("17976f3a-505b-4d66-854a-243a70bb94c0").get, "nameE2", "authorE2", Some("name@service.com"), "descriptionE2", "michelineE2", "michelsonE2", Accepted)
+    val record2 = LibraryEntry(Uid.fromString("17976f3a-505b-4d66-854a-243a70bb94c0").get, "nameE2", "authorE2", Some(EmailAddress.fromString("name@service.com").get), "descriptionE2", "michelineE2", "michelsonE2", Accepted)
     val record3 = LibraryEntry(Uid.fromString("5d8face2-ab24-49e0-b792-a0b99a031645").get, "nameE3", "authorE3", None, "descriptionE3", "michelineE3", "michelsonE3", Declined)
 
     val toInsert = Seq(record1, record2, record3)

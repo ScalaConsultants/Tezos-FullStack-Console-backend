@@ -22,8 +22,7 @@ case class EmailConfiguration(host: String          = "smtp.gmail.com",
                               user: String          = "you@gmail.com",
                               pass: String          = "p@$$w3rd",
                               startTls: Boolean     = true,
-                              receiver: String      = "enterYours@gmail.com",
-                              subjectPrefix: String = "Service message")
+                              receiver: String      = "enterYours@gmail.com")
 
 
 case class CronConfiguration(cronBatchSize: Int               = 10,
