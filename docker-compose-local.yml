@@ -8,9 +8,13 @@ services:
     stdin_open: true
     ports:
       - 30002:8080
+      - 587:587
     environment:
       TEZOS_CONSOLE_HTTP_HOST: 0.0.0.0
       TEZOS_CONSOLE_HTTP_PORT: 8080
+      EMAIL_USER: ${EMAIL_USER}
+      EMAIL_PASS: ${EMAIL_PASS}
+      EMAIL_RECEIVER: ${EMAIL_RECEIVER}
 
   tezos-console-db:
     image: postgres:9.6-alpine

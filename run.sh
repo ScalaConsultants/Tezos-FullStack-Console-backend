@@ -1,3 +1,7 @@
+export EMAIL_USER="mmt-info@scalac.io"
+export EMAIL_PASS=""
+export EMAIL_RECEIVER="mmt-admin-dev@scalac.io"
+
 docker run -i --rm \
     --name tezos-fullstack-console-backend \
     -v "$(pwd):/src" \

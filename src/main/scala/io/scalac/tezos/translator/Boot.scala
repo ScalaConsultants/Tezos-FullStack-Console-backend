@@ -28,7 +28,6 @@ object Boot {
     val host = httpConfig.getString("host")
     val port = httpConfig.getInt("port")
     val configuration = Configuration.getConfig(log)
-    log.info(s"Config loaded - $configuration")
 
     implicit val db: PostgresProfile.backend.Database = Database.forConfig("tezos-db")
     val emails2SendRepo = new Emails2SendRepository
