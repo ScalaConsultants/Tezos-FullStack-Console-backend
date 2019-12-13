@@ -99,8 +99,8 @@ class MessageSpec
         val content = sendEmailModel.content.asInstanceOf[ContactFormContent]
 
         content.name shouldBe "name"
-        content.phone shouldBe "+77072123434"
-        content.email shouldBe "email@gmail.com"
+        content.contact.getPhone() shouldBe "+77072123434"
+        content.contact.getEmail() shouldBe "email@gmail.com"
         content.content shouldBe "I wanna pizza"
       }
     }

@@ -185,7 +185,7 @@ class SendEmailServiceSpec
   private trait SampleEmails {
     val e1: SendEmail = SendEmail.statusChange(unsafeEmailAddress("xxx@service.com"), "translation title", Accepted)
     val e2: SendEmail = SendEmail.fromSendEmailRoutesDto(SendEmailRoutesDto("Dude", "666666666", "dude@service.com", "some content"), testAdminEmail)
-    val e3: SendEmail = SendEmail.approvalRequest(LibraryEntryRoutesDto("contract name", "Thanos", None, "Some description", "micheline", "michelson"), testAdminEmail)
+    val e3: SendEmail = SendEmail.approvalRequest(LibraryEntryRoutesDto("contract name", Some("Thanos"), None, Some("Some description"), "micheline", "michelson"), testAdminEmail)
 
     val toInsert: Seq[SendEmail] = Seq(e1, e2, e3)
 

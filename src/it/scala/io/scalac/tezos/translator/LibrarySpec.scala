@@ -8,7 +8,7 @@ import akka.http.scaladsl.testkit.ScalatestRouteTest
 import io.scalac.tezos.translator.config.{CaptchaConfig, Configuration}
 import io.scalac.tezos.translator.model.LibraryEntry._
 import io.scalac.tezos.translator.model._
-import io.scalac.tezos.translator.repository.dto.LibraryEntryDbDto
+import io.scalac.tezos.translator.repository.dto.{DescriptionText, LibraryEntryDbDto}
 import io.scalac.tezos.translator.repository.{Emails2SendRepository, LibraryRepository, UserRepository}
 import io.scalac.tezos.translator.routes.dto.{LibraryEntryRoutesAdminDto, LibraryEntryRoutesDto}
 import io.scalac.tezos.translator.routes.LibraryRoutes
@@ -56,9 +56,9 @@ class LibrarySpec
         dummyData = LibraryEntry(
           Uid(),
           "name",
-          "author",
+          AuthorName.fromString("ThomasTheTest").toOption,
           EmailAddress.fromString("name@service.com").toOption,
-          "description",
+          DescriptionText.fromString("Testing thing").toOption,
           "micheline",
           "michelson",
           status.getOrElse(Status.fromInt(i % 3).toOption.get))
@@ -88,20 +88,20 @@ class LibrarySpec
 
     "Library routes" should {
       "validate payload before storing" in {
-        val emptyPayload = LibraryEntryRoutesDto("", "", None, "", "", "")
+        val emptyPayload = LibraryEntryRoutesDto("", None, None, None, "", "")
         val expectedErrors1 = List("name field is empty", "author field is empty", "description field is empty",
           "micheline field is empty", "michelson field is empty")
 
         checkValidationErrorsWithExpected(emptyPayload, expectedErrors1)
 
-        val toLongPayload = LibraryEntryRoutesDto(longField, longField, None, "description", "some", "some")
+        val toLongPayload = LibraryEntryRoutesDto(longField, Some(longField), None, Some("description"), "some", "some")
         val expectedErrors2 = List("field name is too long, max length - 255", "field author is too long, max length - 255")
 
         checkValidationErrorsWithExpected(toLongPayload, expectedErrors2)
       }
 
       "store proper payload" in {
-        val properPayload = LibraryEntryRoutesDto("vss", "Mike", None, "Some thing for some things", "micheline", "michelson")
+        val properPayload = LibraryEntryRoutesDto("vss", Some("Mike"), None, Some("Some thing for some things"), "micheline", "michelson")
         Post("/library", properPayload) ~> Route.seal(libraryRoute) ~> check {
           status shouldBe StatusCodes.OK
         }
@@ -111,7 +111,7 @@ class LibrarySpec
 
         currentLibrary.headOption.isEmpty shouldBe false
         val addedRecord: LibraryEntryDbDto = currentLibrary.head
-        addedRecord.name        shouldBe "vss"
+        addedRecord.title        shouldBe "vss"
         addedRecord.author      shouldBe "Mike"
         addedRecord.description shouldBe "Some thing for some things"
         addedRecord.micheline   shouldBe "micheline"
@@ -124,7 +124,7 @@ class LibrarySpec
         whenReady(insert(libraryService)) { _ should contain theSameElementsAs Seq(1, 1, 1) }
 
         // it was the only one accepted
-        val expectedRecord2 = LibraryEntryRoutesDto("nameE2", "authorE2", Some("name@service.com"), "descriptionE2", "michelineE2", "michelsonE2")
+        val expectedRecord2 = LibraryEntryRoutesDto("nameE2", Some("authorE2"), Some("name@service.com"), Some("descriptionE2"), "michelineE2", "michelsonE2")
 
         whenReady(libraryService.getRecords()) {
           _ should contain theSameElementsAs toInsert
@@ -164,7 +164,7 @@ class LibrarySpec
       "update library entry status" in new SampleEntries {
         whenReady(insert(libraryService)) { _ should contain theSameElementsAs Seq(1, 1, 1) }
 
-        val expectedRecord2 = LibraryEntryRoutesDto("nameE2", "authorE2", Some("name@service.com"), "descriptionE2", "michelineE2", "michelsonE2")
+        val expectedRecord2 = LibraryEntryRoutesDto("nameE2", Some("authorE2"), Some("name@service.com"), Some("descriptionE2"), "michelineE2", "michelsonE2")
 
         Get("/library") ~> libraryRoute ~> check {
           status shouldBe StatusCodes.OK
@@ -203,7 +203,7 @@ class LibrarySpec
           _ should contain theSameElementsAs expectedNewStatuses
         }
 
-        val expectedRecord1 = LibraryEntryRoutesDto("nameE1", "authorE1", None, "descriptionE1", "michelineE1", "michelsonE1")
+        val expectedRecord1 = LibraryEntryRoutesDto("nameE1", Some("authorE1"), None, Some("descriptionE1"), "michelineE1", "michelsonE1")
 
         Get("/library") ~> libraryRoute ~> check {
           status shouldBe StatusCodes.OK
@@ -215,7 +215,7 @@ class LibrarySpec
       "delete entry" in new SampleEntries {
         whenReady(insert(libraryService)) { _ should contain theSameElementsAs Seq(1, 1, 1) }
 
-        val expectedRecord2 = LibraryEntryRoutesDto("nameE2", "authorE2", Some("name@service.com"), "descriptionE2", "michelineE2", "michelsonE2")
+        val expectedRecord2 = LibraryEntryRoutesDto("nameE2", Some("authorE2"), Some("name@service.com"), Some("descriptionE2"), "michelineE2", "michelsonE2")
 
         Get("/library") ~> libraryRoute ~> check {
           status shouldBe StatusCodes.OK
@@ -295,7 +295,9 @@ class LibrarySpec
         whenReady(email2SendService.getEmails2Send(10)) { _ shouldBe 'empty }
 
         val userEmail = "name@service.com"
-        val record = LibraryEntryRoutesDto("name", "author", Some(userEmail), "description", "micheline", "michelson")
+        val userDescription = "name@service.com"
+        val userName = "name@service.com"
+        val record = LibraryEntryRoutesDto("name", Some(userName), Some(userEmail), Some(userDescription), "micheline", "michelson")
 
 
         Post("/library", record) ~> Route.seal(libraryRoute) ~> check {
@@ -358,9 +360,9 @@ class LibrarySpec
     }
 
   private trait SampleEntries {
-    val record1 = LibraryEntry(Uid.fromString("d7327913-4957-4417-96d2-e5c1d4311f80").get, "nameE1", "authorE1", None, "descriptionE1", "michelineE1", "michelsonE1", PendingApproval)
-    val record2 = LibraryEntry(Uid.fromString("17976f3a-505b-4d66-854a-243a70bb94c0").get, "nameE2", "authorE2", Some(EmailAddress.fromString("name@service.com").get), "descriptionE2", "michelineE2", "michelsonE2", Accepted)
-    val record3 = LibraryEntry(Uid.fromString("5d8face2-ab24-49e0-b792-a0b99a031645").get, "nameE3", "authorE3", None, "descriptionE3", "michelineE3", "michelsonE3", Declined)
+    val record1 = LibraryEntry(Uid.fromString("d7327913-4957-4417-96d2-e5c1d4311f80").get, "nameE1", Some(AuthorName.fromString("authorE1").get), None, Some(DescriptionText.fromString("descriptionE1").get), "michelineE1", "michelsonE1", PendingApproval)
+    val record2 = LibraryEntry(Uid.fromString("17976f3a-505b-4d66-854a-243a70bb94c0").get, "nameE2", Some(AuthorName.fromString("authorE2").get), Some(EmailAddress.fromString("name@service.com").get), Some(DescriptionText.fromString("descriptionE2").get), "michelineE2", "michelsonE2", Accepted)
+    val record3 = LibraryEntry(Uid.fromString("5d8face2-ab24-49e0-b792-a0b99a031645").get, "nameE3", Some(AuthorName.fromString("authorE3").get), None,Some(DescriptionText.fromString("descriptionE3").get), "michelineE3", "michelsonE3", Declined)
 
     val toInsert = Seq(record1, record2, record3)
 
