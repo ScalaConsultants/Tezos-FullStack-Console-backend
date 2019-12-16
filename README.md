@@ -100,8 +100,9 @@ Content-Type: application/json
 
 ## Run Dev-Env
 
-```./run.sh```
-(make sure this script has execution permissions)
+Make sure this script has execution permissions. Also for the application to be working one need to update `EMAIL_PASS` with a proper value (or provide other account for the service to use).
+```./run.sh $EMAIL_PASS```
+
 
 Alternatively only the DB container can be run with `docker-compose up -d tezos-console-db` and the application run with:
 ```

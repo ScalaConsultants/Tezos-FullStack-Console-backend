@@ -5,7 +5,7 @@ import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.server.Route
 import akka.http.scaladsl.testkit.ScalatestRouteTest
 import io.circe.parser._
-import io.scalac.tezos.translator.config.Configuration
+import io.scalac.tezos.translator.config.CaptchaConfig
 import io.scalac.tezos.translator.fakes.FakeMMTranslator
 import io.scalac.tezos.translator.routes.TranslatorRoutes
 import org.scalatest.concurrent.ScalaFutures
@@ -14,8 +14,8 @@ import org.scalatest.{MustMatchers, WordSpec}
 class TranslationTest extends WordSpec with MustMatchers with ScalaFutures with ScalatestRouteTest {
 
   val log: LoggingAdapter = system.log
-  val config: Configuration = Configuration.getConfig(log)
-  val routes: Route = new TranslatorRoutes(FakeMMTranslator, log, config.reCaptcha).routes
+  val config: CaptchaConfig = CaptchaConfig()
+  val routes: Route = new TranslatorRoutes(FakeMMTranslator, log, config).routes
 
   "A Routes" can {
     "translate michelson to micheline" when {
