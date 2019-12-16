@@ -100,8 +100,8 @@ Content-Type: application/json
 
 ## Run Dev-Env
 
+Make sure this script has execution permissions. Also for the application to be working one need to update
 ```./run.sh```
-(make sure this script has execution permissions)
 
 Alternatively only the DB container can be run with `docker-compose up -d tezos-console-db` and the application run with:
 ```

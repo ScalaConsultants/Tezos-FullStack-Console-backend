@@ -1,5 +1,5 @@
 export EMAIL_USER="mmt-info@scalac.io"
-export EMAIL_PASS=""
+export EMAIL_PASS=$1
 export EMAIL_RECEIVER="mmt-admin-dev@scalac.io"
 
 docker run -i --rm \
