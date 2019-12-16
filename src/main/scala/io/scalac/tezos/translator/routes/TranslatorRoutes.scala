@@ -15,7 +15,7 @@ class TranslatorRoutes(
 )(implicit as: ActorSystem) extends HttpRoutes {
 
   override def routes: Route =
-    (pathPrefix("translate") & withReCaptchaVerify(log, reCaptchaConfig)(as)) {
+    pathPrefix("translate")  {
       (path("from" / "michelson" / "to" / "micheline") & post & entity(as[String])) { body =>
         translator.michelson2micheline(body).fold(
           error => complete(StatusCodes.BadRequest, error.toString),
