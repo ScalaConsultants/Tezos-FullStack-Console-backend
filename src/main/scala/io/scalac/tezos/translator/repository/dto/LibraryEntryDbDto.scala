@@ -24,23 +24,24 @@ case class LibraryEntryDbDto(
     for {
       status <- Status.fromInt(status)
       uid <- Uid.fromString(uid)
-      authorName <- author match {
-        case Some(e) => AuthorName.fromString(e).map(Some(_))
-        case None => Success(None)
-      }
+
       emailAdress <- email match {
         case Some(e) => EmailAddress.fromString(e).map(Some(_))
         case None => Success(None)
       }
       descriptionText <- description match {
-        case Some(e) => DescriptionText.fromString(e).map(Some(_))
+        case Some(e) => new Success(DescriptionText(e))
         case None => Success(None)
+      }
+      authorName <- author match {
+        case Some(e) =>  Success(AuthorName(e))
+        case None => None
       }
     } yield
       LibraryEntry(
         uid = uid,
         title = title,
-        author = authorName,
+        author = Option(authorName),
         email = emailAdress,
         description = descriptionText,
         micheline = micheline,

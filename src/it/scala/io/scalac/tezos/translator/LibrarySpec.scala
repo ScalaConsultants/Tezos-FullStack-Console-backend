@@ -89,19 +89,19 @@ class LibrarySpec
     "Library routes" should {
       "validate payload before storing" in {
         val emptyPayload = LibraryEntryRoutesDto("", None, None, None, "", "")
-        val expectedErrors1 = List("name field is empty", "author field is empty", "description field is empty",
+        val expectedErrors1 = List("name field is empty",
           "micheline field is empty", "michelson field is empty")
 
         checkValidationErrorsWithExpected(emptyPayload, expectedErrors1)
 
-        val toLongPayload = LibraryEntryRoutesDto(longField, Some(longField), None, Some("description"), "some", "some")
+        val toLongPayload = LibraryEntryRoutesDto(longField, Some(longField), None, Some("description"), "some", "some") // TODO : check if description should return this
         val expectedErrors2 = List("field name is too long, max length - 255", "field author is too long, max length - 255")
 
         checkValidationErrorsWithExpected(toLongPayload, expectedErrors2)
       }
 
       "store proper payload" in {
-        val properPayload = LibraryEntryRoutesDto("vss", Some("Mike"), None, Some("Some thing for some things"), "micheline", "michelson")
+        val properPayload = LibraryEntryRoutesDto("vss", Some("Mike"), None, Some("Some thing for some things"), "micheline", "michelson") // with all of some as none return 500
         Post("/library", properPayload) ~> Route.seal(libraryRoute) ~> check {
           status shouldBe StatusCodes.OK
         }

@@ -4,13 +4,8 @@ import javax.mail.internet.InternetAddress
 
 import scala.util.Try
 
-sealed abstract case class AuthorName(value: InternetAddress) {
-  override def toString: String = value.getAddress
-}
+case class AuthorName(value: String)
 
-object AuthorName {
 
-  def fromString(s: String): Try[AuthorName] =
-    Try(new InternetAddress(s, true))
-      .map(ia => new AuthorName(ia) {})
-}
+
+
