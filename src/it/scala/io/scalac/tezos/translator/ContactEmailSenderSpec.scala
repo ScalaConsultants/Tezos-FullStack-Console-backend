@@ -19,7 +19,7 @@ import scala.concurrent.{ExecutionContextExecutor, Future}
 import scala.language.postfixOps
 
 //noinspection TypeAnnotation
-class EmailSenderSpec
+class ContactEmailSenderSpec
   extends TestKit(ActorSystem("MySpec"))
   with WordSpecLike
   with ScalaFutures

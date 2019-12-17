@@ -21,7 +21,7 @@ import scala.util.Success
 
 
 //noinspection TypeAnnotation
-class SendEmailServiceSpec
+class SendContactEmailServiceSpec
   extends TestKit(ActorSystem("MySpec"))
   with FlatSpecLike
   with Matchers

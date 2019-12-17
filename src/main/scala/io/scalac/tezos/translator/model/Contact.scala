@@ -8,15 +8,15 @@ sealed trait Contact extends Product with Serializable{
   def  getEmail():String
   def  getPhone():String
 }
-case class PhoneNumber(number: String) extends Contact {
-  override  def  getEmail()="Not Declared"
+case class ContactPhone(number: String) extends Contact {
+  override  def  getEmail()="Not declared"
   override def  getPhone() = number
 }
-case class Email(email: String) extends Contact {
+case class ContactEmail(email: String) extends Contact {
   override  def  getEmail()=email
-  override def  getPhone() ="Not Declared"
+  override def  getPhone() ="Not declared"
 }
-case class FullFilledContact(phone: String, email: String) extends Contact {
+case class FullContact(phone: String, email: String) extends Contact {
   override  def  getEmail()=email
   override def  getPhone() = phone
 }
@@ -26,9 +26,9 @@ object Contact {
 
 def tryToCreateContact(phone:String,email:String) : Contact=
   (phone, email) match {
-    case (phone, email) if !email.isEmpty && !phone.isEmpty => FullFilledContact(phone, email)
-    case (phone, _) if !phone.isEmpty() => PhoneNumber(phone)
-    case (_, email) if !email.isEmpty => Email(email)
+    case (phone, email) if !email.isEmpty && !phone.isEmpty => FullContact(phone, email)
+    case (phone, _) if !phone.isEmpty() => ContactPhone(phone)
+    case (_, email) if !email.isEmpty => ContactEmail(email)
     case _ => throw  new Exception("Empty Email and Empty Phone Number")
   }
 }
