@@ -81,18 +81,18 @@ object DTOValidation {
       .parMapN(SendEmailRoutesDto.apply)
   }
 
-  private def checkFieldIsValid(value: String, name: String): ValidationResult[String] = {
+  private def checkEmailIsValid(value: String, name: String = "email"): ValidationResult[String] = {
     checkStringNotEmptyAndLength(value, maxTinyLength, FieldIsEmpty(name), FieldToLong(name, maxTinyLength))
       .flatMap(
         mail => checkStringMatchRegExp(mail, emailRegex, FieldIsInvalid(name, mail))
       )
   }
-
-  private def checkEmailIsValid(email: String): ValidationResult[String] = checkFieldIsValid(email, "email")
-
-  private def checkAuthorIsValid(author: String): ValidationResult[String] = checkFieldIsValid(author, "author")
-
-  private def checkDescriptionsValid(description: String): ValidationResult[String] = checkFieldIsValid(description, "description")
+  private def checkAuthorIsValid(value: String, name: String = "author"): ValidationResult[String] = {
+    checkStringNotEmptyAndLength(value, maxTinyLength, FieldIsEmpty(name), FieldToLong(name, maxTinyLength))
+  }
+  private def checkDescriptionsValid(value: String, name: String= "description"): ValidationResult[String] = {
+    checkStringNotEmptyAndLength(value, maxTinyLength, FieldIsEmpty(name), FieldToLong(name, maxTinyLength))
+  }
 
   implicit val LibraryDTOValidation: DTOValidation[LibraryEntryRoutesDto] = { dto =>
     val checkName =

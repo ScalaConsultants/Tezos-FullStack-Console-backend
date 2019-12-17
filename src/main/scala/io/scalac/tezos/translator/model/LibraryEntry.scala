@@ -8,9 +8,9 @@ import scala.util.{Failure, Success, Try}
 case class LibraryEntry(
                          uid: Uid,
                          title: String,
-                         author: Option[AuthorName],
+                         author: Option[String],
                          email: Option[EmailAddress],
-                         description: Option[DescriptionText],
+                         description: Option[String],
                          micheline: String,
                          michelson: String,
                          status: Status

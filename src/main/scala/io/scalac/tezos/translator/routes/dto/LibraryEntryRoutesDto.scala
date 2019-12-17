@@ -16,25 +16,17 @@ case class LibraryEntryRoutesDto(
 ) {
   def toDomain: Try[LibraryEntry] = {
     for {
-      authorName <- author match {
-        case Some(e) => AuthorName.fromString(e).map(Some(_))
-        case None => Success(None)
-      }
       emailAdress <- email match {
         case Some(e) => EmailAddress.fromString(e).map(Some(_))
-        case None => Success(None)
-      }
-      descriptionText <- description match {
-        case Some(e) => DescriptionText.fromString(e).map(Some(_))
         case None => Success(None)
       }
     } yield
       LibraryEntry(
         uid = Uid(),
         title = title,
-        author = authorName,
+        author = author,
         email = emailAdress,
-        description = descriptionText,
+        description = description,
         micheline = micheline,
         michelson = michelson,
         status = PendingApproval
@@ -47,9 +39,9 @@ object LibraryEntryRoutesDto {
   def fromDomain(v: LibraryEntry): LibraryEntryRoutesDto =
     LibraryEntryRoutesDto(
       title = v.title,
-      author = v.author.map(_.toString),
+      author = v.author,
       email = v.email.map(_.toString),
-      description = v.description.map(_.toString),
+      description = v.description,
       micheline = v.micheline,
       michelson = v.michelson
     )
