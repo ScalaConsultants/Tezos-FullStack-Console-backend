@@ -81,12 +81,14 @@ object DTOValidation {
       .parMapN(SendEmailRoutesDto.apply)
   }
 
-  private def checkEmailIsValid(value: String, name: String = "email"): ValidationResult[String] = {
-    checkStringNotEmptyAndLength(value, maxTinyLength, FieldIsEmpty(name), FieldToLong(name, maxTinyLength))
-      .flatMap(
-        mail => checkStringMatchRegExp(mail, emailRegex, FieldIsInvalid(name, mail))
-      )
-  }
+  private def checkEmailIsValid(email: String): ValidationResult[String] =
+    checkStringNotEmptyAndLength(email, maxTinyLength, FieldIsEmpty("email"), FieldToLong("email", maxTinyLength))
+      .flatMap { mail =>
+        EmailAddress.fromString(mail).toEither.bimap(
+          _ => NonEmptyList.one(FieldIsInvalid("email", mail)),
+          a => a.toString
+        )
+      }
   private def checkAuthorIsValid(value: String, name: String = "author"): ValidationResult[String] = {
     checkStringNotEmptyAndLength(value, maxTinyLength, FieldIsEmpty(name), FieldToLong(name, maxTinyLength))
   }
@@ -100,7 +102,7 @@ object DTOValidation {
     val checkAuthor =
       dto.author.map(author => checkAuthorIsValid(author).map(Some(_))).getOrElse(None.asRight)
     val checkEmail =
-      dto.email.map(mail => checkEmailIsValid(mail).map(Some(_))).getOrElse(None.asRight)
+      dto.email.map(mail => checkEmailIsValid(mail).map(x=>Some(x.toLowerCase))).getOrElse(None.asRight)
     val checkDescription =
       dto.description.map(description => checkDescriptionsValid(description).map(Some(_))).getOrElse(None.asRight)
     val checkMicheline =
@@ -118,8 +120,6 @@ object DTOValidation {
     (checkUsername, checkPassword).parMapN(UserCredentials.apply)
   }
 
-  val emailRegex: String =
-    """(?:[a-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\.[a-z0-9!#$%&'*+/=?^_`{|}~-]+)*|"(?:[\x01-\x08\x0b\x0c\x0e-\x1f\x21\x23-\x5b\x5d-\x7f]|\\[\x01-\x09\x0b\x0c\x0e-\x7f])*")@(?:(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?|\[(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?|[a-z0-9-]*[a-z0-9]:(?:[\x01-\x08\x0b\x0c\x0e-\x1f\x21-\x5a\x53-\x7f]|\\[\x01-\x09\x0b\x0c\x0e-\x7f])+)\])"""
 
   val phoneRegex: String =
     """^\+?\d{6,18}$"""

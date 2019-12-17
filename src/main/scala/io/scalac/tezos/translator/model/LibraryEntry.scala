@@ -18,6 +18,7 @@ case class LibraryEntry(
 
 object LibraryEntry {
 
+
   sealed trait Status extends Product with Serializable {
     def value: Int = this match {
       case PendingApproval  =>  0
