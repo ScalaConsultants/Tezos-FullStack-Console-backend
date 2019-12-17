@@ -8,7 +8,7 @@ import akka.http.scaladsl.testkit.ScalatestRouteTest
 import io.scalac.tezos.translator.config.{CaptchaConfig, Configuration}
 import io.scalac.tezos.translator.model.LibraryEntry._
 import io.scalac.tezos.translator.model._
-import io.scalac.tezos.translator.repository.dto.{DescriptionText, LibraryEntryDbDto}
+import io.scalac.tezos.translator.repository.dto.LibraryEntryDbDto
 import io.scalac.tezos.translator.repository.{Emails2SendRepository, LibraryRepository, UserRepository}
 import io.scalac.tezos.translator.routes.dto.{LibraryEntryRoutesAdminDto, LibraryEntryRoutesDto}
 import io.scalac.tezos.translator.routes.LibraryRoutes

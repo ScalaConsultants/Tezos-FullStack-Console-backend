@@ -1,7 +1,6 @@
 package io.scalac.tezos.translator.model
 
 import io.scalac.tezos.translator.model.LibraryEntry.Status
-import io.scalac.tezos.translator.repository.dto.DescriptionText
 
 import scala.util.{Failure, Success, Try}
 

@@ -4,7 +4,7 @@ import java.sql.Timestamp
 import java.time.Instant
 
 import io.scalac.tezos.translator.model.LibraryEntry.Status
-import io.scalac.tezos.translator.model.{AuthorName, EmailAddress, LibraryEntry, Uid}
+import io.scalac.tezos.translator.model.{EmailAddress, LibraryEntry, Uid}
 
 import scala.util.{Success, Try}
 

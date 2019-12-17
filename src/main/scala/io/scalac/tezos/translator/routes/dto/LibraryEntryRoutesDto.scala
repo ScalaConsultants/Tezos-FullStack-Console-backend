@@ -1,8 +1,7 @@
 package io.scalac.tezos.translator.routes.dto
 
 import io.scalac.tezos.translator.model.LibraryEntry.{PendingApproval, Status}
-import io.scalac.tezos.translator.model.{AuthorName, EmailAddress, LibraryEntry, Uid}
-import io.scalac.tezos.translator.repository.dto.DescriptionText
+import io.scalac.tezos.translator.model.{EmailAddress, LibraryEntry, Uid}
 
 import scala.util.{Success, Try}
 
