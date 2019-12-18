@@ -18,3 +18,5 @@ services:
       EMAIL_USER: ${EMAIL_USER}
       EMAIL_PASS: ${EMAIL_PASS}
       EMAIL_RECEIVER: ${EMAIL_RECEIVER}
+    command: ["java", "-jar", "tezos-console.jar"]
+

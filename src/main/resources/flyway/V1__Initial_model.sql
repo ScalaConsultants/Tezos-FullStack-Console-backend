@@ -25,4 +25,4 @@ CREATE TABLE users (
 
 COMMENT ON COLUMN users.password_hash  IS 'bcrypt hash of user password';
 
-INSERT INTO users (username, password_hash) VALUES ('asdf', '$2a$10$Idx1kaM2XQbX72tRh9hFteQ5D5ooOnfO9pR/xYIcHQ/.5BrAnEyrW'); -- plain password: "zxcv"
+INSERT INTO users (username, password_hash) VALUES ('admin', '$2a$10$Idx1kaM2XQbX72tRh9hFteQ5D5ooOnfO9pR/xYIcHQ/.5BrAnEyrW'); -- plain password: "zxcv"

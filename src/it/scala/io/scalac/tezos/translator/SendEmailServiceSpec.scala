@@ -4,7 +4,7 @@ import akka.actor.ActorSystem
 import akka.event.LoggingAdapter
 import akka.testkit.TestKit
 import com.icegreen.greenmail.util.{GreenMail, GreenMailUtil, ServerSetupTest}
-import io.scalac.tezos.translator.config.{Configuration, CronConfiguration, EmailConfiguration}
+import io.scalac.tezos.translator.config.{CronConfiguration, EmailConfiguration}
 import io.scalac.tezos.translator.model.LibraryEntry.Accepted
 import io.scalac.tezos.translator.model.{EmailAddress, SendEmail}
 import io.scalac.tezos.translator.repository.Emails2SendRepository
@@ -61,9 +61,7 @@ class SendEmailServiceSpec
   val testCronConfig = CronConfiguration(cronTaskInterval = 3 seconds)
   val testEmailConfig = EmailConfiguration("localhost", 3025, auth = true, testMailUser, testMailPass, receiver = testAdmin)
 
-  val testConfig = Configuration(email = testEmailConfig, cron = testCronConfig)
-
-  val emailSenderService = SendEmailsServiceImpl(email2SendService, log, testConfig.email, testConfig.cron).get
+  val emailSenderService = SendEmailsServiceImpl(email2SendService, log, testEmailConfig, testCronConfig).get
 
   behavior of "SendEmailsService.getEmailsToSend"
 

@@ -11,6 +11,12 @@ services:
     environment:
       TEZOS_CONSOLE_HTTP_HOST: 0.0.0.0
       TEZOS_CONSOLE_HTTP_PORT: 8080
+      EMAIL_USER: ${EMAIL_USER}
+      EMAIL_PASS: ${EMAIL_PASS}
+      EMAIL_RECEIVER: ${EMAIL_RECEIVER}
+    depends_on:
+      - tezos-console-db
+    command: ["/usr/wait-for-it.sh", "tezos-console-db:5432", "--timeout=90", "--", "java", "-jar", "tezos-console.jar"]
 
   tezos-console-db:
     image: postgres:9.6-alpine
@@ -25,4 +31,3 @@ services:
       - 5432
     volumes:
       - ./postgres/data:/var/lib/postgresql/data
-      - ./postgres/db-init:/docker-entrypoint-initdb.d
