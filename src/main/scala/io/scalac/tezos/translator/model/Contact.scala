@@ -27,9 +27,9 @@ case class FullContact(phone: String, email: String) extends Contact {
 object Contact {
   def tryToCreateContact(phone: String, email: String): Contact =
     (phone, email) match {
-      case (phone, email) if !email.isEmpty && !phone.isEmpty => FullContact(phone, email)
-      case (phone, _) if !phone.isEmpty() => ContactPhone(phone)
-      case (_, email) if !email.isEmpty => ContactEmail(email)
+      case (phone, email) if !email.toString.isEmpty && !phone.isEmpty => Try(FullContact(phone, email))
+      case (phone, _) if !phone.isEmpty() => Try(ContactPhone(phone))
+      case (_, email) if !email.toString.isEmpty => Try(ContactEmail(email))
       case _ => throw new Exception("Empty Email and Empty Phone Number")
     }
 }
