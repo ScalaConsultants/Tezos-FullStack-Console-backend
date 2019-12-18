@@ -18,8 +18,10 @@ case class ContactFormContent(
 case class TextContent(msg: String) extends EmailContent
 
 object EmailContent {
+
+
   implicit val contactFormContentDecoder: Decoder[ContactFormContent] = Decoder.forProduct3("name","contact","content")(ContactFormContent.apply)
-  implicit val contactFormContentEncoder: Encoder[ContactFormContent] = Encoder.forProduct3("name","contact","contetn")(u=> (u.name,u.contact,u.content))
+  implicit val contactFormContentEncoder: Encoder[ContactFormContent] = Encoder.forProduct3("name","contact","content")(u=> (u.name,u.contact,u.content))
   implicit val textContentDecoder: Decoder[TextContent] = Decoder.forProduct1("msg")(TextContent.apply)
   implicit val textContentEncoder: Encoder[TextContent] = Encoder.forProduct1("msg")(u=> (u.msg))
 

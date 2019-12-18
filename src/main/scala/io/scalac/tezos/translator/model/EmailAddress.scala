@@ -10,7 +10,7 @@ sealed abstract case class EmailAddress(value: InternetAddress) {
 }
 
 object EmailAddress {
-  implicit val emailAddressDecoder: Decoder[EmailAddress] = Decoder.forProduct1("value")(EmailAddress.apply) // abstract doesn't have apply so idk what next
+  implicit val emailAddressDecoder: Decoder[EmailAddress] = Decoder.forProduct1("value")(u=>EmailAddress.fromString(u).get) // abstract doesn't have apply so idk what next
   implicit val emailAddressEncoder: Encoder[EmailAddress] = Encoder.forProduct1("value")(u=> (u.value))
   def fromString(s: String): Try[EmailAddress] =
     Try(new InternetAddress(s, true))
