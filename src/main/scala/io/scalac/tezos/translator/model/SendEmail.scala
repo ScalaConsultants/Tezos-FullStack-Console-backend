@@ -4,7 +4,7 @@ import io.scalac.tezos.translator.model.LibraryEntry.Status
 import io.scalac.tezos.translator.repository.dto.SendEmailDbDto
 import io.scalac.tezos.translator.routes.dto.{LibraryEntryRoutesDto, SendEmailRoutesDto}
 
-import scala.util.Try
+import scala.util.{Failure, Success, Try}
 
 sealed abstract case class SendEmail(
                                       uid: Uid,
@@ -37,17 +37,21 @@ object SendEmail {
     new SendEmail(uid, emailAddress, subject, message) {}
   }
 
-  def fromSendEmailRoutesDto(dto: SendEmailRoutesDto, adminEmail: EmailAddress): SendEmail = {
-    new SendEmail(
-      uid = Uid(),
-      to = adminEmail,
-      subject = "Contact request",
-      content = ContactFormContent(
-        name = dto.name,
-        contact = Contact.tryToCreateContact(dto.phone,dto.email),
-        content = dto.content
-      )
-    ) {}
+  def fromSendEmailRoutesDto(dto: SendEmailRoutesDto, adminEmail: EmailAddress): Try[SendEmail] = {
+    for {
+      email   <- EmailAddress.fromString(dto.email)
+      contact <- Contact.tryToCreateContact(dto.phone, email)
+    } yield
+      new SendEmail(
+        uid = Uid(),
+        to = adminEmail,
+        subject = "Contact request",
+        content = ContactFormContent(
+          name = dto.name,
+          contact = contact,
+          content = dto.content
+        )
+      ) {}
   }
 
   def fromSendEmailDbDto(dto: SendEmailDbDto): Try[SendEmail] =

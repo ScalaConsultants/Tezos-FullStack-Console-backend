@@ -1,5 +1,6 @@
 package io.scalac.tezos.translator.model
 
+import io.circe.{Decoder, Encoder}
 import io.circe.generic.auto._
 import io.circe.parser.decode
 import io.circe.syntax._
@@ -17,6 +18,11 @@ case class ContactFormContent(
 case class TextContent(msg: String) extends EmailContent
 
 object EmailContent {
+  implicit val contactFormContentDecoder: Decoder[ContactFormContent] = Decoder.forProduct3("name","contact","content")(ContactFormContent.apply)
+  implicit val contactFormContentEncoder: Encoder[ContactFormContent] = Encoder.forProduct3("name","contact","contetn")(u=> (u.name,u.contact,u.content))
+  implicit val textContentDecoder: Decoder[TextContent] = Decoder.forProduct1("msg")(TextContent.apply)
+  implicit val textContentEncoder: Encoder[TextContent] = Encoder.forProduct1("msg")(u=> (u.msg))
+
   def toJson(c: EmailContent): String = c.asJson.noSpaces
   def fromJson(s: String): Try[EmailContent] = decode[EmailContent](s).toTry
 
