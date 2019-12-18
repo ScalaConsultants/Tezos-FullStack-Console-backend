@@ -10,6 +10,7 @@ import io.scalac.tezos.translator.routes.directives.ReCaptchaDirective._
 import io.scalac.tezos.translator.routes.dto.SendEmailRoutesDto
 import io.scalac.tezos.translator.service.Emails2SendService
 
+import scala.concurrent.Future
 import scala.util.{Failure, Success}
 
 class MessageRoutes(
@@ -21,10 +22,15 @@ class MessageRoutes(
   import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport._
   import io.circe.generic.auto._
 
+  implicit val ec = actorSystem.dispatcher
   override def routes: Route =
     (path ("message") & pathEndOrSingleSlash & withReCaptchaVerify(log, reCaptchaConfig)(actorSystem)
       & withSendMessageValidation & post) { sendEmail =>
-      val operationPerformed = service.addNewEmail2Send(SendEmail.fromSendEmailRoutesDto(sendEmail, adminEmail))
+      val operationPerformed = for {
+        sendEmail <-  Future.fromTry(SendEmail.fromSendEmailRoutesDto(sendEmail, adminEmail))
+        y         <-  service.addNewEmail2Send(sendEmail)
+      } yield y
+
       onComplete(operationPerformed) {
         case Success(_)   => complete(StatusCodes.OK)
         case Failure(err) =>

@@ -1,31 +1,15 @@
 package io.scalac.tezos.translator.model
 
-sealed trait Contact extends Product with Serializable {
-  def getEmail(): String
+import scala.util.Try
 
-  def getPhone(): String
-}
+sealed trait Contact extends Product with Serializable
 
-case class ContactPhone(number: String) extends Contact {
-  override def getEmail() = "Not declared"
-
-  override def getPhone() = number
-}
-
-case class ContactEmail(email: String) extends Contact {
-  override def getEmail() = email
-
-  override def getPhone() = "Not declared"
-}
-
-case class FullContact(phone: String, email: String) extends Contact {
-  override def getEmail() = email
-
-  override def getPhone() = phone
-}
+case class ContactPhone(number: String) extends Contact
+case class ContactEmail(email: EmailAddress) extends Contact
+case class FullContact(phone: String, email: EmailAddress) extends Contact
 
 object Contact {
-  def tryToCreateContact(phone: String, email: String): Contact =
+  def tryToCreateContact(phone: String, email: EmailAddress): Try[Contact] =
     (phone, email) match {
       case (phone, email) if !email.toString.isEmpty && !phone.isEmpty => Try(FullContact(phone, email))
       case (phone, _) if !phone.isEmpty() => Try(ContactPhone(phone))
