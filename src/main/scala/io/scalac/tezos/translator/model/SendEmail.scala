@@ -14,7 +14,6 @@ sealed abstract case class SendEmail(
                                     )
 
 object SendEmail {
-
   def approvalRequest(libraryDto: LibraryEntryRoutesDto, adminEmail: EmailAddress): SendEmail = {
     val uid = Uid()
     val subject = "Library approval request"
@@ -39,7 +38,10 @@ object SendEmail {
 
   def fromSendEmailRoutesDto(dto: SendEmailRoutesDto, adminEmail: EmailAddress): Try[SendEmail] = {
     for {
-      email   <- EmailAddress.fromString(dto.email)
+      email   <-   dto.email match {
+      case Some(e) => EmailAddress.fromString(e).map(Some(_))
+      case None => Success(None)
+    }
       contact <- Contact.tryToCreateContact(dto.phone, email)
     } yield
       new SendEmail(

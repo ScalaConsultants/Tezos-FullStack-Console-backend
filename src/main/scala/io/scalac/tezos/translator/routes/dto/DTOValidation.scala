@@ -69,15 +69,15 @@ object DTOValidation {
     val checkingNameResult: ValidationResult[String] =
       checkStringNotEmptyAndLength(dto.name, maxTinyLength, FieldIsEmpty("name"), FieldToLong("name", maxTinyLength))
 
-    val checkingPhoneIsValid: ValidationResult[String] =
-      checkStringNotEmpty(dto.phone, FieldIsEmpty("phone"))
-        .flatMap(
-          maybePhone => checkStringMatchRegExp(maybePhone, phoneRegex, FieldIsInvalid("phone number", maybePhone))
-        )
+    val checkingPhoneIsValid: Either[NonEmptyList[DTOValidationError], Option[String]] =
+      dto.phone.map( maybePhone => checkStringMatchRegExp(maybePhone, phoneRegex, FieldIsInvalid("phone number", maybePhone)).map(Some(_))
+        ).getOrElse(None.asRight)
 
     val checkContentNotEmpty: ValidationResult[String] = checkStringNotEmpty(dto.content, FieldIsEmpty("content"))
+    val checkEmail: Either[NonEmptyList[DTOValidationError], Option[String]] =
+      dto.email.map(mail => checkEmailIsValid(mail).map(x=>Some(x.toLowerCase))).getOrElse(None.asRight)
 
-    (checkingNameResult, checkingPhoneIsValid, checkEmailIsValid(dto.email), checkContentNotEmpty)
+    (checkingNameResult, checkingPhoneIsValid, checkEmail, checkContentNotEmpty)
       .parMapN(SendEmailRoutesDto.apply)
   }
 

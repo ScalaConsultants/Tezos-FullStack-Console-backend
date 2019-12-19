@@ -1,5 +1,5 @@
 package io.scalac.tezos.translator.model
-
+import Contact._
 import org.scalatest.{Matchers, WordSpec}
 
 class ContactTest extends WordSpec with Matchers {
@@ -7,24 +7,30 @@ class ContactTest extends WordSpec with Matchers {
   "ContactTest" should {
     "get Phone" in {
       val dummyContact = ContactPhone("+11223344")
-      dummyContact.getPhone() shouldBe "+11223344"
-      dummyContact.getEmail() shouldBe "Not declared"
+     getValuesFromContact(dummyContact) shouldBe "phone: +11223344"
     }
     "get Email" in {
-      val dummyContact = ContactEmail("test@service.com")
-      dummyContact.getEmail() shouldBe "test@service.com"
-      dummyContact.getPhone() shouldBe "Not declared"
+      val dummyContact = ContactEmail(EmailAddress.fromString("test@service.com").get)
+      getValuesFromContact(dummyContact) shouldBe "email: test@service.com"
     }
     "get Both" in {
-      val dummyContact = FullContact("+123", "test@service.com")
-      dummyContact.getEmail() shouldBe "test@service.com"
-      dummyContact.getPhone() shouldBe "+123"
+      val dummyContact = FullContact("+123", EmailAddress.fromString("test@service.com").get)
+      getValuesFromContact(dummyContact) shouldBe "phone: +123\nemail: test@service.com\n"
     }
-    "tryToCreateContact" in {
-      val expectedDummyContact = FullContact("+123", "test@service.com")
-      val assert = Contact.tryToCreateContact("+123", "test@service.com")
-      assert shouldBe expectedDummyContact
+    "try To Create Full Filed Contact" in {
+      val expectedDummyContact = FullContact("+123", EmailAddress.fromString("test@service.com").get)
+      val assert = Contact.tryToCreateContact(Option("+123"),  Option(EmailAddress.fromString("test@service.com").get))
+      assert.get shouldBe expectedDummyContact
     }
-
+    "try To Create Contact with email" in {
+      val expectedDummyContact = ContactEmail(EmailAddress.fromString("test@service.com").get)
+      val assert = Contact.tryToCreateContact(None,  Option(EmailAddress.fromString("test@service.com").get))
+      assert.get shouldBe expectedDummyContact
+    }
+    "try To Create Contact with phone" in {
+      val expectedDummyContact = ContactPhone("+123")
+      val assert = Contact.tryToCreateContact(Some("+123"),   None)
+      assert.get shouldBe expectedDummyContact
+    }
   }
 }

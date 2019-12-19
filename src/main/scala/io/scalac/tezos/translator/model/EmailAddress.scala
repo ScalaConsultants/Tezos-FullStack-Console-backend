@@ -1,20 +1,30 @@
 package io.scalac.tezos.translator.model
 
-import io.circe.{Decoder, Encoder}
+import io.circe.{Decoder, DecodingFailure, Encoder, HCursor}
 import javax.mail.internet.InternetAddress
 
 import scala.util.{Success, Try}
-
+import io.circe._, io.circe.generic.semiauto._
 sealed abstract case class EmailAddress(value: InternetAddress) {
   override def toString: String = value.getAddress
 }
 
 object EmailAddress {
-  implicit val emailAddressDecoder: Decoder[EmailAddress] = Decoder.forProduct1("value")(u=>EmailAddress.fromString(u).get) // abstract doesn't have apply so idk what next
-  implicit val emailAddressEncoder: Encoder[EmailAddress] = Encoder.forProduct1("value")(u=> (u.value))
+
   def fromString(s: String): Try[EmailAddress] =
     Try(new InternetAddress(s, true))
       .map(ia => new EmailAddress(ia) {})
 
+  implicit val emailAddressEncoder: Encoder[EmailAddress] = Encoder.forProduct1("value")(_.toString)
 
+  implicit val emailAddressDecoder: Decoder[EmailAddress] = new Decoder[EmailAddress] {
+    final def apply(c: HCursor): Decoder.Result[EmailAddress] =
+      for {
+        value <- c.downField("value").as[String]
+        email <- EmailAddress.fromString(value)
+          .toEither
+          .left
+          .map(ex => DecodingFailure.fromThrowable(ex, c.history))
+      } yield email
+  }
 }

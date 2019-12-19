@@ -4,7 +4,7 @@ import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.server.Route
 import akka.http.scaladsl.testkit.ScalatestRouteTest
 import io.scalac.tezos.translator.config.CaptchaConfig
-import io.scalac.tezos.translator.model.{ContactFormContent, EmailAddress, Errors, SendEmail}
+import io.scalac.tezos.translator.model.{ContactFormContent, EmailAddress, Errors, FullContact, SendEmail}
 import io.scalac.tezos.translator.repository.Emails2SendRepository
 import io.scalac.tezos.translator.repository.dto.SendEmailDbDto
 import io.scalac.tezos.translator.routes.MessageRoutes
@@ -53,11 +53,11 @@ class MessageSpec
 
     "message endpoint" should {
       "validate dto before storing" in {
-        val invalidDto = SendEmailRoutesDto("", "", "", "")
-        val expectedErrorsList1 = List("name field is empty", "phone field is empty", "email field is empty", "content field is empty")
+        val invalidDto = SendEmailRoutesDto("", None,None, "") //TODO: add exception about both missing fields (email and phone)
+        val expectedErrorsList1 = List("name field is empty","content field is empty")
         checkValidationErrorsWithExpected(invalidDto, expectedErrorsList1)
 
-        val dtoInvalidPhoneAndEmail = SendEmailRoutesDto("name", "+7777777777777777777777", "email@@@gmail.com", "whatsup man")
+        val dtoInvalidPhoneAndEmail = SendEmailRoutesDto("name", Some("+7777777777777777777777"), Some("email@@@gmail.com"), "whatsup man")
         val expectedErrorsList2 = List("invalid phone number - +7777777777777777777777", "invalid email - email@@@gmail.com")
         checkValidationErrorsWithExpected(dtoInvalidPhoneAndEmail, expectedErrorsList2)
 
@@ -65,10 +65,10 @@ class MessageSpec
           "123456789012345678901234567890123456789012345678901234567890123456789012345678" +
             "90123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678" +
             "901234567890123456789012345678901234567890123456789012345678901234567890",
-          "+77777777777",
-          "123456789012345678901234567890123456789012345678901234567890123456789012345678" +
+          Some("+77777777777"),
+          Some( "123456789012345678901234567890123456789012345678901234567890123456789012345678" +
             "90123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678" +
-            "901234567890123456789012345678901234567890123456789012345678901234567890@gmail.com",
+            "901234567890123456789012345678901234567890123456789012345678901234567890@gmail.com"),
           "whatsup man")
         val expectedErrorsList3 = List("field name is too long, max length - 255", "field email is too long, max length - 255")
         checkValidationErrorsWithExpected(dtoNameAndEmailToLong, expectedErrorsList3)
@@ -78,7 +78,7 @@ class MessageSpec
       }
 
       "save proper dto" in {
-        val validDto = SendEmailRoutesDto("name", "+77072123434", "email@gmail.com", "I wanna pizza")
+        val validDto = SendEmailRoutesDto("name", Some("+77072123434"),Some( "email@gmail.com"), "I wanna pizza")
         Post("/message", validDto) ~> messageRoute ~> check {
           status shouldBe StatusCodes.OK
         }
@@ -99,8 +99,7 @@ class MessageSpec
         val content = sendEmailModel.content.asInstanceOf[ContactFormContent]
 
         content.name shouldBe "name"
-        content.contact.getPhone() shouldBe "+77072123434"
-        content.contact.getEmail() shouldBe "email@gmail.com"
+        content.contact shouldBe FullContact("+77072123434",  EmailAddress.fromString("email@gmail.com").get)
         content.content shouldBe "I wanna pizza"
       }
     }

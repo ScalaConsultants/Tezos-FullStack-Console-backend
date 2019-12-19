@@ -42,7 +42,6 @@ case class LibraryEntryDbDto(
 }
 
 object LibraryEntryDbDto {
-
   def fromDomain(v: LibraryEntry) =
     LibraryEntryDbDto(
       uid = v.uid.value,

@@ -30,16 +30,9 @@ object EmailContent {
 
   def toPrettyString(c: EmailContent): String = c match {
     case c: ContactFormContent =>
-      val s = c.contact match {
-        case ContactPhone(v) => Seq(s"phone: $v")
-        case ContactEmail(v) => Seq(s"email: $v")
-        case FullContact(a, b) => Seq(s"phone: $a", s"email: $b")
-      }
-
       s"""
          |name: ${c.name}
-         |
-         |email: ${c.contact.getEmail()}
+         |${Contact.getValuesFromContact(c.contact)}
          |content: ${c.content}
          |""".stripMargin
 

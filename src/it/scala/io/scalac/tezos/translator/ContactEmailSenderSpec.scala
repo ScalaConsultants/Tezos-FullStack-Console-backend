@@ -63,12 +63,12 @@ class ContactEmailSenderSpec
       val testMail = "some-tezostests@service.com"
       val testContent = "some content"
 
-      val newEmail2Send = SendEmail.fromSendEmailRoutesDto(SendEmailRoutesDto(testName, testPhone, testMail, testContent), adminEmail)
+      val newEmail2Send = SendEmail.fromSendEmailRoutesDto(SendEmailRoutesDto(testName, Some(testPhone), Some(testMail), testContent), adminEmail)
       val emailSenderService = SendEmailsServiceImpl(email2SendService, log, testConfig.email, testConfig.cron).get
       val cronTask = EmailSender(emailSenderService, testCronConfig)
 
       "send emails" in {
-        val addMail: Future[Int] = email2SendService.addNewEmail2Send(newEmail2Send)
+        val addMail: Future[Int] = email2SendService.addNewEmail2Send(newEmail2Send.get)
 
         whenReady(addMail) { _ shouldBe 1 }
 
@@ -84,12 +84,12 @@ class ContactEmailSenderSpec
 
           val body = GreenMailUtil.getBody(message.get).replaceAll("\r", "")
 
-          body shouldBe
+          body.replaceAll("\n", "").replaceAll("\r", "") shouldBe
             s"""
                |name: $testName
                |phone: $testPhone
                |email: $testMail
-               |content: $testContent""".stripMargin
+               |content: $testContent""".stripMargin.replaceAll("\n", "").replaceAll("\r", "")
         }
 
 
@@ -101,19 +101,8 @@ class ContactEmailSenderSpec
 
         cronTask.cancel()
       }
-
-      "not send email when address is incorrect" in {
-        val newEmail2Send = SendEmail.fromSendEmailRoutesDto(SendEmailRoutesDto(testName, testPhone, "xxx", testContent), adminEmail)
-        val addMail: Future[Int] = email2SendService.addNewEmail2Send(newEmail2Send)
-
-        whenReady(addMail) { _ shouldBe 1 }
-        whenReady(email2SendService.getEmails2Send(10)) { _.length shouldBe 1 }
-
-        val ex = intercept[Exception](getNextEmail.futureValue)
-        ex.getMessage should include("No email was received")
-      }
-
     }
+
 
   private def getNextEmail: Future[Option[MimeMessage]] =
     Future(greenMail.waitForIncomingEmail(20000L, 1))
