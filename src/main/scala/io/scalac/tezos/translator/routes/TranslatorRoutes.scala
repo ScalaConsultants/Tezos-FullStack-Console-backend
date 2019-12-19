@@ -1,32 +1,57 @@
 package io.scalac.tezos.translator.routes
 
-import akka.actor.ActorSystem
 import akka.event.LoggingAdapter
-import akka.http.scaladsl.model._
 import akka.http.scaladsl.server.Route
+import cats.syntax.either._
 import io.scalac.tezos.translator.config.CaptchaConfig
-import io.scalac.tezos.translator.routes.directives.ReCaptchaDirective._
+import io.scalac.tezos.translator.routes.TranslatorRoutes._
 import io.scalac.tezos.translator.routes.util.Translator
+import sttp.model.StatusCode
+import sttp.tapir._
+import sttp.tapir.json.circe._
+import sttp.tapir.server.akkahttp._
+import scala.concurrent.{ExecutionContext, Future}
 
 class TranslatorRoutes(
   translator: Translator,
   log: LoggingAdapter,
   reCaptchaConfig: CaptchaConfig
-)(implicit as: ActorSystem) extends HttpRoutes {
+)(implicit ec: ExecutionContext) extends HttpRoutes {
 
   override def routes: Route =
-    pathPrefix("translate")  {
-      (path("from" / "michelson" / "to" / "micheline") & post & entity(as[String])) { body =>
-        translator.michelson2micheline(body).fold(
-          error => complete(StatusCodes.BadRequest, error.toString),
-          parsed => complete(HttpResponse(entity = HttpEntity(ContentType(MediaTypes.`application/json`), parsed)))
+    fromMichelsonEndpoint.toRoute(
+      body =>
+        Future(
+          translator
+            .michelson2micheline(body)
+            .leftMap((StatusCode.BadRequest, _))
         )
-      } ~ (path("from" / "micheline" / "to" / "michelson") & post & entity(as[String])) { body =>
-        translator.micheline2michelson(body).fold(
-          error => complete(StatusCodes.BadRequest, error.toString),
-          parsed => complete(parsed)
+    ) ~ fromMichelineEndpoint.toRoute(
+      body =>
+        Future(
+          translator
+            .micheline2michelson(body)
+            .leftMap(error => (StatusCode.BadRequest, error.toString))
         )
-      }
-    }
+    )
 
+}
+
+object TranslatorRoutes {
+  val translationEndpoint
+  : Endpoint[String, (StatusCode, String), String, Nothing] =
+    endpoint
+      .post
+      .in("translate")
+      .errorOut(statusCode.and(jsonBody[String]))
+      .in(stringBody)
+      .out(stringBody)
+
+  val fromMichelsonEndpoint
+  : Endpoint[String, (StatusCode, String), String, Nothing] =
+    translationEndpoint.in("from" / "michelson" / "to" / "micheline")
+
+  val fromMichelineEndpoint
+  : Endpoint[String, (StatusCode, String), String, Nothing] =
+    translationEndpoint.in("from" / "micheline" / "to" / "michelson")
 }

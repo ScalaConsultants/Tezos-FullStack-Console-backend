@@ -12,6 +12,7 @@ import io.scalac.tezos.translator.repository.dto.LibraryEntryDbDto
 import io.scalac.tezos.translator.repository.{Emails2SendRepository, LibraryRepository, UserRepository}
 import io.scalac.tezos.translator.routes.LibraryRoutes
 import io.scalac.tezos.translator.routes.dto.{LibraryEntryRoutesAdminDto, LibraryEntryRoutesDto}
+import io.scalac.tezos.translator.routes.dto.DTO.Errors
 import io.scalac.tezos.translator.schema.LibraryTable
 import io.scalac.tezos.translator.service.{Emails2SendService, LibraryService, UserService}
 import org.scalatest.concurrent.ScalaFutures

@@ -4,7 +4,8 @@ import akka.event.LoggingAdapter
 import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.server.{Directive, Route}
 import io.scalac.tezos.translator.config.CaptchaConfig
-import io.scalac.tezos.translator.model.{EmailAddress, Error, SendEmail}
+import io.scalac.tezos.translator.model.{EmailAddress, SendEmail}
+import io.scalac.tezos.translator.routes.dto.DTO.Error
 import io.scalac.tezos.translator.routes.directives.DTOValidationDirective._
 import io.scalac.tezos.translator.routes.directives.ReCaptchaDirective._
 import io.scalac.tezos.translator.routes.dto.SendEmailRoutesDto

@@ -9,7 +9,7 @@ import akka.http.scaladsl.unmarshalling.Unmarshal
 import akka.stream.ActorMaterializer
 import io.circe.Decoder
 import io.scalac.tezos.translator.config.CaptchaConfig
-import io.scalac.tezos.translator.model.{CaptchaVerifyResponse, Error}
+import io.scalac.tezos.translator.routes.dto.DTO.{Error, CaptchaVerifyResponse}
 import org.joda.time.DateTime
 import org.joda.time.format.DateTimeFormat
 
