@@ -11,8 +11,11 @@ object DTO {
                                     hostname:      Option[String],
                                     `error-codes`: Option[List[String]]
                                   )
-  case class Error(error: String)
-  case class Errors(errors: List[String])
+
+  sealed trait ErrorDTO
+
+  case class Error(error: String) extends ErrorDTO
+  case class Errors(errors: List[String]) extends ErrorDTO
 
   implicit val errorsEncoder: Encoder[Errors] = deriveEncoder[Errors]
   implicit val errorsDecoder: Decoder[Errors] = deriveDecoder[Errors]
