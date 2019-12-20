@@ -151,7 +151,7 @@ class SendEmailServiceSpec
 
     val body2 = GreenMailUtil.getBody(e2SendResult)
 
-    body2 shouldBe
+    Helper.testFormat(body2) shouldBe
       Helper.testFormat( s"""
          |name: Dude
          |phone: 666666666
