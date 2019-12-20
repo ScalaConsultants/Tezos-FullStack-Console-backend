@@ -59,8 +59,8 @@ object SendEmail {
   def fromSendEmailDbDto(dto: SendEmailDbDto): Try[SendEmail] =
     for {
       uid <- Uid.fromString(dto.uid)
-      c <- EmailContent.fromJson(dto.content)
-      to <- EmailAddress.fromString(dto.to)
+      c   <- EmailContent.fromJson(dto.content)
+      to  <- EmailAddress.fromString(dto.to)
     } yield
       new SendEmail(
         uid = uid,
