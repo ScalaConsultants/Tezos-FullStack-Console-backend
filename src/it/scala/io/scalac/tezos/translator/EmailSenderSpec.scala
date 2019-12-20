@@ -18,7 +18,7 @@ import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContextExecutor, Future}
 import scala.language.postfixOps
 
-//noinspection TypeAnnotation
+//noinspection  TypeAnnotation
 class EmailSenderSpec
   extends TestKit(ActorSystem("MySpec"))
   with WordSpecLike
@@ -83,12 +83,12 @@ class EmailSenderSpec
 
           val body = GreenMailUtil.getBody(message.get).replaceAll("\r", "")
 
-          body.replaceAll("\n", "").replaceAll("\r", "") shouldBe
-            s"""
+          Helper.testFormat(body) shouldBe
+            Helper.testFormat(s"""
                |name: $testName
                |phone: $testPhone
                |email: $testMail
-               |content: $testContent""".stripMargin.replaceAll("\n", "").replaceAll("\r", "")
+               |content: $testContent""".stripMargin)
         }
 
 

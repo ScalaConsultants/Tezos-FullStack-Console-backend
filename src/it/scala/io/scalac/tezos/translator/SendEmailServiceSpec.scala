@@ -149,14 +149,14 @@ class SendEmailServiceSpec
     recipients2.length shouldBe 1
     recipients2.headOption shouldBe Some(testAdmin) // this should go to "admin", which is testAdmin in here
 
-    val body2 = GreenMailUtil.getBody(e2SendResult).replaceAll("\n", "").replaceAll("\r", "")
+    val body2 = GreenMailUtil.getBody(e2SendResult)
 
     body2 shouldBe
-      s"""
+      Helper.testFormat( s"""
          |name: Dude
          |phone: 666666666
          |email: dude@service.com
-         |content: some content""".stripMargin.replaceAll("\n", "").replaceAll("\r", "")
+         |content: some content""".stripMargin)
 
 
     received.get(e3.subject) shouldBe defined

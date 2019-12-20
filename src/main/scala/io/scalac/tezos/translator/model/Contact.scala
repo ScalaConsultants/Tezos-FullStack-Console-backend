@@ -12,7 +12,7 @@ case class FullContact(phone: String, email: EmailAddress) extends Contact
 
 object Contact {
 
-  def tryToCreateContact(phone: Option[String], email: Option[EmailAddress]): Try[Contact] =
+  def create(phone: Option[String], email: Option[EmailAddress]): Try[Contact] =
     (phone, email) match {
       case (Some(phone), Some(email)) => Success(FullContact(phone, email))
       case (Some(phone), None)  => Success(ContactPhone(phone))

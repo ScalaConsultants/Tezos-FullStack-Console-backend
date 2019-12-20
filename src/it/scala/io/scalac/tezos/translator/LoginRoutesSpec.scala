@@ -28,7 +28,7 @@ class LoginRoutesSpec
     val loginRoute: Route = new LoginRoutes(new UserService(new UserRepository, testDb), system.log).routes
 
     "LoginRoute" should "reject wrong credentials" in {
-      Post("/login", UserCredentials("admin", "admin")) ~> loginRoute ~> check {
+      Post("/login", UserCredentials("admin", "asdf")) ~> loginRoute ~> check {
         status shouldBe StatusCodes.Forbidden
       }
     }

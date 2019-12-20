@@ -42,7 +42,7 @@ object SendEmail {
                    case Some(e) => EmailAddress.fromString(e).map(Some(_))
                    case None => Success(None)
                          }
-      contact <- Contact.tryToCreateContact(dto.phone, email)
+      contact <- Contact.create(dto.phone, email)
     } yield
       new SendEmail(
         uid = Uid(),

@@ -19,17 +19,17 @@ class ContactTest extends WordSpec with Matchers {
     }
     "try To Create Full Filed Contact" in {
       val expectedDummyContact = FullContact("+123", EmailAddress.fromString("test@service.com").get)
-      val assert = Contact.tryToCreateContact(Option("+123"),  Option(EmailAddress.fromString("test@service.com").get))
+      val assert = Contact.create(Option("+123"),  Option(EmailAddress.fromString("test@service.com").get))
       assert.get shouldBe expectedDummyContact
     }
     "try To Create Contact with email" in {
       val expectedDummyContact = ContactEmail(EmailAddress.fromString("test@service.com").get)
-      val assert = Contact.tryToCreateContact(None,  Option(EmailAddress.fromString("test@service.com").get))
+      val assert = Contact.create(None,  Option(EmailAddress.fromString("test@service.com").get))
       assert.get shouldBe expectedDummyContact
     }
     "try To Create Contact with phone" in {
       val expectedDummyContact = ContactPhone("+123")
-      val assert = Contact.tryToCreateContact(Some("+123"),   None)
+      val assert = Contact.create(Some("+123"),   None)
       assert.get shouldBe expectedDummyContact
     }
   }
