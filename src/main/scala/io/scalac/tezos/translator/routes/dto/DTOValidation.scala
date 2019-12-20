@@ -77,8 +77,15 @@ object DTOValidation {
     val checkEmail: Either[NonEmptyList[DTOValidationError], Option[String]] =
       dto.email.map(mail => checkEmailIsValid(mail).map(x=>Some(x.toLowerCase))).getOrElse(None.asRight)
 
-    (checkingNameResult, checkingPhoneIsValid, checkEmail, checkContentNotEmpty)
+    if( dto.email.isEmpty && dto.phone.isEmpty)
+      {
+        (checkingNameResult, NonEmptyList.one(FieldIsEmpty("Both, Email field is empty and Phone")).asLeft, checkEmail, checkContentNotEmpty)
+          .parMapN(SendEmailRoutesDto.apply)
+      }
+    else {
+      (checkingNameResult, checkingPhoneIsValid, checkEmail, checkContentNotEmpty)
       .parMapN(SendEmailRoutesDto.apply)
+    }
   }
 
   private def checkEmailIsValid(email: String): ValidationResult[String] =
