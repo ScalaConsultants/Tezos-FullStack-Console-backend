@@ -9,9 +9,9 @@ CREATE TABLE emails2send (
 CREATE TABLE library (
     "uid" VARCHAR(36) UNIQUE NOT NULL,
     "name" TEXT NOT NULL,
-    "author" TEXT NOT NULL,
+    "author" TEXT ,
     "email" TEXT,
-    "description" TEXT NOT NULL,
+    "description" TEXT,
     "micheline" TEXT NOT NULL,
     "michelson" TEXT NOT NULL,
     "created_at" TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
