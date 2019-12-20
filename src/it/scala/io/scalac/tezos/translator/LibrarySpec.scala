@@ -5,13 +5,13 @@ import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.model.headers.{Authorization, OAuth2BearerToken}
 import akka.http.scaladsl.server.Route
 import akka.http.scaladsl.testkit.ScalatestRouteTest
-import io.scalac.tezos.translator.config.{CaptchaConfig, Configuration}
+import io.scalac.tezos.translator.config.{CaptchaConfig, DBUtilityConfiguration}
 import io.scalac.tezos.translator.model.LibraryEntry._
 import io.scalac.tezos.translator.model._
 import io.scalac.tezos.translator.repository.dto.LibraryEntryDbDto
 import io.scalac.tezos.translator.repository.{Emails2SendRepository, LibraryRepository, UserRepository}
-import io.scalac.tezos.translator.routes.dto.{LibraryEntryRoutesAdminDto, LibraryEntryRoutesDto}
 import io.scalac.tezos.translator.routes.LibraryRoutes
+import io.scalac.tezos.translator.routes.dto.{LibraryEntryRoutesAdminDto, LibraryEntryRoutesDto}
 import io.scalac.tezos.translator.schema.LibraryTable
 import io.scalac.tezos.translator.service.{Emails2SendService, LibraryService, UserService}
 import org.scalatest.concurrent.ScalaFutures
@@ -38,18 +38,18 @@ class LibrarySpec
 
   val testDb = DbTestBase.db
 
-  val reCaptchaConfig = CaptchaConfig(checkOn = false, "", "", "")
-  val config = Configuration(reCaptcha = reCaptchaConfig)
+    val reCaptchaConfig = CaptchaConfig(checkOn = false, "", "", "")
+    val dbUtilityConfig = DBUtilityConfiguration()
 
   val log: LoggingAdapter = system.log
 
-  val userService = new UserService(new UserRepository, testDb)
-  val emails2SendRepo = new Emails2SendRepository
-  val email2SendService = new Emails2SendService(emails2SendRepo, testDb)
-  val libraryRepo = new LibraryRepository(config.dbUtility, testDb)
-  val libraryService = new LibraryService(libraryRepo, log)
-  val adminEmail = EmailAddress.fromString("tezos-console-admin@service.com").get
-  val libraryRoute: Route = new LibraryRoutes(libraryService, userService, email2SendService, system.log, config.reCaptcha, adminEmail).routes
+    val userService = new UserService(new UserRepository, testDb)
+    val emails2SendRepo = new Emails2SendRepository
+    val email2SendService = new Emails2SendService(emails2SendRepo, testDb)
+    val libraryRepo = new LibraryRepository(dbUtilityConfig, testDb)
+    val libraryService = new LibraryService(libraryRepo, log)
+    val adminEmail = EmailAddress.fromString("tezos-console-admin@service.com").get
+    val libraryRoute: Route = new LibraryRoutes(libraryService, userService, email2SendService, system.log, reCaptchaConfig, adminEmail).routes
 
   def insertDummiesToDb(size: Int, status: Option[Status] = Some(Accepted)): Future[immutable.IndexedSeq[Int]] = {
     val inserts = for {
@@ -188,9 +188,9 @@ class LibrarySpec
     }
   }
 
-  "show records using a limit parameter or using the default limit" in {
-    val defaultLimit: Int = config.dbUtility.defaultLimit
-    val manualLimit = 3
+      "show records using a limit parameter or using the default limit" in {
+        val defaultLimit: Int = dbUtilityConfig.defaultLimit
+        val manualLimit  = 3
 
     whenReady(insertDummiesToDb(defaultLimit + 1)) {
       _.length shouldBe defaultLimit + 1
@@ -222,7 +222,7 @@ class LibrarySpec
       actualRecords should contain theSameElementsAs Seq(expectedRecord2)
     }
 
-    val bearerToken = getToken(userService, UserCredentials("asdf", "zxcv"))
+        val bearerToken = getToken(userService, UserCredentials("admin", "zxcv"))
 
     // change statuses
     // record1
@@ -275,7 +275,7 @@ class LibrarySpec
       actualRecords should contain theSameElementsAs Seq(expectedRecord2)
     }
 
-    val bearerToken = getToken(userService, UserCredentials("asdf", "zxcv"))
+        val bearerToken = getToken(userService, UserCredentials("admin", "zxcv"))
 
     // record 2
     Delete("/library?uid=17976f3a-505b-4d66-854a-243a70bb94c0").withHeaders(Authorization(OAuth2BearerToken(bearerToken))) ~> libraryRoute ~> check {
@@ -306,11 +306,11 @@ class LibrarySpec
 
     val expected = toInsert.map(LibraryEntryRoutesAdminDto.fromDomain)
 
-    val bearerToken = getToken(userService, UserCredentials("asdf", "zxcv"))
-    Get(s"/library").withHeaders(Authorization(OAuth2BearerToken(bearerToken))) ~> libraryRoute ~> check {
-      status shouldBe StatusCodes.OK
-      val actualRecords = responseAs[List[LibraryEntryRoutesAdminDto]]
-      actualRecords.size shouldBe toInsert.length
+        val bearerToken = getToken(userService, UserCredentials("admin", "zxcv"))
+        Get(s"/library").withHeaders(Authorization(OAuth2BearerToken(bearerToken))) ~> libraryRoute ~> check {
+          status shouldBe StatusCodes.OK
+          val actualRecords = responseAs[List[LibraryEntryRoutesAdminDto]]
+          actualRecords.size shouldBe toInsert.length
 
       actualRecords should contain theSameElementsAs expected
     }
@@ -322,11 +322,11 @@ class LibrarySpec
       _ should contain theSameElementsAs Seq(1, 1, 1)
     }
 
-    val bearerToken = getToken(userService, UserCredentials("asdf", "zxcv"))
-    Get(s"/library").withHeaders(Authorization(OAuth2BearerToken(bearerToken))) ~> libraryRoute ~> check {
-      status shouldBe StatusCodes.OK
-      val actualAllRecords = responseAs[List[LibraryEntryRoutesDto]]
-      actualAllRecords.size shouldBe toInsert.length
+        val bearerToken = getToken(userService, UserCredentials("admin", "zxcv"))
+        Get(s"/library").withHeaders(Authorization(OAuth2BearerToken(bearerToken))) ~> libraryRoute ~> check {
+          status shouldBe StatusCodes.OK
+          val actualAllRecords = responseAs[List[LibraryEntryRoutesDto]]
+          actualAllRecords.size shouldBe toInsert.length
 
       Get(s"/library?limit=2").withHeaders(Authorization(OAuth2BearerToken(bearerToken))) ~> libraryRoute ~> check {
         status shouldBe StatusCodes.OK
@@ -385,7 +385,7 @@ class LibrarySpec
 
     val recordFromDB = maybeRecord.get
 
-    val bearerToken = getToken(userService, UserCredentials("asdf", "zxcv"))
+        val bearerToken = getToken(userService, UserCredentials("admin", "zxcv"))
 
     Put(s"/library?uid=${recordFromDB.uid.value}&status=accepted").withHeaders(Authorization(OAuth2BearerToken(bearerToken))) ~> libraryRoute ~> check {
       status shouldBe StatusCodes.OK
@@ -410,8 +410,6 @@ class LibrarySpec
       email2SendService.removeSentMessage(approvalRequest.uid)
     }
   }
-
-
 
 private trait SampleEntries {
   val record1 = LibraryEntry(Uid.fromString("d7327913-4957-4417-96d2-e5c1d4311f80").get, "nameE1", Some(("authorE1")), None, Some(("descriptionE1")), "michelineE1", "michelsonE1", PendingApproval)

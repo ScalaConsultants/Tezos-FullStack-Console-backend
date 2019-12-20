@@ -28,13 +28,13 @@ class LoginRoutesSpec
     val loginRoute: Route = new LoginRoutes(new UserService(new UserRepository, testDb), system.log).routes
 
     "LoginRoute" should "reject wrong credentials" in {
-      Post("/login", UserCredentials("asdf", "asdf")) ~> loginRoute ~> check {
+      Post("/login", UserCredentials("admin", "asdf")) ~> loginRoute ~> check {
         status shouldBe StatusCodes.Forbidden
       }
     }
 
     it should "accept correct credentials and return token" in {
-      Post("/login", UserCredentials("asdf", "zxcv")) ~> loginRoute ~> check {
+      Post("/login", UserCredentials("admin", "zxcv")) ~> loginRoute ~> check {
         status shouldBe StatusCodes.OK
         responseAs[String] should not be empty
       }
@@ -47,7 +47,7 @@ class LoginRoutesSpec
     }
 
     it should "allow to logout" in {
-      Post("/login", UserCredentials("asdf", "zxcv")) ~> loginRoute ~> check {
+      Post("/login", UserCredentials("admin", "zxcv")) ~> loginRoute ~> check {
         val token = responseAs[String]
         Post("/logout").withHeaders(Authorization(OAuth2BearerToken(token))) ~> loginRoute ~> check {
           status shouldBe StatusCodes.OK
@@ -62,7 +62,7 @@ class LoginRoutesSpec
     }
 
     it should "not allow to logout twice" in {
-      Post("/login", UserCredentials("asdf", "zxcv")) ~> loginRoute ~> check {
+      Post("/login", UserCredentials("admin", "zxcv")) ~> loginRoute ~> check {
         val token = responseAs[String]
         Post("/logout").withHeaders(Authorization(OAuth2BearerToken(token))) ~> loginRoute ~> check {
           status shouldBe StatusCodes.OK

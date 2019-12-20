@@ -23,6 +23,7 @@ object Version {
   val testContainersScala     = "0.32.0"
   val testContainersPostgres  = "1.12.1"
   val bCrypt                  = "4.1"
+  val flyway                  = "6.1.1"
 
 }
 
@@ -107,7 +108,11 @@ object Dependencies {
     "org.testcontainers"  %   "postgresql"            % Version.testContainersPostgres  % "it,test"
   )
 
-  val bcrypt:Seq[ModuleID] = Seq(
+  val bcrypt: Seq[ModuleID] = Seq(
     "com.github.t3hnar" %% "scala-bcrypt" % Version.bCrypt
+  )
+  
+  val flyway: Seq[ModuleID] = Seq(
+    "org.flywaydb" % "flyway-core" % Version.flyway
   )
 }

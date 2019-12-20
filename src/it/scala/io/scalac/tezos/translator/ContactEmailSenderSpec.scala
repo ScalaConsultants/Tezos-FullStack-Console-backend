@@ -5,7 +5,7 @@ import akka.event.LoggingAdapter
 import akka.testkit.TestKit
 import com.icegreen.greenmail.util.{GreenMail, GreenMailUtil, ServerSetupTest}
 import io.scalac.tezos.translator.actor.EmailSender
-import io.scalac.tezos.translator.config.{Configuration, CronConfiguration, EmailConfiguration}
+import io.scalac.tezos.translator.config.{CronConfiguration, EmailConfiguration}
 import io.scalac.tezos.translator.model.{EmailAddress, SendEmail}
 import io.scalac.tezos.translator.repository.Emails2SendRepository
 import io.scalac.tezos.translator.routes.dto.SendEmailRoutesDto
@@ -19,7 +19,7 @@ import scala.concurrent.{ExecutionContextExecutor, Future}
 import scala.language.postfixOps
 
 //noinspection TypeAnnotation
-class ContactEmailSenderSpec
+class EmailSenderSpec
   extends TestKit(ActorSystem("MySpec"))
   with WordSpecLike
   with ScalaFutures
@@ -53,7 +53,6 @@ class ContactEmailSenderSpec
 
     val testCronConfig = CronConfiguration(cronTaskInterval = 3 seconds)
     val testEmailConfig = EmailConfiguration("localhost", 3025, auth = true, testMailUser, testMailPass, receiver = adminEmail.toString)
-    val testConfig = Configuration(email = testEmailConfig, cron = testCronConfig)
 
     override def beforeEach(): Unit = greenMail.purgeEmailFromAllMailboxes()
 
@@ -64,7 +63,7 @@ class ContactEmailSenderSpec
       val testContent = "some content"
 
       val newEmail2Send = SendEmail.fromSendEmailRoutesDto(SendEmailRoutesDto(testName, Some(testPhone), Some(testMail), testContent), adminEmail)
-      val emailSenderService = SendEmailsServiceImpl(email2SendService, log, testConfig.email, testConfig.cron).get
+      val emailSenderService = SendEmailsServiceImpl(email2SendService, log, testEmailConfig, testCronConfig).get
       val cronTask = EmailSender(emailSenderService, testCronConfig)
 
       "send emails" in {

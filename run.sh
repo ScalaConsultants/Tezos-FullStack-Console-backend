@@ -1,9 +1,8 @@
-docker run -i --rm \
-    --name tezos-fullstack-console-backend \
-    -v "$(pwd):/src" \
-    -w /src \
-    hseeberger/scala-sbt:11.0.4_1.3.4_2.12.10 \
-    sbt clean assembly
+export EMAIL_USER="mmt-info@scalac.io" \
+export EMAIL_PASS=$1 \
+export EMAIL_RECEIVER="mmt-admin-dev@scalac.io"
+
+sbt clean assembly
 
 docker build -t tezos-fullstack-console-backend .
 
