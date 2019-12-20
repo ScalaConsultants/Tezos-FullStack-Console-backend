@@ -10,7 +10,3 @@ node_modules/
 /.idea
 /.classpath
 /.project
-
-postgres/data/*model/
-model/
-model/

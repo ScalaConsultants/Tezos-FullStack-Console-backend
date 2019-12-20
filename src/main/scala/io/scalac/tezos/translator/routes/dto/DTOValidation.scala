@@ -75,7 +75,7 @@ object DTOValidation {
 
     val checkContentNotEmpty: ValidationResult[String] = checkStringNotEmpty(dto.content, FieldIsEmpty("content"))
     val checkEmail: Either[NonEmptyList[DTOValidationError], Option[String]] =
-      dto.email.map(mail => checkEmailIsValid(mail).map(x=>Some(x.toLowerCase))).getOrElse(None.asRight)
+      dto.email.map(mail => checkEmailIsValid(mail).map( x => Some(x.toLowerCase))).getOrElse(None.asRight)
 
     if( dto.email.isEmpty && dto.phone.isEmpty)
       {
@@ -109,7 +109,7 @@ object DTOValidation {
     val checkAuthor =
       dto.author.map(author => checkAuthorIsValid(author).map(Some(_))).getOrElse(None.asRight)
     val checkEmail =
-      dto.email.map(mail => checkEmailIsValid(mail).map(x=>Some(x.toLowerCase))).getOrElse(None.asRight)
+      dto.email.map(mail => checkEmailIsValid(mail).map( x => Some(x.toLowerCase))).getOrElse(None.asRight)
     val checkDescription =
       dto.description.map(description => checkDescriptionsValid(description).map(Some(_))).getOrElse(None.asRight)
     val checkMicheline =
