@@ -16,7 +16,7 @@ object Contact {
     (phone, email) match {
       case (Some(phone), Some(email)) => Success(FullContact(phone, email))
       case (Some(phone), None)  => Success(ContactPhone(phone))
-      case (_, Some(email)) => Success(ContactEmail(email))
+      case (None, Some(email)) => Success(ContactEmail(email))
       case _ => Failure( new Exception("Empty Email and Empty Phone Number"))
     }
   def prettyString(c: Contact): String =
