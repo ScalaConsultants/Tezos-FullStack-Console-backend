@@ -5,7 +5,10 @@ import akka.http.scaladsl.server.directives.Credentials.Provided
 import com.github.t3hnar.bcrypt._
 import io.scalac.tezos.translator.model.UserModel
 import io.scalac.tezos.translator.repository.UserRepository
+import io.scalac.tezos.translator.routes.dto.DTO.{Error, ErrorDTO}
 import slick.jdbc.PostgresProfile.api._
+import cats.syntax.either._
+import sttp.model.StatusCode
 
 import scala.annotation.tailrec
 import scala.concurrent.{ExecutionContext, Future}
@@ -39,6 +42,15 @@ class UserService(repository: UserRepository, db: Database)(implicit ec: Executi
   def authenticateOAuth2AndPrependUsername(credentials: Credentials): Option[(String, String)] = credentials match {
     case Provided(bearerToken) => tokenToUser.get(bearerToken).map((_, bearerToken))
     case _ => None
+  }
+
+  def authenticateOAuth2AndPrependUsername1(token: String): Future[Either[(ErrorDTO, StatusCode), (String, String)]] = Future {
+    tokenToUser.get(token)
+      .fold {
+        (Error("Token not found"), StatusCode.Forbidden).asLeft[(String, String)]
+      } {
+        x => (x, token).asRight
+      }
   }
 
   def logout(token: String): Unit = tokenToUser.remove(token)
