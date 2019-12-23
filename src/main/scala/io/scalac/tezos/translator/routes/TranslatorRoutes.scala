@@ -35,23 +35,23 @@ class TranslatorRoutes(
         )
     )
 
+  override def docs: List[Endpoint[_, _, _, _]] = List(fromMichelsonEndpoint, fromMichelineEndpoint)
+
 }
 
 object TranslatorRoutes {
-  val translationEndpoint
-  : Endpoint[String, (StatusCode, String), String, Nothing] =
-    endpoint
+  private val translationEndpoint: Endpoint[String, (StatusCode, String), String, Nothing] =
+    Endpoints
+      .baseEndpoint
       .post
       .in("translate")
       .errorOut(statusCode.and(jsonBody[String]))
       .in(stringBody)
       .out(stringBody)
 
-  val fromMichelsonEndpoint
-  : Endpoint[String, (StatusCode, String), String, Nothing] =
+  private val fromMichelsonEndpoint: Endpoint[String, (StatusCode, String), String, Nothing] =
     translationEndpoint.in("from" / "michelson" / "to" / "micheline")
 
-  val fromMichelineEndpoint
-  : Endpoint[String, (StatusCode, String), String, Nothing] =
+  private val fromMichelineEndpoint: Endpoint[String, (StatusCode, String), String, Nothing] =
     translationEndpoint.in("from" / "micheline" / "to" / "michelson")
 }

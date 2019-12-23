@@ -16,7 +16,7 @@ import sttp.tapir._
 import sttp.tapir.json.circe._
 import sttp.tapir.server.akkahttp._
 import cats.syntax.either._
-import io.scalac.tezos.translator.routes.Endpoints.ErrorResponse
+import io.scalac.tezos.translator.routes.Endpoints._
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success}
@@ -40,39 +40,42 @@ class LibraryRoutes(
       .in(jsonBody[LibraryEntryRoutesDto])
       .post
       .out(statusCode)
+      .description("Will add LibraryEntryRoutesDto to storage")
 
   private val getDtoEndpoint: Endpoint[(Option[Int], Option[Int]), ErrorResponse, Seq[LibraryEntryRoutesDto], Nothing] =
     libraryEndpoint
-      .in(query[Option[Int]]("offset")
-        .and(query[Option[Int]]("limit")))
-      .errorOut(jsonBody[ErrorDTO].and(statusCode))
+      .in(offsetQuery.and(limitQuery))
+      .errorOut(errorResponse)
       .out(jsonBody[Seq[LibraryEntryRoutesDto]])
       .get
+      .description("Will return sequence of LibraryEntryRoutesDto")
 
   private val getAdminsDtoEndpoint: Endpoint[(String, Option[Int], Option[Int]), ErrorResponse, Seq[LibraryEntryRoutesAdminDto], Nothing] =
     libraryEndpoint
       .in(auth.bearer)
-      .in(query[Option[Int]]("offset")
-        .and(query[Option[Int]]("limit")))
-      .errorOut(jsonBody[ErrorDTO].and(statusCode))
+      .in(offsetQuery.and(limitQuery))
+      .errorOut(errorResponse)
       .out(jsonBody[Seq[LibraryEntryRoutesAdminDto]])
       .get
+      .description("Will return sequence of LibraryEntryRoutesAdminDto")
 
   private val putEntryEndpoint: Endpoint[(String, String, String), ErrorResponse, StatusCode, Nothing] =
     libraryEndpoint
       .in(auth.bearer)
-      .in(query[String]("uid").and(query[String]("status")))
-      .errorOut(jsonBody[ErrorDTO].and(statusCode))
+      .in(uidQuery.and(statusQuery))
+      .errorOut(errorResponse)
       .out(statusCode)
       .put
+      .description("Will change the status of entry with passed uid")
 
   private val deleteEntryEndpoint: Endpoint[(String, String), ErrorResponse, StatusCode, Nothing] =
     libraryEndpoint
       .in(auth.bearer)
-      .in(query[String]("uid"))
-      .errorOut(jsonBody[ErrorDTO].and(statusCode))
+      .in(uidQuery)
+      .errorOut(errorResponse)
       .out(statusCode)
       .delete
+      .description("Will delete an entry with passed uid")
 
   private def addNewEntryRoute(): Route =
     libraryAddEndpoint.toRoute {
@@ -184,9 +187,9 @@ class LibraryRoutes(
       }
 
   private def validateLibraryEntryRoutesDTO(x: Unit,
-                                    LibraryEntryRoutesDTO: LibraryEntryRoutesDto)
-                         (implicit ec: ExecutionContext): Future[Either[ErrorResponse, LibraryEntryRoutesDto]] =
-    DTOValidationDirective.withDTOValidation1(LibraryEntryRoutesDTO)
+                                            LibraryEntryRoutesDTO: LibraryEntryRoutesDto)
+                                           (implicit ec: ExecutionContext): Future[Either[ErrorResponse, LibraryEntryRoutesDto]] =
+    DTOValidationDirective.validateDto(LibraryEntryRoutesDTO)
 
   private def handleError(t: Throwable): ErrorResponse =
     t match {
@@ -195,5 +198,8 @@ class LibraryRoutes(
     }
 
   override def routes: Route = addNewEntryRoute ~ getDTORoute ~ getAdminsDTORoute ~ putEntryRoute ~ deleteEntryRoute
+
+  override def docs: List[Endpoint[_, _ ,_ ,_]] =
+    List(libraryAddEndpoint, getDtoEndpoint, getAdminsDtoEndpoint, putEntryEndpoint, deleteEntryEndpoint)
 
 }

@@ -2,7 +2,7 @@ package io.scalac.tezos.translator.routes
 import akka.actor.ActorSystem
 import io.scalac.tezos.translator.model.{EmailAddress, SendEmail}
 import io.scalac.tezos.translator.routes.directives.{DTOValidationDirective, ReCaptchaDirective}
-import io.scalac.tezos.translator.routes.dto.DTO.{Error, ErrorDTO}
+import io.scalac.tezos.translator.routes.dto.DTO.Error
 import io.scalac.tezos.translator.routes.dto.SendEmailRoutesDto
 import io.scalac.tezos.translator.service.Emails2SendService
 import akka.event.LoggingAdapter
@@ -46,7 +46,7 @@ class MessageRoutes(
   private def validateSendMessage(x: Unit,
                                   sendEmailRoutesDto: SendEmailRoutesDto)
                                  (implicit ec: ExecutionContext): Future[Either[ErrorResponse, SendEmailRoutesDto]] =
-    DTOValidationDirective.withDTOValidation1(sendEmailRoutesDto)
+    DTOValidationDirective.validateDto(sendEmailRoutesDto)
 
   def buildRoute(log: LoggingAdapter, reCaptchaConfig: CaptchaConfig)(implicit ec: ExecutionContext): Route =
     messageEndpoint
@@ -55,5 +55,7 @@ class MessageRoutes(
           .andThenFirstE((validateSendMessage _).tupled)
           .andThenFirstE(addNewEmail)
       }
+
+  override def docs: List[Endpoint[_, _, _, _]] = List(messageEndpoint)
 
 }

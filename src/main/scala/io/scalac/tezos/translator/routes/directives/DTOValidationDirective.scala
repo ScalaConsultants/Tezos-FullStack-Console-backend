@@ -24,14 +24,15 @@ object DTOValidationDirective extends Directives {
       }
     }
 
-  def withDTOValidation1[T : DTOValidation](value: T)(implicit ec: ExecutionContext): Future[Either[(ErrorDTO, StatusCode), T]] = Future {
-    DTOValidation(value) match {
-      case Right(value) => value.asRight
-      case Left(errors) =>
-        val errorsList = errors.map(convertValidationErrorsToString).toList
-        (Errors(errorsList), StatusCode.BadRequest).asLeft
+  def validateDto[T : DTOValidation](value: T)(implicit ec: ExecutionContext): Future[Either[(ErrorDTO, StatusCode), T]] =
+    Future {
+      DTOValidation(value) match {
+        case Right(value) => value.asRight
+        case Left(errors) =>
+          val errorsList = errors.map(convertValidationErrorsToString).toList
+          (Errors(errorsList), StatusCode.BadRequest).asLeft
+      }
     }
-  }
 
   def convertValidationErrorsToString: PartialFunction[DTOValidationError, String] = {
     case FieldToLong(field, maxLength)    => s"field $field is too long, max length - $maxLength"

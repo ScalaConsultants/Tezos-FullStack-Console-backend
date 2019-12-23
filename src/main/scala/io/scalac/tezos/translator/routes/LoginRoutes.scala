@@ -7,6 +7,7 @@ import akka.http.scaladsl.server.{Directive, Route}
 import io.scalac.tezos.translator.model.UserCredentials
 import io.scalac.tezos.translator.routes.directives.DTOValidationDirective._
 import io.scalac.tezos.translator.service.UserService
+import sttp.tapir.Endpoint
 
 import scala.util.{Failure, Success}
 
@@ -33,4 +34,7 @@ class LoginRoutes(userService: UserService, log: LoggingAdapter)(implicit as: Ac
         }
 
   def validateCredentialsFormat: Directive[Tuple1[UserCredentials]] = withDTOValidation[UserCredentials]
+
+  override def docs: List[Endpoint[_, _, _, _]] = List()
+
 }
