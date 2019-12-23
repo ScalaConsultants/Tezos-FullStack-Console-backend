@@ -69,33 +69,49 @@ object DTOValidation {
     val checkingNameResult: ValidationResult[String] =
       checkStringNotEmptyAndLength(dto.name, maxTinyLength, FieldIsEmpty("name"), FieldToLong("name", maxTinyLength))
 
-    val checkingPhoneIsValid: ValidationResult[String] =
-      checkStringNotEmpty(dto.phone, FieldIsEmpty("phone"))
-        .flatMap(
-          maybePhone => checkStringMatchRegExp(maybePhone, phoneRegex, FieldIsInvalid("phone number", maybePhone))
-        )
+    val checkingPhoneIsValid: Either[NonEmptyList[DTOValidationError], Option[String]] =
+      dto.phone.map( maybePhone => checkStringMatchRegExp(maybePhone, phoneRegex, FieldIsInvalid("phone number", maybePhone)).map(Some(_))
+        ).getOrElse(None.asRight)
 
     val checkContentNotEmpty: ValidationResult[String] = checkStringNotEmpty(dto.content, FieldIsEmpty("content"))
+    val checkEmail: Either[NonEmptyList[DTOValidationError], Option[String]] =
+      dto.email.map(mail => checkEmailIsValid(mail).map(x => Some(x.toLowerCase))).getOrElse(None.asRight)
 
-    (checkingNameResult, checkingPhoneIsValid, checkEmailIsValid(dto.email), checkContentNotEmpty)
+    if( dto.email.isEmpty && dto.phone.isEmpty)
+      {
+        (checkingNameResult, NonEmptyList.one(FieldIsEmpty("Both, Email field is empty and Phone")).asLeft, checkEmail, checkContentNotEmpty)
+          .parMapN(SendEmailRoutesDto.apply)
+      }
+    else {
+      (checkingNameResult, checkingPhoneIsValid, checkEmail, checkContentNotEmpty)
       .parMapN(SendEmailRoutesDto.apply)
+    }
   }
 
   private def checkEmailIsValid(email: String): ValidationResult[String] =
     checkStringNotEmptyAndLength(email, maxTinyLength, FieldIsEmpty("email"), FieldToLong("email", maxTinyLength))
-      .flatMap(
-        mail => checkStringMatchRegExp(mail, emailRegex, FieldIsInvalid("email", mail))
-      )
+      .flatMap { mail =>
+        EmailAddress.fromString(mail).toEither.bimap(
+          _ => NonEmptyList.one(FieldIsInvalid("email", mail)),
+          a => a.toString
+        )
+      }
+  private def checkAuthorIsValid(value: String, name: String = "author"): ValidationResult[String] = {
+    checkStringNotEmptyAndLength(value, maxTinyLength, FieldIsEmpty(name), FieldToLong(name, maxTinyLength))
+  }
+  private def checkDescriptionsValid(value: String, name: String= "description"): ValidationResult[String] = {
+    checkStringNotEmptyAndLength(value, maxTinyLength, FieldIsEmpty(name), FieldToLong(name, maxTinyLength))
+  }
 
   implicit val LibraryDTOValidation: DTOValidation[LibraryEntryRoutesDto] = { dto =>
     val checkName =
-      checkStringNotEmptyAndLength(dto.name, maxTinyLength, FieldIsEmpty("name"), FieldToLong("name", maxTinyLength))
+      checkStringNotEmptyAndLength(dto.title, maxTinyLength, FieldIsEmpty("name"), FieldToLong("name", maxTinyLength))
     val checkAuthor =
-      checkStringNotEmptyAndLength(dto.author, maxTinyLength, FieldIsEmpty("author"), FieldToLong("author", maxTinyLength))
+      dto.author.map(author => checkAuthorIsValid(author).map(Some(_))).getOrElse(None.asRight)
     val checkEmail =
-      dto.email.map(mail => checkEmailIsValid(mail).map(Some(_))).getOrElse(None.asRight)
+      dto.email.map(mail => checkEmailIsValid(mail).map( x => Some(x.toLowerCase))).getOrElse(None.asRight)
     val checkDescription =
-      checkStringNotEmpty(dto.description, FieldIsEmpty("description"))
+      dto.description.map(description => checkDescriptionsValid(description).map(Some(_))).getOrElse(None.asRight)
     val checkMicheline =
       checkStringNotEmpty(dto.micheline, FieldIsEmpty("micheline"))
     val checkMichelson =
@@ -111,8 +127,6 @@ object DTOValidation {
     (checkUsername, checkPassword).parMapN(UserCredentials.apply)
   }
 
-  val emailRegex: String =
-    """(?:[a-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\.[a-z0-9!#$%&'*+/=?^_`{|}~-]+)*|"(?:[\x01-\x08\x0b\x0c\x0e-\x1f\x21\x23-\x5b\x5d-\x7f]|\\[\x01-\x09\x0b\x0c\x0e-\x7f])*")@(?:(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?|\[(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?|[a-z0-9-]*[a-z0-9]:(?:[\x01-\x08\x0b\x0c\x0e-\x1f\x21-\x5a\x53-\x7f]|\\[\x01-\x09\x0b\x0c\x0e-\x7f])+)\])"""
 
   val phoneRegex: String =
     """^\+?\d{6,18}$"""

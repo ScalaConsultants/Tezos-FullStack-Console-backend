@@ -19,11 +19,11 @@ class LibraryTable(tag: Tag) extends Table[LibraryEntryDbDto](tag, "library") {
 
   def name: Rep[String] = column[String]("name", NotNull, O.SqlType("TEXT"))
 
-  def author: Rep[String] = column[String]("author", NotNull, O.SqlType("TEXT"))
+  def author: Rep[Option[String]] = column[Option[String]]("author", O.SqlType("TEXT"))
 
   def email: Rep[Option[String]] = column[Option[String]]("email", O.SqlType("TEXT"))
 
-  def description: Rep[String] = column[String]("description", NotNull, O.SqlType("TEXT"))
+  def description: Rep[Option[String]] = column[Option[String]]("description", O.SqlType("TEXT"))
 
   def micheline: Rep[String] = column[String]("micheline", NotNull, O.SqlType("TEXT"))
 

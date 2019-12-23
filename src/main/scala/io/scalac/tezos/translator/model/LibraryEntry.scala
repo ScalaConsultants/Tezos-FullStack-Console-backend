@@ -5,17 +5,18 @@ import io.scalac.tezos.translator.model.LibraryEntry.Status
 import scala.util.{Failure, Success, Try}
 
 case class LibraryEntry(
-  uid: Uid,
-  name: String,
-  author: String,
-  email: Option[EmailAddress],
-  description: String,
-  micheline: String,
-  michelson: String,
-  status: Status
+                         uid: Uid,
+                         title: String,
+                         author: Option[String],
+                         email: Option[EmailAddress],
+                         description: Option[String],
+                         micheline: String,
+                         michelson: String,
+                         status: Status
 )
 
 object LibraryEntry {
+
 
   sealed trait Status extends Product with Serializable {
     def value: Int = this match {

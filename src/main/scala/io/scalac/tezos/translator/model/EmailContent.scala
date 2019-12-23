@@ -1,5 +1,6 @@
 package io.scalac.tezos.translator.model
 
+import io.circe.{Decoder, Encoder}
 import io.circe.generic.auto._
 import io.circe.parser.decode
 import io.circe.syntax._
@@ -10,14 +11,14 @@ sealed trait EmailContent extends Product with Serializable
 
 case class ContactFormContent(
   name: String,
-  phone: String,
-  email: String,
+  contact:Contact,
   content: String
 ) extends EmailContent
 
 case class TextContent(msg: String) extends EmailContent
 
 object EmailContent {
+
   def toJson(c: EmailContent): String = c.asJson.noSpaces
   def fromJson(s: String): Try[EmailContent] = decode[EmailContent](s).toTry
 
@@ -25,8 +26,7 @@ object EmailContent {
     case c: ContactFormContent =>
       s"""
          |name: ${c.name}
-         |phone: ${c.phone}
-         |email: ${c.email}
+         |${Contact.prettyString(c.contact)}
          |content: ${c.content}
          |""".stripMargin
 
