@@ -91,17 +91,17 @@ class LibraryRoutes(
 
   private def getAdminsDTORoute: Route =
     getAdminsDtoEndpoint.toRoute {
-      (userService.authenticateOAuth2AndPrependUsername1 _).andThenFirstE((getAdminsDto _).tupled)
+      (userService.authenticate _).andThenFirstE((getAdminsDto _).tupled)
     }
 
   private def putEntryRoute: Route =
     putEntryEndpoint.toRoute {
-      (userService.authenticateOAuth2AndPrependUsername1 _).andThenFirstE((putDto _).tupled)
+      (userService.authenticate _).andThenFirstE((putDto _).tupled)
     }
 
   private def deleteEntryRoute: Route =
     deleteEntryEndpoint.toRoute {
-      (userService.authenticateOAuth2AndPrependUsername1 _).andThenFirstE((deleteDto _).tupled)
+      (userService.authenticate _).andThenFirstE((deleteDto _).tupled)
     }
 
   private def addNewEntry(libraryDTO: LibraryEntryRoutesDto): Future[Either[ErrorResponse, StatusCode]] = {
