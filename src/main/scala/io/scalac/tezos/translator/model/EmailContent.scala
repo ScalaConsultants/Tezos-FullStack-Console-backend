@@ -11,9 +11,9 @@ sealed trait EmailContent extends Product with Serializable
 
 case class ContactFormContent(
   name: String,
-  contact:Contact,
-  content: String
-) extends EmailContent
+  contact: Contact,
+  content: String)
+    extends EmailContent
 
 case class TextContent(msg: String) extends EmailContent
 

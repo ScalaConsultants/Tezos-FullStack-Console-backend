@@ -11,7 +11,7 @@ object DTOValidationDirective extends Directives {
   import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport._
   import io.circe.generic.auto._
 
-  def withDTOValidation[T : FromEntityUnmarshaller : DTOValidation]: Directive[Tuple1[T]] =
+  def withDTOValidation[T: FromEntityUnmarshaller: DTOValidation]: Directive[Tuple1[T]] =
     entity(as[T]).flatMap { ent =>
       DTOValidation(ent) match {
         case Right(value) => provide(value)

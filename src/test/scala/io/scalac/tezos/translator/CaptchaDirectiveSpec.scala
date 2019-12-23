@@ -13,14 +13,19 @@ import org.scalatest.{BeforeAndAfterAll, Matchers, WordSpec}
 
 import scala.concurrent.duration._
 
-class CaptchaDirectiveSpec extends WordSpec with Matchers with ScalatestRouteTest with BeforeAndAfterAll with Directives {
+class CaptchaDirectiveSpec
+    extends WordSpec
+    with Matchers
+    with ScalatestRouteTest
+    with BeforeAndAfterAll
+    with Directives {
 
-  val checkCaptchaUri     = "/check"
-  val testCaptchaHost     = "localhost"
-  val testCaptchaPort     = 3030
+  val checkCaptchaUri = "/check"
+  val testCaptchaHost = "localhost"
+  val testCaptchaPort = 3030
   val testCaptchaHostName = s"$testCaptchaHost:$testCaptchaPort"
-  val secret              = "test"
-  val headerName          = "CAPTCHA"
+  val secret = "test"
+  val headerName = "CAPTCHA"
 
   lazy val wireMockServer = new WireMockServer(wireMockConfig().port(testCaptchaPort))
 
@@ -36,12 +41,10 @@ class CaptchaDirectiveSpec extends WordSpec with Matchers with ScalatestRouteTes
     wireMockServer.stop()
   }
 
-  val captchaTestConfig = CaptchaConfig(
-    checkOn    = true,
-    url        = "http://" + testCaptchaHostName + checkCaptchaUri,
-    secret     = secret,
-    headerName = headerName
-  )
+  val captchaTestConfig = CaptchaConfig(checkOn = true,
+                                        url = "http://" + testCaptchaHostName + checkCaptchaUri,
+                                        secret = secret,
+                                        headerName = headerName)
 
   val captchaTestRoute: Route = path("test") {
     pathEndOrSingleSlash {
@@ -105,32 +108,31 @@ class CaptchaDirectiveSpec extends WordSpec with Matchers with ScalatestRouteTes
 
   def stubForCaptchaCheck(expectedUserResponse: String): Unit =
     wireMockServer.stubFor(
-      expectedPost(urlEqualTo(checkCaptchaUri + s"?secret=$secret&response=$expectedUserResponse"))
-        .willReturn(
-          aResponse()
-            .withHeader("Content-Type", "application/json")
-            .withBody(
-              """{
+        expectedPost(urlEqualTo(checkCaptchaUri + s"?secret=$secret&response=$expectedUserResponse"))
+          .willReturn(
+              aResponse()
+                .withHeader("Content-Type", "application/json")
+                .withBody("""{
                 |"success": true
-                |}""".stripMargin
-            ).withStatus(StatusCodes.OK.intValue)
-        )
+                |}""".stripMargin)
+                .withStatus(StatusCodes.OK.intValue)
+          )
     )
 
   def stubForInvalidCaptcha(expectedUserResponse: String): Unit =
     wireMockServer.stubFor(
-      expectedPost(urlEqualTo(checkCaptchaUri + s"?secret=$secret&response=$expectedUserResponse"))
-        .willReturn(
-          aResponse()
-            .withHeader("Content-Type", "application/json")
-            .withBody(
-              """{
+        expectedPost(urlEqualTo(checkCaptchaUri + s"?secret=$secret&response=$expectedUserResponse"))
+          .willReturn(
+              aResponse()
+                .withHeader("Content-Type", "application/json")
+                .withBody("""{
                 |"success": false,
                 |"error-codes": [
                 |"invalid-input-response"
                 |]
-                |}""".stripMargin
-            ).withStatus(StatusCodes.OK.intValue))
+                |}""".stripMargin)
+                .withStatus(StatusCodes.OK.intValue)
+          )
     )
 
 }

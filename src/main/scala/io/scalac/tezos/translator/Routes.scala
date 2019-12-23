@@ -21,15 +21,14 @@ class Routes(
   log: LoggingAdapter,
   captchaConfig: CaptchaConfig,
   adminEmail: EmailAddress
-)(implicit as: ActorSystem, ec: ExecutionContext) {
+)(implicit as: ActorSystem,
+  ec: ExecutionContext) {
 
   private val apis: List[HttpRoutes] =
-    List(
-      new TranslatorRoutes(translator, log, captchaConfig),
-      new MessageRoutes(emails2SendService, log, captchaConfig, adminEmail),
-      new LibraryRoutes(libraryService, userService, emails2SendService, log, captchaConfig, adminEmail),
-      new LoginRoutes(userService, log)
-    )
+    List(new TranslatorRoutes(translator, log, captchaConfig),
+         new MessageRoutes(emails2SendService, log, captchaConfig, adminEmail),
+         new LibraryRoutes(libraryService, userService, emails2SendService, log, captchaConfig, adminEmail),
+         new LoginRoutes(userService, log))
 
   lazy val allRoutes: Route =
     cors() {

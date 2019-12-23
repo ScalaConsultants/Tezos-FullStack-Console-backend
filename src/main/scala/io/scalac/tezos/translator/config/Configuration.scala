@@ -12,15 +12,13 @@ case class Configuration(
   email: EmailConfiguration = EmailConfiguration(),
   cron: CronConfiguration = CronConfiguration(),
   dbUtility: DBUtilityConfiguration = DBUtilityConfiguration(),
-  dbEvolutionConfig: DbEvolutionConfig
-)
+  dbEvolutionConfig: DbEvolutionConfig)
 
 case class CaptchaConfig(
   checkOn: Boolean = false,
   url: String = "https://www.google.com/recaptcha/api/siteverify",
   secret: String = "??",
-  headerName: String = "Captcha"
-)
+  headerName: String = "Captcha")
 
 case class EmailConfiguration(
   host: String = "smtp.gmail.com",
@@ -29,15 +27,12 @@ case class EmailConfiguration(
   user: String = "you@gmail.com",
   pass: String = "p@$$w3rd",
   startTls: Boolean = true,
-  receiver: String = "enterYours@gmail.com"
-)
-
+  receiver: String = "enterYours@gmail.com")
 
 case class CronConfiguration(
   cronBatchSize: Int = 10,
   startDelay: FiniteDuration = 0 milliseconds,
-  cronTaskInterval: FiniteDuration = 30 seconds
-)
+  cronTaskInterval: FiniteDuration = 30 seconds)
 
 case class DBUtilityConfiguration(defaultLimit: Int = 10)
 
@@ -46,8 +41,7 @@ case class DbEvolutionConfig(
   user: String,
   password: String,
   migrationScriptsPackage: String,
-  enabled: Boolean
-)
+  enabled: Boolean)
 
 object Configuration {
 

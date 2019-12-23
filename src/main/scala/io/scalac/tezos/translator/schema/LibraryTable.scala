@@ -29,9 +29,11 @@ class LibraryTable(tag: Tag) extends Table[LibraryEntryDbDto](tag, "library") {
 
   def michelson: Rep[String] = column[String]("michelson", NotNull, O.SqlType("TEXT"))
 
-  def createdAt: Rep[Timestamp] = column[Timestamp]("created_at", NotNull, O.SqlType("TIMESTAMP(6) DEFAULT CURRENT_TIMESTAMP(6)"))
+  def createdAt: Rep[Timestamp] =
+    column[Timestamp]("created_at", NotNull, O.SqlType("TIMESTAMP(6) DEFAULT CURRENT_TIMESTAMP(6)"))
 
   def status: Rep[Int] = column[Int]("status", NotNull, O.SqlType("SMALLINT"))
 
-  override def * : ProvenShape[LibraryEntryDbDto] = (uid, name, author, email, description, micheline, michelson, createdAt, status) <> ((LibraryEntryDbDto.apply _).tupled, LibraryEntryDbDto.unapply)
+  override def * : ProvenShape[LibraryEntryDbDto] =
+    (uid, name, author, email, description, micheline, michelson, createdAt, status) <> ((LibraryEntryDbDto.apply _).tupled, LibraryEntryDbDto.unapply)
 }

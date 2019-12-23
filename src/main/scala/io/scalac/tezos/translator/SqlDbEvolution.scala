@@ -15,6 +15,7 @@ class SqlDbEvolution(flyway: Flyway) {
 }
 
 object SqlDbEvolution {
+
   def apply(
     config: DbEvolutionConfig,
     additionalMigrationPackages: List[String] = List.empty
@@ -22,7 +23,7 @@ object SqlDbEvolution {
     lazy val flyway: Flyway = Flyway
       .configure()
       .dataSource(config.url, config.user, config.password)
-      .locations(config.migrationScriptsPackage :: additionalMigrationPackages:_*)
+      .locations(config.migrationScriptsPackage :: additionalMigrationPackages: _*)
       .load()
 
     new SqlDbEvolution(flyway)

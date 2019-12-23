@@ -4,5 +4,4 @@ case class SendEmailRoutesDto(
   name: String,
   phone: Option[String],
   email: Option[String],
-  content: String
-)
+  content: String)

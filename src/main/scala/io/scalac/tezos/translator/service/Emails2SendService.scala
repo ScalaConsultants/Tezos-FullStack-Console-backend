@@ -7,25 +7,21 @@ import slick.jdbc.PostgresProfile.api._
 
 import scala.concurrent.{ExecutionContext, Future}
 
-class Emails2SendService(repository: Emails2SendRepository, db: Database) {
+class Emails2SendService(
+  repository: Emails2SendRepository,
+  db: Database) {
 
   def addNewEmail2Send(email: SendEmail): Future[Int] =
-    db.run(
-      repository.add(SendEmailDbDto.fromDomain(email))
-    )
+    db.run(repository.add(SendEmailDbDto.fromDomain(email)))
 
   def getEmails2Send(batchSize: Int)(implicit ec: ExecutionContext): Future[Seq[SendEmail]] =
     for {
-      entriesDto  <-  db.run(repository.getEmails2Send(batchSize))
-      entriesFSeq =   entriesDto.map(e => Future.fromTry(SendEmail.fromSendEmailDbDto(e)))
-      entries     <-  Future.sequence(entriesFSeq)
+      entriesDto <- db.run(repository.getEmails2Send(batchSize))
+      entriesFSeq = entriesDto.map(e => Future.fromTry(SendEmail.fromSendEmailDbDto(e)))
+      entries <- Future.sequence(entriesFSeq)
     } yield entries
 
-
-  def removeSentMessage(uid: Uid): Future[Int] = {
-    db.run(
-      repository.removeEmail2Send(uid.value)
-    )
-  }
+  def removeSentMessage(uid: Uid): Future[Int] =
+    db.run(repository.removeEmail2Send(uid.value))
 
 }

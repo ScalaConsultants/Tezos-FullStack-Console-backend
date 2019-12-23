@@ -10,7 +10,11 @@ import io.scalac.tezos.translator.service.UserService
 
 import scala.util.{Failure, Success}
 
-class LoginRoutes(userService: UserService, log: LoggingAdapter)(implicit as: ActorSystem) extends HttpRoutes {
+class LoginRoutes(
+  userService: UserService,
+  log: LoggingAdapter
+)(implicit as: ActorSystem)
+    extends HttpRoutes {
   import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport._
   import io.circe.generic.auto._
 
@@ -21,16 +25,17 @@ class LoginRoutes(userService: UserService, log: LoggingAdapter)(implicit as: Ac
           log.error(s"user login failed with: ${ex.getMessage}")
           complete(HttpResponse(status = StatusCodes.InternalServerError))
         case Success(Some(token)) => complete(token)
-        case _ => complete(HttpResponse(status = StatusCodes.Forbidden))
+        case _                    => complete(HttpResponse(status = StatusCodes.Forbidden))
       }
     } ~
       (pathPrefix("logout")
         & pathEndOrSingleSlash
         & authenticateOAuth2("", userService.authenticateOAuth2AndPrependUsername)
-        & post) { case (_, token) =>
+        & post) {
+        case (_, token) =>
           userService.logout(token)
           complete(StatusCodes.OK)
-        }
+      }
 
   def validateCredentialsFormat: Directive[Tuple1[UserCredentials]] = withDTOValidation[UserCredentials]
 }

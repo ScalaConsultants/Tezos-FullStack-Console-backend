@@ -10,20 +10,17 @@ case class LibraryEntryRoutesAdminDto(
   description: Option[String],
   micheline: String,
   michelson: String,
-  status: String,
-)
+  status: String)
 
 object LibraryEntryRoutesAdminDto {
-  def fromDomain(v: LibraryEntry): LibraryEntryRoutesAdminDto = {
-    LibraryEntryRoutesAdminDto(
-      uid = v.uid.value,
-      title = v.title,
-      author = v.author.map(_.toString),
-      email = v.email.map(_.toString),
-      description = v.description.map(_.toString),
-      micheline = v.micheline,
-      michelson = v.michelson,
-      status = v.status.toString
-    )
-  }
+
+  def fromDomain(v: LibraryEntry): LibraryEntryRoutesAdminDto =
+    LibraryEntryRoutesAdminDto(uid = v.uid.value,
+                               title = v.title,
+                               author = v.author.map(_.toString),
+                               email = v.email.map(_.toString),
+                               description = v.description.map(_.toString),
+                               micheline = v.micheline,
+                               michelson = v.michelson,
+                               status = v.status.toString)
 }

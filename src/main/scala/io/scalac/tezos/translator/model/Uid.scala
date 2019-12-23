@@ -7,9 +7,9 @@ import scala.util.{Failure, Success, Try}
 sealed abstract case class Uid(value: String)
 
 object Uid {
-  def apply(): Uid = {
+
+  def apply(): Uid =
     new Uid(UUID.randomUUID().toString.toLowerCase) {}
-  }
 
   def fromString(s: String): Try[Uid] =
     if (s == null) failure("Uid cannot be null")

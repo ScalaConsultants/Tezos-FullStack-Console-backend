@@ -22,7 +22,9 @@ class LibraryRoutes(
   log: LoggingAdapter,
   captchaConfig: CaptchaConfig,
   adminEmail: EmailAddress
-)(implicit as: ActorSystem, ec: ExecutionContext) extends HttpRoutes {
+)(implicit as: ActorSystem,
+  ec: ExecutionContext)
+    extends HttpRoutes {
   import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport._
   import io.circe.generic.auto._
 
@@ -40,9 +42,9 @@ class LibraryRoutes(
         }
 
         val operationPerformed = for {
-          entry       <-  Future.fromTry(libraryDto.toDomain)
-          addResult   <-  service.addNew(entry)
-          _           <-  sendEmailF
+          entry <- Future.fromTry(libraryDto.toDomain)
+          addResult <- service.addNew(entry)
+          _ <- sendEmailF
         } yield addResult
 
         onComplete(operationPerformed) {
@@ -54,46 +56,48 @@ class LibraryRoutes(
       } ~
         (get
           & authenticateOAuth2("", userService.authenticateOAuth2AndPrependUsername)
-          & parameters('offset.as[Int].?, 'limit.as[Int].?)) { case (_, offset, limit) =>
-          val operationPerformed = service.getRecords(offset, limit)
-          onComplete(operationPerformed) {
-            case Success(libraryEntries) => complete(libraryEntries.map(LibraryEntryRoutesAdminDto.fromDomain))
-            case Failure(err) =>
-              log.error(s"Can't show accepted library models, error - $err")
-              complete(StatusCodes.InternalServerError, Error("Can't get records"))
-          }
+          & parameters('offset.as[Int].?, 'limit.as[Int].?)) {
+          case (_, offset, limit) =>
+            val operationPerformed = service.getRecords(offset, limit)
+            onComplete(operationPerformed) {
+              case Success(libraryEntries) => complete(libraryEntries.map(LibraryEntryRoutesAdminDto.fromDomain))
+              case Failure(err) =>
+                log.error(s"Can't show accepted library models, error - $err")
+                complete(StatusCodes.InternalServerError, Error("Can't get records"))
+            }
         } ~
-        (get & parameters('offset.as[Int].?, 'limit.as[Int].?)) { case (offset, limit) =>
-          val operationPerformed = service.getRecords(offset, limit, Some(Accepted))
-          onComplete(operationPerformed) {
-            case Success(libraryEntries) => complete(libraryEntries.map(LibraryEntryRoutesDto.fromDomain))
-            case Failure(err) =>
-              log.error(s"Can't show accepted library models, limit - $limit error - $err")
-              complete(StatusCodes.InternalServerError, Error("Can't get records"))
-          }
+        (get & parameters('offset.as[Int].?, 'limit.as[Int].?)) {
+          case (offset, limit) =>
+            val operationPerformed = service.getRecords(offset, limit, Some(Accepted))
+            onComplete(operationPerformed) {
+              case Success(libraryEntries) => complete(libraryEntries.map(LibraryEntryRoutesDto.fromDomain))
+              case Failure(err) =>
+                log.error(s"Can't show accepted library models, limit - $limit error - $err")
+                complete(StatusCodes.InternalServerError, Error("Can't get records"))
+            }
         } ~
         (authenticateOAuth2("", userService.authenticateOAuth2AndPrependUsername) &
           put &
-          parameters('uid.as[String], 'status.as[String])
-          ) { case (_, uid, status) =>
-
+          parameters('uid.as[String], 'status.as[String])) {
+          case (_, uid, status) =>
             val statusChangeWithEmail =
               for {
-                u             <-  Future.fromTry(Uid.fromString(uid))
-                parsedStatus  =   Status.fromString(status) match {
-                                    case Success(PendingApproval) => Failure(new IllegalArgumentException("Cannot change status to 'pending_approval' !"))
-                                    case other => other
-                                  }
-                s             <-  Future.fromTry(parsedStatus)
-                updatedEntry  <-  service.changeStatus(u, s)
-                _             <-  updatedEntry.email match {
-                                    case Some(email) =>
-                                      val e = SendEmail.statusChange(email, updatedEntry.title , s)
-                                      emails2SendService
-                                        .addNewEmail2Send(e)
-                                        .recover { case err => log.error(s"Can't add new email to send, error - $err") }
-                                    case None => Future.successful(())
-                                  }
+                u <- Future.fromTry(Uid.fromString(uid))
+                parsedStatus = Status.fromString(status) match {
+                  case Success(PendingApproval) =>
+                    Failure(new IllegalArgumentException("Cannot change status to 'pending_approval' !"))
+                  case other => other
+                }
+                s <- Future.fromTry(parsedStatus)
+                updatedEntry <- service.changeStatus(u, s)
+                _ <- updatedEntry.email match {
+                      case Some(email) =>
+                        val e = SendEmail.statusChange(email, updatedEntry.title, s)
+                        emails2SendService
+                          .addNewEmail2Send(e)
+                          .recover { case err => log.error(s"Can't add new email to send, error - $err") }
+                      case None => Future.successful(())
+                    }
               } yield updatedEntry
 
             onComplete(statusChangeWithEmail) {
@@ -107,17 +111,17 @@ class LibraryRoutes(
         } ~
         (authenticateOAuth2("", userService.authenticateOAuth2AndPrependUsername) &
           delete &
-          parameters('uid.as[String])
-          ) { case (_, uid) =>
-              onComplete(Future.fromTry(Uid.fromString(uid).map(service.delete)).flatten) {
-                case Success(_) =>
-                  complete(StatusCodes.OK)
+          parameters('uid.as[String])) {
+          case (_, uid) =>
+            onComplete(Future.fromTry(Uid.fromString(uid).map(service.delete)).flatten) {
+              case Success(_) =>
+                complete(StatusCodes.OK)
 
-                case Failure(err) =>
-                  log.error(s"Can't delete library entry, uid: $uid, error - $err")
-                  handleError(err)
-              }
+              case Failure(err) =>
+                log.error(s"Can't delete library entry, uid: $uid, error - $err")
+                handleError(err)
             }
+        }
     }
 
   def withLibraryDTOValidation: Directive[Tuple1[LibraryEntryRoutesDto]] = withDTOValidation[LibraryEntryRoutesDto]
@@ -125,7 +129,7 @@ class LibraryRoutes(
   private def handleError(t: Throwable): StandardRoute =
     t match {
       case _: IllegalArgumentException => complete(StatusCodes.NotFound, Error(t.getMessage))
-      case _ => complete(StatusCodes.InternalServerError, Error("Can't update"))
+      case _                           => complete(StatusCodes.InternalServerError, Error("Can't update"))
     }
 
 }

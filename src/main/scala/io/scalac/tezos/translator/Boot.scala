@@ -18,6 +18,7 @@ import scala.io.StdIn
 import scala.util.{Failure, Success}
 
 object Boot {
+
   def main(args: Array[String]): Unit = {
     implicit val system: ActorSystem = ActorSystem("tezos-translator")
     implicit val materializer: ActorMaterializer = ActorMaterializer()
@@ -45,25 +46,32 @@ object Boot {
 
     val bindingFuture =
       for {
-        cfg               <-  Future.fromTry(maybeConfiguration)
-        dbEvolution       =   SqlDbEvolution(cfg.dbEvolutionConfig)
-        _                 <-  if (cfg.dbEvolutionConfig.enabled) dbEvolution.runEvolutions() else Future.successful(0)
-        libraryRepo       =   new LibraryRepository(cfg.dbUtility, db)
-        libraryService    =   new LibraryService(libraryRepo, log)
-        sendEmailsService <-  Future.fromTry(SendEmailsServiceImpl(email2SendService, log, cfg.email, cfg.cron))
-        cronEmailSender   =   EmailSender(sendEmailsService, cfg.cron)
-        adminEmail        <-  Future.fromTry(EmailAddress.fromString(cfg.email.receiver))
-        routes            =   new Routes(email2SendService, libraryService, userService, MMTranslator, log, cfg.reCaptcha, adminEmail)
-        binding           <-  Http().bindAndHandle(routes.allRoutes, host, port)
+        cfg <- Future.fromTry(maybeConfiguration)
+        dbEvolution = SqlDbEvolution(cfg.dbEvolutionConfig)
+        _ <- if (cfg.dbEvolutionConfig.enabled) dbEvolution.runEvolutions() else Future.successful(0)
+        libraryRepo = new LibraryRepository(cfg.dbUtility, db)
+        libraryService = new LibraryService(libraryRepo, log)
+        sendEmailsService <- Future.fromTry(SendEmailsServiceImpl(email2SendService, log, cfg.email, cfg.cron))
+        cronEmailSender = EmailSender(sendEmailsService, cfg.cron)
+        adminEmail <- Future.fromTry(EmailAddress.fromString(cfg.email.receiver))
+        routes = new Routes(email2SendService,
+                            libraryService,
+                            userService,
+                            MMTranslator,
+                            log,
+                            cfg.reCaptcha,
+                            adminEmail)
+        binding <- Http().bindAndHandle(routes.allRoutes, host, port)
       } yield (cronEmailSender, binding)
 
     log.info(s"Server online at http://$host:$port\nPress RETURN to stop...")
 
     StdIn.readLine()
     bindingFuture
-      .flatMap { case (cronEmailSender, binding) =>
-        cronEmailSender.cancel()
-        binding.unbind()
+      .flatMap {
+        case (cronEmailSender, binding) =>
+          cronEmailSender.cancel()
+          binding.unbind()
       }
       .onComplete(_ => system.terminate())
   }
