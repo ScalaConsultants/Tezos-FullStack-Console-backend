@@ -1,13 +1,12 @@
 package io.scalac.tezos.translator.service
 
-import akka.http.scaladsl.server.directives.Credentials
-import akka.http.scaladsl.server.directives.Credentials.Provided
 import com.github.t3hnar.bcrypt._
 import io.scalac.tezos.translator.model.UserModel
 import io.scalac.tezos.translator.repository.UserRepository
-import io.scalac.tezos.translator.routes.dto.DTO.{Error, ErrorDTO}
+import io.scalac.tezos.translator.routes.dto.DTO.Error
 import slick.jdbc.PostgresProfile.api._
 import cats.syntax.either._
+import io.scalac.tezos.translator.routes.Endpoints.ErrorResponse
 import sttp.model.StatusCode
 
 import scala.annotation.tailrec
@@ -39,7 +38,7 @@ class UserService(repository: UserRepository, db: Database)(implicit ec: Executi
       }
   }
 
-  def authenticate(token: String): Future[Either[(ErrorDTO, StatusCode), (String, String)]] = Future {
+  def authenticate(token: String): Future[Either[ErrorResponse, (String, String)]] = Future {
     tokenToUser.get(token)
       .fold {
         (Error("Token not found"), StatusCode.Unauthorized).asLeft[(String, String)]

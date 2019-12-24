@@ -7,7 +7,7 @@ import io.scalac.tezos.translator.config.CaptchaConfig
 import io.scalac.tezos.translator.model.LibraryEntry.{Accepted, PendingApproval, Status}
 import io.scalac.tezos.translator.model.{EmailAddress, SendEmail, Uid}
 import io.scalac.tezos.translator.routes.directives.DTOValidationDirective
-import io.scalac.tezos.translator.routes.dto.DTO.{Error, ErrorDTO}
+import io.scalac.tezos.translator.routes.dto.DTO.Error
 import io.scalac.tezos.translator.routes.directives.ReCaptchaDirective._
 import io.scalac.tezos.translator.routes.dto.{LibraryEntryDTO, LibraryEntryRoutesAdminDto, LibraryEntryRoutesDto}
 import io.scalac.tezos.translator.service.{Emails2SendService, LibraryService, UserService}
@@ -16,8 +16,9 @@ import sttp.tapir._
 import sttp.tapir.json.circe._
 import sttp.tapir.server.akkahttp._
 import cats.syntax.either._
+import cats.data.EitherT
+import cats.instances.future._
 import io.scalac.tezos.translator.routes.Endpoints._
-
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success}
 
@@ -126,15 +127,17 @@ class LibraryRoutes(
 
   private def getDto(maybeHeader: Option[String],
                       maybeOffset: Option[Int],
-                      maybeLimit: Option[Int]): Future[Either[ErrorResponse, Seq[LibraryEntryDTO]]] =
-    maybeHeader
-      .fold(getJustDto(maybeOffset, maybeLimit)) {
+                      maybeLimit: Option[Int]): Future[Either[ErrorResponse, Seq[LibraryEntryDTO]]] = {
+    val result = maybeHeader
+      .fold(EitherT(getJustDto(maybeOffset, maybeLimit))) {
         token =>
           for {
-            _      <- userService.authenticate(token)
-            result <- getAdminsDto(maybeOffset, maybeLimit)
+            _      <- EitherT(userService.authenticate(token))
+            result <- EitherT(getAdminsDto(maybeOffset, maybeLimit))
           } yield result
-    }
+      }
+    result.value
+  }
 
   private def getJustDto(maybeOffset: Option[Int],
                      maybeLimit: Option[Int]): Future[Either[ErrorResponse, Seq[LibraryEntryDTO]]] =
