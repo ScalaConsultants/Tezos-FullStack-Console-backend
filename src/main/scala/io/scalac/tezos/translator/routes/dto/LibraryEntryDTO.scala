@@ -1,10 +1,23 @@
 package io.scalac.tezos.translator.routes.dto
 
+import io.circe.Encoder
+import io.circe.generic.semiauto.deriveEncoder
 import io.scalac.tezos.translator.model.LibraryEntry.PendingApproval
 import io.scalac.tezos.translator.model.{EmailAddress, LibraryEntry, Uid}
 import scala.util.{Success, Try}
 
 sealed trait LibraryEntryDTO
+
+object LibraryEntryDTO {
+
+  implicit val LibraryEntryDTOEncoder: Encoder[LibraryEntryDTO] = {
+    case v: LibraryEntryRoutesAdminDto =>
+      LibraryEntryRoutesAdminDto.libraryEntryRoutesAdminDtoEncoder(v)
+    case v: LibraryEntryRoutesDto =>
+      LibraryEntryRoutesDto.libraryEntryRoutesDtoEncoder(v)
+  }
+
+}
 
 case class LibraryEntryRoutesAdminDto(
                                        uid: String,
@@ -30,6 +43,9 @@ object LibraryEntryRoutesAdminDto {
       status = v.status.toString
     )
   }
+
+  implicit val libraryEntryRoutesAdminDtoEncoder: Encoder[LibraryEntryRoutesAdminDto] =
+    deriveEncoder[LibraryEntryRoutesAdminDto]
 
 }
 
@@ -72,5 +88,8 @@ object LibraryEntryRoutesDto {
       micheline = v.micheline,
       michelson = v.michelson
     )
+
+  implicit val libraryEntryRoutesDtoEncoder: Encoder[LibraryEntryRoutesDto] =
+    deriveEncoder[LibraryEntryRoutesDto]
 
 }
