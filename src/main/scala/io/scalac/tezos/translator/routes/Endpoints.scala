@@ -20,6 +20,7 @@ object Endpoints {
     baseEndpoint.in(header[String](reCaptchaConfig.headerName)).errorOut(jsonBody[ErrorDTO].and(statusCode))
 
   val errorResponse: EndpointOutput[ErrorResponse] = jsonBody[ErrorDTO].and(statusCode)
+
   val offsetQuery: EndpointInput.Query[Option[Int]] =
     query[Option[Int]]("offset").description("Offset").example(40.some)
   val limitQuery: EndpointInput.Query[Option[Int]] =
@@ -28,5 +29,10 @@ object Endpoints {
     query[String]("uid").description("Uid").example("4a5c1b83-c263-49be-95d2-620e4a832e94")
   val statusQuery: EndpointInput.Query[String] =
     query[String]("status").description("Desired status").example("accepted")
+
+  val maybeAuthHeader: EndpointIO.Header[Option[String]] =
+    header[Option[String]]("Authorization")
+      .description("Optional authorization header")
+      .example("Bearer  WcPvrwuCTJYghiz2vxQsvmOzmPA9uH".some)
 
 }

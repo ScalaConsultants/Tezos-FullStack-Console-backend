@@ -7,9 +7,9 @@ import io.scalac.tezos.translator.config.CaptchaConfig
 import io.scalac.tezos.translator.model.LibraryEntry.{Accepted, PendingApproval, Status}
 import io.scalac.tezos.translator.model.{EmailAddress, SendEmail, Uid}
 import io.scalac.tezos.translator.routes.directives.DTOValidationDirective
-import io.scalac.tezos.translator.routes.dto.DTO.{Error, ErrorDTO}
+import io.scalac.tezos.translator.routes.dto.DTO.Error
 import io.scalac.tezos.translator.routes.directives.ReCaptchaDirective._
-import io.scalac.tezos.translator.routes.dto.{LibraryEntryRoutesAdminDto, LibraryEntryRoutesDto}
+import io.scalac.tezos.translator.routes.dto.{LibraryEntryDTO, LibraryEntryRoutesAdminDto, LibraryEntryRoutesDto}
 import io.scalac.tezos.translator.service.{Emails2SendService, LibraryService, UserService}
 import sttp.model.StatusCode
 import sttp.tapir._
@@ -42,22 +42,14 @@ class LibraryRoutes(
       .out(statusCode)
       .description("Will add LibraryEntryRoutesDto to storage")
 
-  private val getDtoEndpoint: Endpoint[(Option[Int], Option[Int]), ErrorResponse, Seq[LibraryEntryRoutesDto], Nothing] =
+  private val getDtoEndpoint: Endpoint[(Option[String], Option[Int], Option[Int]), ErrorResponse, Seq[LibraryEntryDTO], Nothing] =
     libraryEndpoint
+      .in(maybeAuthHeader)
       .in(offsetQuery.and(limitQuery))
       .errorOut(errorResponse)
-      .out(jsonBody[Seq[LibraryEntryRoutesDto]])
+      .out(jsonBody[Seq[LibraryEntryDTO]])
       .get
-      .description("Will return sequence of LibraryEntryRoutesDto")
-
-  private val getAdminsDtoEndpoint: Endpoint[(String, Option[Int], Option[Int]), ErrorResponse, Seq[LibraryEntryRoutesAdminDto], Nothing] =
-    libraryEndpoint
-      .in(auth.bearer)
-      .in(offsetQuery.and(limitQuery))
-      .errorOut(errorResponse)
-      .out(jsonBody[Seq[LibraryEntryRoutesAdminDto]])
-      .get
-      .description("Will return sequence of LibraryEntryRoutesAdminDto")
+      .description("Will return sequence of LibraryEntryRoutesDto or LibraryEntryRoutesAdminDto if auth header provided")
 
   private val putEntryEndpoint: Endpoint[(String, String, String), ErrorResponse, StatusCode, Nothing] =
     libraryEndpoint
@@ -87,11 +79,6 @@ class LibraryRoutes(
   private def getDTORoute: Route =
     getDtoEndpoint.toRoute {
       (getDto _).tupled
-    }
-
-  private def getAdminsDTORoute: Route =
-    getAdminsDtoEndpoint.toRoute {
-      (userService.authenticate _).andThenFirstE((getAdminsDto _).tupled)
     }
 
   private def putEntryRoute: Route =
@@ -126,9 +113,8 @@ class LibraryRoutes(
     }
   }
 
-  private def getAdminsDto(userAndToken: (String, String),
-                           maybeOffset: Option[Int],
-                           maybeLimit: Option[Int]): Future[Either[ErrorResponse, Seq[LibraryEntryRoutesAdminDto]]] = {
+  private def getAdminsDto(maybeOffset: Option[Int],
+                            maybeLimit: Option[Int]): Future[Either[ErrorResponse, Seq[LibraryEntryDTO]]] = {
     service
       .getRecords(maybeOffset, maybeLimit)
       .map(_.map(LibraryEntryRoutesAdminDto.fromDomain).asRight)
@@ -138,8 +124,20 @@ class LibraryRoutes(
       }
   }
 
-  private def getDto(maybeOffset: Option[Int],
-                     maybeLimit: Option[Int]): Future[Either[ErrorResponse, Seq[LibraryEntryRoutesDto]]] =
+  private def getDto(maybeHeader: Option[String],
+                      maybeOffset: Option[Int],
+                      maybeLimit: Option[Int]): Future[Either[ErrorResponse, Seq[LibraryEntryDTO]]] =
+    maybeHeader
+      .fold(getJustDto(maybeOffset, maybeLimit)) {
+        token =>
+          for {
+            _      <- userService.authenticate(token)
+            result <- getAdminsDto(maybeOffset, maybeLimit)
+          } yield result
+    }
+
+  private def getJustDto(maybeOffset: Option[Int],
+                     maybeLimit: Option[Int]): Future[Either[ErrorResponse, Seq[LibraryEntryDTO]]] =
     service
       .getRecords(maybeOffset, maybeLimit, Some(Accepted))
       .map(_.map(LibraryEntryRoutesDto.fromDomain).asRight)
@@ -197,9 +195,9 @@ class LibraryRoutes(
       case _ => (Error("Can't update"), StatusCode.InternalServerError)
     }
 
-  override def routes: Route = addNewEntryRoute ~ getDTORoute ~ getAdminsDTORoute ~ putEntryRoute ~ deleteEntryRoute
+  override def routes: Route = addNewEntryRoute ~ getDTORoute ~ putEntryRoute ~ deleteEntryRoute
 
   override def docs: List[Endpoint[_, _ ,_ ,_]] =
-    List(libraryAddEndpoint, getDtoEndpoint, getAdminsDtoEndpoint, putEntryEndpoint, deleteEntryEndpoint)
+    List(libraryAddEndpoint, getDtoEndpoint, putEntryEndpoint, deleteEntryEndpoint)
 
 }

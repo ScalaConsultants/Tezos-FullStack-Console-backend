@@ -22,7 +22,8 @@ class LoginRoutes(userService: UserService, log: LoggingAdapter)(implicit as: Ac
 
 
   val loginEndpoint: Endpoint[UserCredentials, ErrorResponse, String, Nothing] =
-    endpoint
+    Endpoints
+      .baseEndpoint
       .post
       .in("login")
       .in(jsonBody[UserCredentials])
@@ -44,7 +45,8 @@ class LoginRoutes(userService: UserService, log: LoggingAdapter)(implicit as: Ac
     userService.authenticate(token).map(_.map { case  (_, t) => userService.logout(t) })
 
   val logoutEndpoint: Endpoint[String, ErrorResponse, Unit, Nothing] =
-    endpoint
+    Endpoints
+      .baseEndpoint
       .post
       .in("logout")
       .in(auth.bearer)
