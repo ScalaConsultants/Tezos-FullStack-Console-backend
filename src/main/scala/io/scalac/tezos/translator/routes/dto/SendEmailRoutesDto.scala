@@ -5,8 +5,8 @@ import io.circe.generic.semiauto.{deriveDecoder, deriveEncoder}
 
 case class SendEmailRoutesDto(
   name: String,
-  phone: String,
-  email: String,
+  phone: Option[String],
+  email: Option[String],
   content: String
 )
 

@@ -24,14 +24,14 @@ class TranslatorRoutes(
         Future(
           translator
             .michelson2micheline(body)
-            .leftMap((StatusCode.BadRequest, _))
+            .leftMap(_ => (StatusCode.BadRequest, "invalid syntax"))
         )
     ) ~ fromMichelineEndpoint.toRoute(
       body =>
         Future(
           translator
             .micheline2michelson(body)
-            .leftMap(error => (StatusCode.BadRequest, error.toString))
+            .leftMap(_ => (StatusCode.BadRequest, "input json cannot be parsed"))
         )
     )
 

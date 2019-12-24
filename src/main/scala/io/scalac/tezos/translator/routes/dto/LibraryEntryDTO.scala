@@ -21,10 +21,10 @@ object LibraryEntryDTO {
 
 case class LibraryEntryRoutesAdminDto(
                                        uid: String,
-                                       name: String,
-                                       author: String,
+                                       title: String,
+                                       author: Option[String],
                                        email: Option[String],
-                                       description: String,
+                                       description: Option[String],
                                        micheline: String,
                                        michelson: String,
                                        status: String,
@@ -34,10 +34,10 @@ object LibraryEntryRoutesAdminDto {
   def fromDomain(v: LibraryEntry): LibraryEntryRoutesAdminDto = {
     LibraryEntryRoutesAdminDto(
       uid = v.uid.value,
-      name = v.name,
-      author = v.author,
+      title = v.title,
+      author = v.author.map(_.toString),
       email = v.email.map(_.toString),
-      description = v.description,
+      description = v.description.map(_.toString),
       micheline = v.micheline,
       michelson = v.michelson,
       status = v.status.toString
@@ -50,38 +50,40 @@ object LibraryEntryRoutesAdminDto {
 }
 
 case class LibraryEntryRoutesDto(
-                                  name: String,
-                                  author: String,
+                                  title: String,
+                                  author: Option[String],
                                   email: Option[String],
-                                  description: String,
+                                  description: Option[String],
                                   micheline: String,
                                   michelson: String
                                 ) extends LibraryEntryDTO {
   def toDomain: Try[LibraryEntry] = {
-    val emailAddress = email match {
-      case Some(v) => EmailAddress.fromString(v).map(Some(_))
+
+    val emailAdress = email match {
+      case Some(e) => EmailAddress.fromString(e).map(Some(_))
       case None => Success(None)
     }
 
-    emailAddress.map { ea =>
+    emailAdress.map(email => {
+
       LibraryEntry(
         uid = Uid(),
-        name = name,
+        title = title,
         author = author,
-        email = ea,
+        email = email,
         description = description,
         micheline = micheline,
         michelson = michelson,
         status = PendingApproval
       )
-    }
+    })
   }
-}
 
+}
 object LibraryEntryRoutesDto {
   def fromDomain(v: LibraryEntry): LibraryEntryRoutesDto =
     LibraryEntryRoutesDto(
-      name = v.name,
+      title = v.title,
       author = v.author,
       email = v.email.map(_.toString),
       description = v.description,

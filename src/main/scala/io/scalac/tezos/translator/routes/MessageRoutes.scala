@@ -31,17 +31,18 @@ class MessageRoutes(
       .in(jsonBody[SendEmailRoutesDto])
       .out(statusCode)
 
-  override def routes: Route = buildRoute(log, reCaptchaConfig)
+  private def addNewEmail(dto: SendEmailRoutesDto): Future[Either[ErrorResponse, StatusCode]] = {
+    val operationPerformed = for {
+        sendEmail <-  Future.fromTry(SendEmail.fromSendEmailRoutesDto(dto, adminEmail))
+        newEmail  <-  service.addNewEmail2Send(sendEmail)
+      } yield newEmail
 
-  private def addNewEmail(dto: SendEmailRoutesDto): Future[Either[ErrorResponse, StatusCode]] =
-    service
-      .addNewEmail2Send(SendEmail.fromSendEmailRoutesDto(dto, adminEmail))
-      .map(_ => StatusCode.Ok.asRight)
-    .recover {
-      case err =>
-        log.error(s"Can't add email to send, err - $err")
+    operationPerformed.map(_ => StatusCode.Ok.asRight).recover {
+      case e =>
+        log.error(s"Can't add email to send, err - $e")
         (Error("Can't save payload"), StatusCode.InternalServerError).asLeft
     }
+  }
 
   private def validateSendMessage(x: Unit,
                                   sendEmailRoutesDto: SendEmailRoutesDto)
@@ -55,6 +56,8 @@ class MessageRoutes(
           .andThenFirstE((validateSendMessage _).tupled)
           .andThenFirstE(addNewEmail)
       }
+
+  override def routes: Route = buildRoute(log, reCaptchaConfig)
 
   override def docs: List[Endpoint[_, _, _, _]] = List(messageEndpoint)
 

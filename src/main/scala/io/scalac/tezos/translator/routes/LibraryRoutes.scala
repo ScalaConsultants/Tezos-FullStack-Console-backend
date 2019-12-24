@@ -7,7 +7,7 @@ import io.scalac.tezos.translator.config.CaptchaConfig
 import io.scalac.tezos.translator.model.LibraryEntry.{Accepted, PendingApproval, Status}
 import io.scalac.tezos.translator.model.{EmailAddress, SendEmail, Uid}
 import io.scalac.tezos.translator.routes.directives.DTOValidationDirective
-import io.scalac.tezos.translator.routes.dto.DTO.Error
+import io.scalac.tezos.translator.routes.dto.DTO.{Error, ErrorDTO}
 import io.scalac.tezos.translator.routes.directives.ReCaptchaDirective._
 import io.scalac.tezos.translator.routes.dto.{LibraryEntryDTO, LibraryEntryRoutesAdminDto, LibraryEntryRoutesDto}
 import io.scalac.tezos.translator.service.{Emails2SendService, LibraryService, UserService}
@@ -161,7 +161,7 @@ class LibraryRoutes(
         updatedEntry  <-  service.changeStatus(u, s)
         _             <-  updatedEntry.email match {
           case Some(email) =>
-            val e = SendEmail.statusChange(email, updatedEntry.name , s)
+            val e = SendEmail.statusChange(email, updatedEntry.title , s)
             emails2SendService
               .addNewEmail2Send(e)
               .recover { case err => log.error(s"Can't add new email to send, error - $err") }

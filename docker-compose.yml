@@ -18,5 +18,8 @@ services:
       EMAIL_USER: ${EMAIL_USER}
       EMAIL_PASS: ${EMAIL_PASS}
       EMAIL_RECEIVER: ${EMAIL_RECEIVER}
+      FE_URL: ${FE_URL}
+      RE_CAPTCHA_CHECK_ON: ${RE_CAPTCHA_CHECK_ON}
+      RE_CAPTCHA_SECRET: ${RE_CAPTCHA_SECRET}
     command: ["java", "-jar", "tezos-console.jar"]
 

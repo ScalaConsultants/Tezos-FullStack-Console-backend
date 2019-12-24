@@ -134,7 +134,7 @@ class SendEmailServiceSpec
     recipients1.length shouldBe 1
     recipients1.headOption shouldBe Some("xxx@service.com")
 
-    val body1 = GreenMailUtil.getBody(e1SendResult).replaceAll("\r", "")
+    val body1 = GreenMailUtil.getBody(e1SendResult)
 
     body1 shouldBe """Acceptance status of your translation: "translation title" has changed to: accepted"""
 
@@ -149,14 +149,14 @@ class SendEmailServiceSpec
     recipients2.length shouldBe 1
     recipients2.headOption shouldBe Some(testAdmin) // this should go to "admin", which is testAdmin in here
 
-    val body2 = GreenMailUtil.getBody(e2SendResult).replaceAll("\r", "")
+    val body2 = GreenMailUtil.getBody(e2SendResult)
 
-    body2 shouldBe
-      s"""
+    Helper.testFormat(body2) shouldBe
+      Helper.testFormat( s"""
          |name: Dude
          |phone: 666666666
          |email: dude@service.com
-         |content: some content""".stripMargin
+         |content: some content""".stripMargin)
 
 
     received.get(e3.subject) shouldBe defined
@@ -182,8 +182,8 @@ class SendEmailServiceSpec
 
   private trait SampleEmails {
     val e1: SendEmail = SendEmail.statusChange(unsafeEmailAddress("xxx@service.com"), "translation title", Accepted)
-    val e2: SendEmail = SendEmail.fromSendEmailRoutesDto(SendEmailRoutesDto("Dude", "666666666", "dude@service.com", "some content"), testAdminEmail)
-    val e3: SendEmail = SendEmail.approvalRequest(LibraryEntryRoutesDto("contract name", "Thanos", None, "Some description", "micheline", "michelson"), testAdminEmail)
+    val e2: SendEmail = SendEmail.fromSendEmailRoutesDto(SendEmailRoutesDto("Dude", Some("666666666"), Some("dude@service.com"), "some content"), testAdminEmail).get
+    val e3: SendEmail = SendEmail.approvalRequest(LibraryEntryRoutesDto("contract name", Some("Thanos"), None, Some("Some description"), "micheline", "michelson"), testAdminEmail)
 
     val toInsert: Seq[SendEmail] = Seq(e1, e2, e3)
 
