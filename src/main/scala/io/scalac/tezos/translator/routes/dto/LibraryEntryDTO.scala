@@ -14,7 +14,7 @@ object LibraryEntryDTO {
   implicit val LibraryEntryDTOEncoder: Encoder[LibraryEntryDTO] = {
     case v: LibraryEntryRoutesAdminDto =>
       LibraryEntryRoutesAdminDto.libraryEntryRoutesAdminDtoEncoder(v)
-    case v: LibraryEntryRoutesDto =>
+    case v: LibraryEntryRoutesDto      =>
       LibraryEntryRoutesDto.libraryEntryRoutesDtoEncoder(v)
   }
 

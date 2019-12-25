@@ -101,10 +101,10 @@ object Dependencies {
     "com.softwaremill.sttp.tapir" %% "tapir-core" % Version.tapir,
     "com.softwaremill.sttp.tapir" %% "tapir-akka-http-server" % Version.tapir exclude("com.typesafe.akka", "akka-stream_2.12"),
     "com.softwaremill.sttp.tapir" %% "tapir-json-circe" % Version.tapir,
-    "com.softwaremill.sttp.model" %% "core" % Version.tapirModel,
     "com.softwaremill.sttp.tapir" %% "tapir-openapi-docs" % Version.tapir,
     "com.softwaremill.sttp.tapir" %% "tapir-openapi-circe-yaml" % Version.tapir,
-    "com.softwaremill.sttp.tapir" %% "tapir-swagger-ui-akka-http" % Version.tapir exclude("com.typesafe.akka", "akka-stream_2.12")
+    "com.softwaremill.sttp.tapir" %% "tapir-swagger-ui-akka-http" % Version.tapir exclude("com.typesafe.akka", "akka-stream_2.12"),
+    "com.softwaremill.sttp.model" %% "core" % Version.tapirModel,
   )
 
   val tesozFCTM: Seq[ModuleID] = Seq(

@@ -43,7 +43,7 @@ class UserService(repository: UserRepository, db: Database)(implicit ec: Executi
       .fold {
         (Error("Token not found"), StatusCode.Unauthorized).asLeft[(String, String)]
       } {
-        x => (x, token).asRight
+        username => (username, token).asRight
       }
   }
 

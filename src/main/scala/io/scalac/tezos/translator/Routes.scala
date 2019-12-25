@@ -45,7 +45,7 @@ class Routes(
 
     import scala.concurrent.Await
     import scala.concurrent.duration._
-    val docs = apis.flatMap(_.docs).toOpenAPI("Tezos library", "1.0")
+    val docs = apis.flatMap(_.docs).toOpenAPI("Tezos API", "1.0")
     new SwaggerAkka(docs.toYaml).routes
   }
 

@@ -23,7 +23,7 @@ object DTO {
   implicit val errorsDecoder: Decoder[Errors] = deriveDecoder[Errors]
 
   implicit val errorDTOEncoder: Encoder[ErrorDTO] = {
-    case v: Error => errorEncoder.apply(v)
+    case v: Error  => errorEncoder.apply(v)
     case v: Errors => errorsEncoder.apply(v)
   }
 
