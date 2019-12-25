@@ -1,9 +1,10 @@
 package io.scalac.tezos.translator.routes
 import akka.actor.ActorSystem
 import io.scalac.tezos.translator.model.{EmailAddress, SendEmail}
-import io.scalac.tezos.translator.routes.directives.{DTOValidationDirective, ReCaptchaDirective}
+import io.scalac.tezos.translator.routes.utils.ReCaptcha
 import io.scalac.tezos.translator.routes.dto.DTO.Error
-import io.scalac.tezos.translator.routes.dto.SendEmailRoutesDto
+import io.scalac.tezos.translator.routes.dto.DTOValidation
+import io.scalac.tezos.translator.routes.dto.{DTO, SendEmailRoutesDto}
 import io.scalac.tezos.translator.service.Emails2SendService
 import akka.event.LoggingAdapter
 import akka.http.scaladsl.server.Route
@@ -22,11 +23,11 @@ class MessageRoutes(
   reCaptchaConfig: CaptchaConfig,
   adminEmail: EmailAddress
 )(implicit actorSystem: ActorSystem, ec: ExecutionContext) extends HttpRoutes {
-  import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport._
 
-  private val messageEndpoint: Endpoint[(String, SendEmailRoutesDto), ErrorResponse, StatusCode, Nothing] =
+  private val messageEndpoint: Endpoint[(Option[String], SendEmailRoutesDto), (DTO.ErrorDTO, StatusCode), StatusCode, Nothing] =
     Endpoints
       .captchaEndpoint(reCaptchaConfig)
+      .post
       .in("message")
       .in(jsonBody[SendEmailRoutesDto])
       .out(statusCode)
@@ -47,12 +48,12 @@ class MessageRoutes(
   private def validateSendMessage(x: Unit,
                                   sendEmailRoutesDto: SendEmailRoutesDto)
                                  (implicit ec: ExecutionContext): Future[Either[ErrorResponse, SendEmailRoutesDto]] =
-    DTOValidationDirective.validateDto(sendEmailRoutesDto)
+    DTOValidation.validateDto(sendEmailRoutesDto)
 
   def buildRoute(log: LoggingAdapter, reCaptchaConfig: CaptchaConfig)(implicit ec: ExecutionContext): Route =
     messageEndpoint
       .toRoute {
-        (ReCaptchaDirective.withReCaptchaVerify1(_, log, reCaptchaConfig))
+        (ReCaptcha.withReCaptchaVerify(_, log, reCaptchaConfig))
           .andThenFirstE((validateSendMessage _).tupled)
           .andThenFirstE(addNewEmail)
       }

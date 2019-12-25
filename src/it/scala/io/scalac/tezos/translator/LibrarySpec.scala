@@ -33,10 +33,10 @@ class LibrarySpec
     with BeforeAndAfterEach {
 
   import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport._
-  import io.circe.generic.auto._
 
   override def beforeEach(): Unit = DbTestBase.recreateTables()
 
+  val libraryEndpoint = "/v1/library"
   val testDb = DbTestBase.db
 
   val reCaptchaConfig = CaptchaConfig(checkOn = false, "", "", "")
@@ -69,7 +69,7 @@ class LibrarySpec
   }
 
   def checkValidationErrorsWithExpected(dto: LibraryEntryRoutesDto, expectedErrors: List[String]): Assertion = {
-    Post("/library", dto) ~> Route.seal(libraryRoute) ~> check {
+    Post(libraryEndpoint, dto) ~> Route.seal(libraryRoute) ~> check {
       status shouldBe StatusCodes.BadRequest
       responseAs[Errors].errors should contain theSameElementsAs expectedErrors
     }
@@ -106,7 +106,7 @@ class LibrarySpec
     "store proper payload" should {
       "full filed payload " in {
         val properPayload = LibraryEntryRoutesDto("vss", Some("Mike"), None, Some("Some thing for some things"), "micheline", "michelson") // with all of some as none return 500
-        Post("/library", properPayload) ~> Route.seal(libraryRoute) ~> check {
+        Post(libraryEndpoint, properPayload) ~> Route.seal(libraryRoute) ~> check {
           status shouldBe StatusCodes.OK
         }
 
@@ -123,7 +123,7 @@ class LibrarySpec
       }
       "payload without options" in {
         val properPayload = LibraryEntryRoutesDto("vss", None, None, None, "micheline", "michelson")
-        Post("/library", properPayload) ~> Route.seal(libraryRoute) ~> check {
+        Post(libraryEndpoint, properPayload) ~> Route.seal(libraryRoute) ~> check {
           status shouldBe StatusCodes.OK
         }
         val dbRequest: Future[Seq[LibraryEntryDbDto]] = testDb.run(LibraryTable.library.filter(_.name === "vss").result)
@@ -137,7 +137,7 @@ class LibrarySpec
       }
       "payload with UperCased Email make lower " in {
         val properPayload = LibraryEntryRoutesDto("vss", None, Some("Aeaaast@service.pl"), Some("Some thing for some things"), "micheline", "michelson")
-        Post("/library", properPayload) ~> Route.seal(libraryRoute) ~> check {
+        Post(libraryEndpoint, properPayload) ~> Route.seal(libraryRoute) ~> check {
           status shouldBe StatusCodes.OK
         }
         val dbRequest: Future[Seq[LibraryEntryDbDto]] = testDb.run(LibraryTable.library.filter(_.name === "vss").result)
@@ -158,7 +158,7 @@ class LibrarySpec
       }
       val userEmail = "name@service.com"
       val record = LibraryEntryRoutesDto("name", Some("Author"), Some(userEmail), Some("description"), "micheline", "michelson")
-      Post("/library", record) ~> Route.seal(libraryRoute) ~> check {
+      Post(libraryEndpoint, record) ~> Route.seal(libraryRoute) ~> check {
         status shouldBe StatusCodes.OK
       }
 
@@ -181,7 +181,7 @@ class LibrarySpec
       _ should contain theSameElementsAs Seq(record2)
     }
 
-    Get("/library") ~> libraryRoute ~> check {
+    Get(libraryEndpoint) ~> libraryRoute ~> check {
       status shouldBe StatusCodes.OK
       val actualRecords = responseAs[List[LibraryEntryRoutesDto]]
       actualRecords should contain theSameElementsAs Seq(expectedRecord2)
@@ -196,13 +196,13 @@ class LibrarySpec
       _.length shouldBe defaultLimit + 1
     }
 
-    Get(s"/library?limit=$manualLimit") ~> libraryRoute ~> check {
+    Get(s"$libraryEndpoint?limit=$manualLimit") ~> libraryRoute ~> check {
       status shouldBe StatusCodes.OK
       val actualRecords = responseAs[List[LibraryEntryRoutesDto]]
       actualRecords.size shouldBe manualLimit
     }
 
-    Get(s"/library") ~> libraryRoute ~> check {
+    Get(libraryEndpoint) ~> libraryRoute ~> check {
       status shouldBe StatusCodes.OK
       val actualRecords = responseAs[List[LibraryEntryRoutesDto]]
       actualRecords.size shouldBe defaultLimit
@@ -216,7 +216,7 @@ class LibrarySpec
 
     val expectedRecord2 = LibraryEntryRoutesDto("nameE2", Some("authorE2"), Some("name@service.com"), Some("descriptionE2"), "michelineE2", "michelsonE2")
 
-    Get("/library") ~> libraryRoute ~> check {
+    Get(libraryEndpoint) ~> libraryRoute ~> check {
       status shouldBe StatusCodes.OK
       val actualRecords = responseAs[List[LibraryEntryRoutesDto]]
       actualRecords should contain theSameElementsAs Seq(expectedRecord2)
@@ -226,24 +226,24 @@ class LibrarySpec
 
     // change statuses
     // record1
-    Put(s"/library?uid=d7327913-4957-4417-96d2-e5c1d4311f80&status=accepted").withHeaders(Authorization(OAuth2BearerToken(bearerToken))) ~> libraryRoute ~> check {
+    Put(s"$libraryEndpoint?uid=d7327913-4957-4417-96d2-e5c1d4311f80&status=accepted").withHeaders(Authorization(OAuth2BearerToken(bearerToken))) ~> libraryRoute ~> check {
       status shouldBe StatusCodes.OK
     }
     // record2
-    Put("/library?uid=17976f3a-505b-4d66-854a-243a70bb94c0&status=declined").withHeaders(Authorization(OAuth2BearerToken(bearerToken))) ~> libraryRoute ~> check {
+    Put(s"$libraryEndpoint?uid=17976f3a-505b-4d66-854a-243a70bb94c0&status=declined").withHeaders(Authorization(OAuth2BearerToken(bearerToken))) ~> libraryRoute ~> check {
       status shouldBe StatusCodes.OK
     }
     // record3
-    Put("/library?uid=5d8face2-ab24-49e0-b792-a0b99a031645&status=pending_approval").withHeaders(Authorization(OAuth2BearerToken(bearerToken))) ~> libraryRoute ~> check {
+    Put(s"$libraryEndpoint?uid=5d8face2-ab24-49e0-b792-a0b99a031645&status=pending_approval").withHeaders(Authorization(OAuth2BearerToken(bearerToken))) ~> libraryRoute ~> check {
       status shouldBe StatusCodes.NotFound // cannot update status to "pending_approval"
     }
 
     // invalid uid
-    Put("/library?uid=aada8ebe&status=accepted").withHeaders(Authorization(OAuth2BearerToken(bearerToken))) ~> libraryRoute ~> check {
+    Put(s"$libraryEndpoint?uid=aada8ebe&status=accepted").withHeaders(Authorization(OAuth2BearerToken(bearerToken))) ~> libraryRoute ~> check {
       status shouldBe StatusCodes.NotFound
     }
     // non exisitng uid
-    Put("/library?uid=4cb9f377-718c-4d5d-be0d-118a5c99e298&status=accepted").withHeaders(Authorization(OAuth2BearerToken(bearerToken))) ~> libraryRoute ~> check {
+    Put(s"$libraryEndpoint?uid=4cb9f377-718c-4d5d-be0d-118a5c99e298&status=accepted").withHeaders(Authorization(OAuth2BearerToken(bearerToken))) ~> libraryRoute ~> check {
       status shouldBe StatusCodes.NotFound
     }
 
@@ -255,7 +255,7 @@ class LibrarySpec
 
     val expectedRecord1 = LibraryEntryRoutesDto("nameE1", Some("authorE1"), None, Some("descriptionE1"), "michelineE1", "michelsonE1")
 
-    Get("/library") ~> libraryRoute ~> check {
+    Get(libraryEndpoint) ~> libraryRoute ~> check {
       status shouldBe StatusCodes.OK
       val actualRecords = responseAs[List[LibraryEntryRoutesDto]]
       actualRecords should contain theSameElementsAs Seq(expectedRecord1)
@@ -269,7 +269,7 @@ class LibrarySpec
 
     val expectedRecord2 = LibraryEntryRoutesDto("nameE2", Some("authorE2"), Some("name@service.com"), Some("descriptionE2"), "michelineE2", "michelsonE2")
 
-    Get("/library") ~> libraryRoute ~> check {
+    Get(libraryEndpoint) ~> libraryRoute ~> check {
       status shouldBe StatusCodes.OK
       val actualRecords = responseAs[List[LibraryEntryRoutesDto]]
       actualRecords should contain theSameElementsAs Seq(expectedRecord2)
@@ -278,22 +278,22 @@ class LibrarySpec
     val bearerToken = getToken(userService, UserCredentials("admin", "zxcv"))
 
     // record 2
-    Delete("/library?uid=17976f3a-505b-4d66-854a-243a70bb94c0").withHeaders(Authorization(OAuth2BearerToken(bearerToken))) ~> libraryRoute ~> check {
+    Delete(s"$libraryEndpoint?uid=17976f3a-505b-4d66-854a-243a70bb94c0").withHeaders(Authorization(OAuth2BearerToken(bearerToken))) ~> libraryRoute ~> check {
       status shouldBe StatusCodes.OK
     }
 
-    Get("/library") ~> libraryRoute ~> check {
+    Get(libraryEndpoint) ~> libraryRoute ~> check {
       status shouldBe StatusCodes.OK
       val actualRecords = responseAs[List[LibraryEntryRoutesDto]]
       actualRecords shouldBe 'empty
     }
 
     // invalid uid
-    Delete("/library?uid=aada8ebe").withHeaders(Authorization(OAuth2BearerToken(bearerToken))) ~> libraryRoute ~> check {
+    Delete(s"$libraryEndpoint?uid=aada8ebe").withHeaders(Authorization(OAuth2BearerToken(bearerToken))) ~> libraryRoute ~> check {
       status shouldBe StatusCodes.NotFound
     }
     // non exisitng uid
-    Delete("/library?uid=4cb9f377-718c-4d5d-be0d-118a5c99e298").withHeaders(Authorization(OAuth2BearerToken(bearerToken))) ~> libraryRoute ~> check {
+    Delete(s"$libraryEndpoint?uid=4cb9f377-718c-4d5d-be0d-118a5c99e298").withHeaders(Authorization(OAuth2BearerToken(bearerToken))) ~> libraryRoute ~> check {
       status shouldBe StatusCodes.NotFound
     }
   }
@@ -307,7 +307,7 @@ class LibrarySpec
     val expected = toInsert.map(LibraryEntryRoutesAdminDto.fromDomain)
 
     val bearerToken = getToken(userService, UserCredentials("admin", "zxcv"))
-    Get(s"/library").withHeaders(Authorization(OAuth2BearerToken(bearerToken))) ~> libraryRoute ~> check {
+    Get(libraryEndpoint).withHeaders(Authorization(OAuth2BearerToken(bearerToken))) ~> libraryRoute ~> check {
       status shouldBe StatusCodes.OK
       val actualRecords = responseAs[List[LibraryEntryRoutesAdminDto]]
       actualRecords.size shouldBe toInsert.length
@@ -323,19 +323,19 @@ class LibrarySpec
     }
 
     val bearerToken = getToken(userService, UserCredentials("admin", "zxcv"))
-    Get(s"/library").withHeaders(Authorization(OAuth2BearerToken(bearerToken))) ~> libraryRoute ~> check {
+    Get(libraryEndpoint).withHeaders(Authorization(OAuth2BearerToken(bearerToken))) ~> libraryRoute ~> check {
       status shouldBe StatusCodes.OK
       val actualAllRecords = responseAs[List[LibraryEntryRoutesDto]]
       actualAllRecords.size shouldBe toInsert.length
 
-      Get(s"/library?limit=2").withHeaders(Authorization(OAuth2BearerToken(bearerToken))) ~> libraryRoute ~> check {
+      Get(s"$libraryEndpoint?limit=2").withHeaders(Authorization(OAuth2BearerToken(bearerToken))) ~> libraryRoute ~> check {
         status shouldBe StatusCodes.OK
         val actualPaginatedRecords = responseAs[List[LibraryEntryRoutesDto]]
         actualPaginatedRecords should contain theSameElementsAs actualAllRecords.slice(0, 2)
 
       }
 
-      Get(s"/library?limit=2&offset=2").withHeaders(Authorization(OAuth2BearerToken(bearerToken))) ~> libraryRoute ~> check {
+      Get(s"$libraryEndpoint?limit=2&offset=2").withHeaders(Authorization(OAuth2BearerToken(bearerToken))) ~> libraryRoute ~> check {
         status shouldBe StatusCodes.OK
         val actualPaginatedRecords = responseAs[List[LibraryEntryRoutesDto]]
         actualPaginatedRecords should contain theSameElementsAs actualAllRecords.slice(2, 4)
@@ -354,7 +354,7 @@ class LibrarySpec
     val record = LibraryEntryRoutesDto("name", Some(userName), Some(userEmail), Some(userDescription), "micheline", "michelson")
 
 
-    Post("/library", record) ~> Route.seal(libraryRoute) ~> check {
+    Post(libraryEndpoint, record) ~> Route.seal(libraryRoute) ~> check {
       status shouldBe StatusCodes.OK
     }
 
@@ -387,7 +387,7 @@ class LibrarySpec
 
     val bearerToken = getToken(userService, UserCredentials("admin", "zxcv"))
 
-    Put(s"/library?uid=${recordFromDB.uid.value}&status=accepted").withHeaders(Authorization(OAuth2BearerToken(bearerToken))) ~> libraryRoute ~> check {
+    Put(s"$libraryEndpoint?uid=${recordFromDB.uid.value}&status=accepted").withHeaders(Authorization(OAuth2BearerToken(bearerToken))) ~> libraryRoute ~> check {
       status shouldBe StatusCodes.OK
     }
 

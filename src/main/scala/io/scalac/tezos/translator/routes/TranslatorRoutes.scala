@@ -5,7 +5,7 @@ import akka.http.scaladsl.server.Route
 import cats.syntax.either._
 import io.scalac.tezos.translator.config.CaptchaConfig
 import io.scalac.tezos.translator.routes.TranslatorRoutes._
-import io.scalac.tezos.translator.routes.util.Translator
+import io.scalac.tezos.translator.routes.utils.Translator
 import sttp.model.StatusCode
 import sttp.tapir._
 import sttp.tapir.json.circe._

@@ -5,7 +5,10 @@ import cats.instances.parallel._
 import cats.syntax.either._
 import cats.syntax.parallel._
 import io.scalac.tezos.translator.model._
+import io.scalac.tezos.translator.routes.dto.DTO.{ErrorDTO, Errors}
 import io.scalac.tezos.translator.routes.dto.DTOValidation.ValidationResult
+import sttp.model.StatusCode
+import scala.concurrent.{ExecutionContext, Future}
 
 trait DTOValidation[T] {
 
@@ -22,6 +25,22 @@ object DTOValidation {
 
   def apply[T](value: T)(implicit validator: DTOValidation[T]): ValidationResult[T] =
     validator.validate(value)
+
+  def validateDto[T : DTOValidation](value: T)(implicit ec: ExecutionContext): Future[Either[(ErrorDTO, StatusCode), T]] =
+    Future {
+      DTOValidation(value) match {
+        case Right(value) => value.asRight
+        case Left(errors) =>
+          val errorsList = errors.map(convertValidationErrorsToString).toList
+          (Errors(errorsList), StatusCode.BadRequest).asLeft
+      }
+    }
+
+  def convertValidationErrorsToString: PartialFunction[DTOValidationError, String] = {
+    case FieldToLong(field, maxLength)    => s"field $field is too long, max length - $maxLength"
+    case FieldIsEmpty(fieldName)          => s"$fieldName field is empty"
+    case FieldIsInvalid(fieldName, field) => s"invalid $fieldName - $field"
+  }
 
   sealed trait DTOValidationError
 

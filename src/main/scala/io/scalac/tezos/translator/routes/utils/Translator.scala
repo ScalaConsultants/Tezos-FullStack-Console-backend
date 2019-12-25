@@ -1,4 +1,4 @@
-package io.scalac.tezos.translator.routes.util
+package io.scalac.tezos.translator.routes.utils
 
 import io.scalac.tezos.translator.micheline.MichelineTranslator
 import io.scalac.tezos.translator.michelson.JsonToMichelson

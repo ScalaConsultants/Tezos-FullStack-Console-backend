@@ -1,13 +1,17 @@
 package io.scalac.tezos.translator.routes
 
+import cats.data.EitherT
+import cats.instances.future._
 import io.scalac.tezos.translator.config.CaptchaConfig
-import io.scalac.tezos.translator.routes.dto.DTO.ErrorDTO
+import io.scalac.tezos.translator.routes.dto.DTO.{Error, ErrorDTO}
 import sttp.tapir.{Endpoint, endpoint, header, jsonBody, statusCode}
 import io.circe.generic.auto._
 import sttp.model.StatusCode
 import sttp.tapir._
 import sttp.tapir.json.circe._
 import cats.syntax.option._
+import io.scalac.tezos.translator.service.UserService
+import scala.concurrent.{ExecutionContext, Future}
 
 object Endpoints {
 
@@ -16,8 +20,8 @@ object Endpoints {
   def baseEndpoint: Endpoint[Unit, Unit, Unit, Nothing] =
     endpoint.in("v1")
 
-  def captchaEndpoint(reCaptchaConfig: CaptchaConfig): Endpoint[String, ErrorResponse, Unit, Nothing] =
-    baseEndpoint.in(header[String](reCaptchaConfig.headerName)).errorOut(jsonBody[ErrorDTO].and(statusCode))
+  def captchaEndpoint(reCaptchaConfig: CaptchaConfig): Endpoint[Option[String], ErrorResponse, Unit, Nothing] =
+    baseEndpoint.in(header[Option[String]](reCaptchaConfig.headerName)).errorOut(jsonBody[ErrorDTO].and(statusCode))
 
   val errorResponse: EndpointOutput[ErrorResponse] = jsonBody[ErrorDTO].and(statusCode)
 
@@ -34,5 +38,26 @@ object Endpoints {
     header[Option[String]]("Authorization")
       .description("Optional authorization header")
       .example("Bearer  WcPvrwuCTJYghiz2vxQsvmOzmPA9uH".some)
+
+  private val bearer: String = "Bearer "
+
+  implicit class OptionAuthOps(val maybeString: Option[String]) extends AnyVal {
+    def withMaybeAuth[R](userService: UserService)
+                        (onAuth:      => Future[Either[ErrorResponse, R]])
+                        (withoutAuth: => Future[Either[ErrorResponse, R]])
+                        (implicit ec: ExecutionContext): EitherT[Future, ErrorResponse, R] =
+      maybeString
+        .fold(EitherT(withoutAuth)) {
+          string =>
+            if (string.startsWith(bearer) && string.length > bearer.length) {
+              val token = string.drop(bearer.length)
+              for {
+                _      <- EitherT(userService.authenticate(token))
+                result <- EitherT(onAuth)
+              } yield result
+            } else
+              EitherT.leftT[Future, R]((Error("Invalid Authorization header"), StatusCode.BadRequest))
+        }
+  }
 
 }

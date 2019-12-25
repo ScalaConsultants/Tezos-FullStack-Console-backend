@@ -6,18 +6,16 @@ import akka.http.scaladsl.server.Route
 import io.scalac.tezos.translator.config.CaptchaConfig
 import io.scalac.tezos.translator.model.LibraryEntry.{Accepted, PendingApproval, Status}
 import io.scalac.tezos.translator.model.{EmailAddress, SendEmail, Uid}
-import io.scalac.tezos.translator.routes.directives.DTOValidationDirective
+import io.scalac.tezos.translator.routes.dto.DTOValidation
 import io.scalac.tezos.translator.routes.dto.DTO.Error
-import io.scalac.tezos.translator.routes.directives.ReCaptchaDirective._
-import io.scalac.tezos.translator.routes.dto.{LibraryEntryDTO, LibraryEntryRoutesAdminDto, LibraryEntryRoutesDto}
+import io.scalac.tezos.translator.routes.utils.ReCaptcha._
+import io.scalac.tezos.translator.routes.dto.{DTO, LibraryEntryDTO, LibraryEntryRoutesAdminDto, LibraryEntryRoutesDto}
 import io.scalac.tezos.translator.service.{Emails2SendService, LibraryService, UserService}
 import sttp.model.StatusCode
 import sttp.tapir._
 import sttp.tapir.json.circe._
 import sttp.tapir.server.akkahttp._
 import cats.syntax.either._
-import cats.data.EitherT
-import cats.instances.future._
 import io.scalac.tezos.translator.routes.Endpoints._
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success}
@@ -30,13 +28,12 @@ class LibraryRoutes(
   captchaConfig: CaptchaConfig,
   adminEmail: EmailAddress
 )(implicit as: ActorSystem, ec: ExecutionContext) extends HttpRoutes {
-  import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport._
   import io.circe.generic.auto._
 
-  private val libraryCaptchaEndpoint: Endpoint[String, ErrorResponse, Unit, Nothing] = Endpoints.captchaEndpoint(captchaConfig).in("library")
+  private val libraryCaptchaEndpoint: Endpoint[Option[String], (DTO.ErrorDTO, StatusCode), Unit, Nothing] = Endpoints.captchaEndpoint(captchaConfig).in("library")
   private  val libraryEndpoint: Endpoint[Unit, Unit, Unit, Nothing] = Endpoints.baseEndpoint.in("library")
 
-  private val libraryAddEndpoint: Endpoint[(String, LibraryEntryRoutesDto), ErrorResponse, StatusCode, Nothing] =
+  private val libraryAddEndpoint: Endpoint[(Option[String], LibraryEntryRoutesDto), (DTO.ErrorDTO, StatusCode), StatusCode, Nothing] =
     libraryCaptchaEndpoint
       .in(jsonBody[LibraryEntryRoutesDto])
       .post
@@ -72,7 +69,7 @@ class LibraryRoutes(
 
   private def addNewEntryRoute(): Route =
     libraryAddEndpoint.toRoute {
-      (withReCaptchaVerify1(_, log, captchaConfig))
+      (withReCaptchaVerify(_, log, captchaConfig))
         .andThenFirstE((validateLibraryEntryRoutesDTO _).tupled)
         .andThenFirstE(addNewEntry)
     }
@@ -126,18 +123,11 @@ class LibraryRoutes(
   }
 
   private def getDto(maybeHeader: Option[String],
-                      maybeOffset: Option[Int],
-                      maybeLimit: Option[Int]): Future[Either[ErrorResponse, Seq[LibraryEntryDTO]]] = {
-    val result = maybeHeader
-      .fold(EitherT(getJustDto(maybeOffset, maybeLimit))) {
-        token =>
-          for {
-            _      <- EitherT(userService.authenticate(token))
-            result <- EitherT(getAdminsDto(maybeOffset, maybeLimit))
-          } yield result
-      }
-    result.value
-  }
+                     maybeOffset: Option[Int],
+                     maybeLimit: Option[Int]): Future[Either[ErrorResponse, Seq[LibraryEntryDTO]]] =
+    maybeHeader
+      .withMaybeAuth(userService)(getAdminsDto(maybeOffset, maybeLimit))(getJustDto(maybeOffset, maybeLimit))
+      .value
 
   private def getJustDto(maybeOffset: Option[Int],
                      maybeLimit: Option[Int]): Future[Either[ErrorResponse, Seq[LibraryEntryDTO]]] =
@@ -190,7 +180,7 @@ class LibraryRoutes(
   private def validateLibraryEntryRoutesDTO(x: Unit,
                                             LibraryEntryRoutesDTO: LibraryEntryRoutesDto)
                                            (implicit ec: ExecutionContext): Future[Either[ErrorResponse, LibraryEntryRoutesDto]] =
-    DTOValidationDirective.validateDto(LibraryEntryRoutesDTO)
+    DTOValidation.validateDto(LibraryEntryRoutesDTO)
 
   private def handleError(t: Throwable): ErrorResponse =
     t match {

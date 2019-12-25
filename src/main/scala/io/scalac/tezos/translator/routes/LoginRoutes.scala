@@ -5,7 +5,7 @@ import akka.event.LoggingAdapter
 import akka.http.scaladsl.server.Route
 import io.scalac.tezos.translator.model.UserCredentials
 import io.scalac.tezos.translator.routes.Endpoints.ErrorResponse
-import io.scalac.tezos.translator.routes.directives.DTOValidationDirective
+import io.scalac.tezos.translator.routes.dto.DTOValidation
 import io.scalac.tezos.translator.routes.dto.DTO.{Error, ErrorDTO}
 import io.scalac.tezos.translator.service.UserService
 import cats.syntax.either._
@@ -38,7 +38,7 @@ class LoginRoutes(userService: UserService, log: LoggingAdapter)(implicit as: Ac
     }
 
   val loginRoute: Route = loginEndpoint.toRoute {
-    (DTOValidationDirective.validateDto[UserCredentials] _).andThenFirstE(loginLogic)
+    (DTOValidation.validateDto[UserCredentials] _).andThenFirstE(loginLogic)
   }
 
   def logoutLogic(token: String): Future[Either[ErrorResponse, Unit]] =
