@@ -6,23 +6,33 @@ import io.scalac.tezos.translator.repository.UserRepository
 import io.scalac.tezos.translator.routes.dto.DTO.Error
 import slick.jdbc.PostgresProfile.api._
 import cats.syntax.either._
+import io.scalac.tezos.translator.model.Types.{UserToken, UserTokenType}
 import io.scalac.tezos.translator.routes.Endpoints.ErrorResponse
 import sttp.model.StatusCode
-
+import eu.timepit.refined._
 import scala.annotation.tailrec
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Random
 
 class UserService(repository: UserRepository, db: Database)(implicit ec: ExecutionContext) {
 
-  private val tokenToUser = new scala.collection.concurrent.TrieMap[String, String]
+  private val tokenToUser = new scala.collection.concurrent.TrieMap[UserToken, String]
 
   @tailrec
-  private def createToken(username: String): String = {
-    val newToken = Random.alphanumeric.take(30).mkString
+  private def createToken(username: String): UserToken = {
+    val newToken = generateRandomToken
     tokenToUser.putIfAbsent(newToken, username) match {
       case None => newToken
       case Some(_) => createToken(username) // token already exists, retry
+    }
+  }
+
+  @tailrec
+  private def generateRandomToken: UserToken = {
+    val maybeNewTokenEntry = refineV[UserTokenType](Random.alphanumeric.take(30).mkString)
+    maybeNewTokenEntry match {
+      case Left(_)      => generateRandomToken
+      case Right(value) => UserToken(value)
     }
   }
 
@@ -30,7 +40,7 @@ class UserService(repository: UserRepository, db: Database)(implicit ec: Executi
     password.isBcrypted(user.passwordHash)
   }
 
-  def authenticateAndCreateToken(username: String, password: String): Future[Option[String]] = {
+  def authenticateAndCreateToken(username: String, password: String): Future[Option[UserToken]] = {
     db.run(repository.getByUsername(username))
       .map { userOption =>
         val isAuthenticated = userOption.exists(user => checkPassword(user, password))
@@ -38,15 +48,24 @@ class UserService(repository: UserRepository, db: Database)(implicit ec: Executi
       }
   }
 
-  def authenticate(token: String): Future[Either[ErrorResponse, (String, String)]] = Future {
+  def authenticate(token: UserToken): Future[Either[ErrorResponse, (String, UserToken)]] = Future {
     tokenToUser.get(token)
       .fold {
-        (Error("Token not found"), StatusCode.Unauthorized).asLeft[(String, String)]
+        (Error("Token not found"), StatusCode.Unauthorized).asLeft[(String, UserToken)]
       } {
         username => (username, token).asRight
       }
   }
 
-  def logout(token: String): Unit = tokenToUser.remove(token)
+  def authenticate1(string: String, token: UserToken): Future[Either[ErrorResponse, (String, UserToken)]] = Future {
+    tokenToUser.get(token)
+      .fold {
+        (Error("Token not found"), StatusCode.Unauthorized).asLeft[(String, UserToken)]
+      } {
+        username => (username, token).asRight
+      }
+  }
+
+  def logout(token: UserToken): Unit = tokenToUser.remove(token)
 
 }

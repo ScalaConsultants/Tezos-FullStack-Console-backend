@@ -58,7 +58,7 @@ class LoginRoutesSpec
     }
 
     it should "only allowed logout for users who are logged in" in {
-      Post(logoutEndpoint).withHeaders(Authorization(OAuth2BearerToken("someRandomToken"))) ~> Route.seal(loginRoute) ~> check {
+      Post(logoutEndpoint).withHeaders(Authorization(OAuth2BearerToken("someRandomTokenWithLength30Sym"))) ~> Route.seal(loginRoute) ~> check {
         status shouldBe StatusCodes.Unauthorized
       }
     }

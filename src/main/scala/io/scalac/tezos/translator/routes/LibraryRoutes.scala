@@ -5,7 +5,7 @@ import akka.event.LoggingAdapter
 import akka.http.scaladsl.server.Route
 import io.scalac.tezos.translator.config.CaptchaConfig
 import io.scalac.tezos.translator.model.LibraryEntry.{Accepted, PendingApproval, Status}
-import io.scalac.tezos.translator.model.{EmailAddress, SendEmail, Uid}
+import io.scalac.tezos.translator.model.{EmailAddress, SendEmail, Types, Uid}
 import io.scalac.tezos.translator.routes.dto.DTOValidation
 import io.scalac.tezos.translator.routes.dto.DTO.Error
 import io.scalac.tezos.translator.routes.utils.ReCaptcha._
@@ -16,6 +16,7 @@ import sttp.tapir._
 import sttp.tapir.json.circe._
 import sttp.tapir.server.akkahttp._
 import cats.syntax.either._
+import io.scalac.tezos.translator.model.Types.{Limit, Offset, UserToken}
 import io.scalac.tezos.translator.routes.Endpoints._
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success}
@@ -33,14 +34,14 @@ class LibraryRoutes(
   private val libraryCaptchaEndpoint: Endpoint[Option[String], (DTO.ErrorDTO, StatusCode), Unit, Nothing] = Endpoints.captchaEndpoint(captchaConfig).in("library")
   private  val libraryEndpoint: Endpoint[Unit, Unit, Unit, Nothing] = Endpoints.baseEndpoint.in("library")
 
-  private val libraryAddEndpoint: Endpoint[(Option[String], LibraryEntryRoutesDto), (DTO.ErrorDTO, StatusCode), StatusCode, Nothing] =
+  private val libraryAddEndpoint: Endpoint[(Option[String], LibraryEntryRoutesDto), ErrorResponse, StatusCode, Nothing] =
     libraryCaptchaEndpoint
       .in(jsonBody[LibraryEntryRoutesDto])
       .post
       .out(statusCode)
       .description("Will add LibraryEntryRoutesDto to storage")
 
-  private val getDtoEndpoint: Endpoint[(Option[String], Option[Int], Option[Int]), ErrorResponse, Seq[LibraryEntryDTO], Nothing] =
+  private val getDtoEndpoint: Endpoint[(Option[UserToken], Option[Offset], Option[Limit]), ErrorResponse, Seq[LibraryEntryDTO], Nothing] =
     libraryEndpoint
       .in(maybeAuthHeader)
       .in(offsetQuery.and(limitQuery))
@@ -81,12 +82,12 @@ class LibraryRoutes(
 
   private def putEntryRoute: Route =
     putEntryEndpoint.toRoute {
-      (userService.authenticate _).andThenFirstE((putDto _).tupled)
+      (bearer2TokenF _).andThenFirstE(userService.authenticate).andThenFirstE((putDto _).tupled)
     }
 
   private def deleteEntryRoute: Route =
     deleteEntryEndpoint.toRoute {
-      (userService.authenticate _).andThenFirstE((deleteDto _).tupled)
+      (bearer2TokenF _).andThenFirstE(userService.authenticate).andThenFirstE((deleteDto _).tupled)
     }
 
   private def addNewEntry(libraryDTO: LibraryEntryRoutesDto): Future[Either[ErrorResponse, StatusCode]] = {
@@ -111,8 +112,8 @@ class LibraryRoutes(
     }
   }
 
-  private def getAdminsDto(maybeOffset: Option[Int],
-                            maybeLimit: Option[Int]): Future[Either[ErrorResponse, Seq[LibraryEntryDTO]]] = {
+  private def getAdminsDto(maybeOffset: Option[Offset],
+                           maybeLimit:  Option[Limit]): Future[Either[ErrorResponse, Seq[LibraryEntryDTO]]] = {
     service
       .getRecords(maybeOffset, maybeLimit)
       .map(_.map(LibraryEntryRoutesAdminDto.fromDomain).asRight)
@@ -122,15 +123,15 @@ class LibraryRoutes(
       }
   }
 
-  private def getDto(maybeHeader: Option[String],
-                     maybeOffset: Option[Int],
-                     maybeLimit: Option[Int]): Future[Either[ErrorResponse, Seq[LibraryEntryDTO]]] =
-    maybeHeader
+  private def getDto(maybeToken:  Option[UserToken],
+                     maybeOffset: Option[Offset],
+                     maybeLimit:  Option[Limit]): Future[Either[ErrorResponse, Seq[LibraryEntryDTO]]] =
+    maybeToken
       .withMaybeAuth(userService)(getAdminsDto(maybeOffset, maybeLimit))(getJustDto(maybeOffset, maybeLimit))
       .value
 
-  private def getJustDto(maybeOffset: Option[Int],
-                     maybeLimit: Option[Int]): Future[Either[ErrorResponse, Seq[LibraryEntryDTO]]] =
+  private def getJustDto(maybeOffset: Option[Offset],
+                         maybeLimit:  Option[Limit]): Future[Either[ErrorResponse, Seq[LibraryEntryDTO]]] =
     service
       .getRecords(maybeOffset, maybeLimit, Some(Accepted))
       .map(_.map(LibraryEntryRoutesDto.fromDomain).asRight)
@@ -139,7 +140,7 @@ class LibraryRoutes(
       (Error("Can't get records"), StatusCode.InternalServerError).asLeft
     }
 
-  private def putDto(userData: (String, String),
+  private def putDto(userData: (String, UserToken),
                      uid: String,
                      status: String): Future[Either[ErrorResponse, StatusCode]] = {
     val statusChangeWithEmail =
@@ -167,7 +168,7 @@ class LibraryRoutes(
     }
   }
 
-  private def deleteDto(userData: (String, String), uid: String): Future[Either[ErrorResponse, StatusCode]] =
+  private def deleteDto(userData: (String, UserToken), uid: String): Future[Either[ErrorResponse, StatusCode]] =
     Future
       .fromTry(Uid.fromString(uid).map(service.delete))
       .flatten

@@ -18,7 +18,9 @@ import io.scalac.tezos.translator.service.{Emails2SendService, LibraryService, U
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.{Assertion, BeforeAndAfterEach, Matchers, WordSpec}
 import slick.jdbc.PostgresProfile.api._
-
+import eu.timepit.refined._
+import eu.timepit.refined.numeric.Positive
+import io.scalac.tezos.translator.model.Types.Limit
 import scala.collection.immutable
 import scala.concurrent.duration._
 import scala.concurrent.{Await, Future}
@@ -80,7 +82,7 @@ class LibrarySpec
 
     maybeToken shouldBe defined
 
-    maybeToken.get
+    maybeToken.get.v.value
   }
 
   val longField: String = "qwertyuiopqwertyuiopqwertyuiopqwertyuiopqwertyuiopqwertyuiopqwertyuiopqwertyuiopqwertyuiop" +
@@ -249,7 +251,7 @@ class LibrarySpec
 
 
     val expectedNewStatuses = Seq(record1.copy(status = Accepted), record2.copy(status = Declined), record3)
-    whenReady(libraryService.getRecords(limit = Some(5))) {
+    whenReady(libraryService.getRecords(limit = Some(Limit(refineMV[Positive](5))))) {
       _ should contain theSameElementsAs expectedNewStatuses
     }
 

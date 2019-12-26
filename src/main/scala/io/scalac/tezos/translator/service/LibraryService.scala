@@ -2,6 +2,7 @@ package io.scalac.tezos.translator.service
 
 import akka.event.LoggingAdapter
 import io.scalac.tezos.translator.model.LibraryEntry._
+import io.scalac.tezos.translator.model.Types.{Limit, Offset}
 import io.scalac.tezos.translator.model.{LibraryEntry, Uid}
 import io.scalac.tezos.translator.repository.LibraryRepository
 import io.scalac.tezos.translator.repository.dto.LibraryEntryDbDto
@@ -14,10 +15,7 @@ class LibraryService(repository: LibraryRepository, log: LoggingAdapter)(implici
   def addNew(entry: LibraryEntry): Future[Int] =
     repository.add(LibraryEntryDbDto.fromDomain(entry))
 
-  def getRecords(offset: Option[Int] = None, limit: Option[Int] = None, statusFilter: Option[Status] = None): Future[Seq[LibraryEntry]] =
-    if (offset.exists(_ < 0) || limit.exists(_ < 0))
-      Future.failed(new IllegalArgumentException)
-    else
+  def getRecords(offset: Option[Offset] = None, limit: Option[Limit] = None, statusFilter: Option[Status] = None): Future[Seq[LibraryEntry]] =
       for {
         entriesDto <- repository.list(statusFilter, offset, limit)
         entriesFSeq = entriesDto.map(e => Future.fromTry(e.toDomain))
