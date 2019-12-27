@@ -7,7 +7,6 @@ import io.scalac.tezos.translator.model.UserCredentials
 import io.scalac.tezos.translator.model.types.Auth.UserToken
 import io.scalac.tezos.translator.routes.Endpoints.bearer2TokenF
 import io.scalac.tezos.translator.routes.Endpoints.ErrorResponse
-import io.scalac.tezos.translator.routes.dto.DTOValidation
 import io.scalac.tezos.translator.routes.dto.DTO.{Error, ErrorDTO}
 import io.scalac.tezos.translator.service.UserService
 import cats.syntax.either._
@@ -37,7 +36,7 @@ class LoginRoutes(userService: UserService, log: LoggingAdapter)(implicit as: Ac
     }
 
   val loginRoute: Route = loginEndpoint.toRoute {
-    (DTOValidation.validateDto[UserCredentials] _).andThenFirstE(loginLogic)
+    loginLogic
   }
 
   def logoutLogic(token: UserToken): Future[Either[ErrorResponse, Unit]] =

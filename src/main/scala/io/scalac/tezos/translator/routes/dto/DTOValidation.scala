@@ -139,14 +139,6 @@ object DTOValidation {
     (checkName, checkAuthor, checkEmail, checkDescription, checkMicheline, checkMichelson).parMapN(LibraryEntryRoutesDto.apply)
   }
 
-  implicit val UserCredentialsValidation: DTOValidation[UserCredentials] = { dto =>
-    val checkUsername =
-      checkStringNotEmptyAndLength(dto.username, maxUsernameLength, FieldIsEmpty("username"), FieldToLong("username", maxUsernameLength))
-    val checkPassword = checkStringNotEmpty(dto.password, FieldIsEmpty("password"))
-    (checkUsername, checkPassword).parMapN(UserCredentials.apply)
-  }
-
-
   val phoneRegex: String =
     """^\+?\d{6,18}$"""
 

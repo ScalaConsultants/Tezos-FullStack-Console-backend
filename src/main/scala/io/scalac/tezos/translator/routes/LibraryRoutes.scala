@@ -8,27 +8,21 @@ import akka.http.scaladsl.server.Route
 import io.scalac.tezos.translator.config.CaptchaConfig
 import io.scalac.tezos.translator.model.LibraryEntry.{Accepted, PendingApproval, Status}
 import io.scalac.tezos.translator.model.{EmailAddress, SendEmail}
-import io.scalac.tezos.translator.model.{EmailAddress, SendEmail}
 import io.scalac.tezos.translator.routes.dto.DTOValidation
 import io.scalac.tezos.translator.routes.dto.DTO.Error
 import io.scalac.tezos.translator.routes.utils.ReCaptcha._
 import io.scalac.tezos.translator.routes.dto.{DTO, LibraryEntryDTO, LibraryEntryRoutesAdminDto, LibraryEntryRoutesDto}
 import io.scalac.tezos.translator.routes.dto.LibraryEntryDTO._
-import io.scalac.tezos.translator.service.{Emails2SendService, LibraryService, UserService}
 import io.scalac.tezos.translator.model.types.UUIDs.LibraryEntryId
-import io.scalac.tezos.translator.routes.Endpoints._
 import io.scalac.tezos.translator.service.{Emails2SendService, LibraryService, UserService}
 import sttp.model.StatusCode
 import sttp.tapir._
 import sttp.tapir.json.circe._
 import sttp.tapir.server.akkahttp._
-import sttp.tapir.CodecFormat.Json._
 import cats.syntax.either._
-import io.scalac.tezos.translator.model.types.Params._
-import cats.syntax.either._
-import io.scalac.tezos.translator.model.types.Auth.UserToken
 import io.scalac.tezos.translator.routes.Endpoints._
-
+import io.scalac.tezos.translator.model.types.Auth.{UserToken, Username}
+import io.scalac.tezos.translator.model.types.Params._
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success}
 
@@ -151,7 +145,7 @@ class LibraryRoutes(
       (Error("Can't get records"), StatusCode.InternalServerError).asLeft
     }
 
-  private def putDto(userData: (String, UserToken),
+  private def putDto(userData: (Username, UserToken),
                      uid: String,
                      status: String): Future[Either[ErrorResponse, StatusCode]] = {
     val statusChangeWithEmail =
@@ -178,7 +172,7 @@ class LibraryRoutes(
     }
   }
 
-  private def deleteDto(userData: (String, UserToken), uid: String): Future[Either[ErrorResponse, StatusCode]] =
+  private def deleteDto(userData: (Username, UserToken), uid: String): Future[Either[ErrorResponse, StatusCode]] =
     service.delete(LibraryEntryId(UUID.fromString(uid)))
       .map(_ => StatusCode.Ok.asRight)
       .recover { case e =>

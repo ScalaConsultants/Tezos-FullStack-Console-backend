@@ -22,6 +22,7 @@ import org.scalatest.{Assertion, BeforeAndAfterEach, Matchers, WordSpec}
 import slick.jdbc.PostgresProfile.api._
 import eu.timepit.refined._
 import eu.timepit.refined.numeric.Positive
+import Helper.adminCredentials
 import io.scalac.tezos.translator.model.types.Params.Limit
 import io.scalac.tezos.translator.model.types.UUIDs.LibraryEntryId
 
@@ -228,7 +229,7 @@ class LibrarySpec
       actualRecords should contain theSameElementsAs Seq(expectedRecord2)
     }
 
-    val bearerToken = getToken(userService, UserCredentials("admin", "zxcv"))
+    val bearerToken = getToken(userService, adminCredentials)
 
     // change statuses
     // record1
@@ -281,7 +282,7 @@ class LibrarySpec
       actualRecords should contain theSameElementsAs Seq(expectedRecord2)
     }
 
-    val bearerToken = getToken(userService, UserCredentials("admin", "zxcv"))
+    val bearerToken = getToken(userService, adminCredentials)
 
     // record 2
     Delete(s"$libraryEndpoint?uid=17976f3a-505b-4d66-854a-243a70bb94c0").withHeaders(Authorization(OAuth2BearerToken(bearerToken))) ~> libraryRoute ~> check {
@@ -295,7 +296,7 @@ class LibrarySpec
     }
 
     // invalid uid
-    Delete(s"$libraryEndpoint?uid=aada8ebe").withHeaders(Authorization(OAuth2BearerToken(bearerToken))) ~> libraryRoute ~> check {
+    Delete(s"$libraryEndpoint?uid=4cb9f377-718c-4d5d-be0d-118a5c99e294").withHeaders(Authorization(OAuth2BearerToken(bearerToken))) ~> libraryRoute ~> check {
       status shouldBe StatusCodes.NotFound
     }
     // non exisitng uid
@@ -312,7 +313,7 @@ class LibrarySpec
 
     val expected = toInsert.map(LibraryEntryRoutesAdminDto.fromDomain)
 
-    val bearerToken = getToken(userService, UserCredentials("admin", "zxcv"))
+    val bearerToken = getToken(userService, adminCredentials)
     Get(libraryEndpoint).withHeaders(Authorization(OAuth2BearerToken(bearerToken))) ~> libraryRoute ~> check {
       status shouldBe StatusCodes.OK
       val actualRecords = responseAs[List[LibraryEntryRoutesAdminDto]]
@@ -328,7 +329,7 @@ class LibrarySpec
       _ should contain theSameElementsAs Seq(1, 1, 1)
     }
 
-    val bearerToken = getToken(userService, UserCredentials("admin", "zxcv"))
+    val bearerToken = getToken(userService, adminCredentials)
     Get(libraryEndpoint).withHeaders(Authorization(OAuth2BearerToken(bearerToken))) ~> libraryRoute ~> check {
       status shouldBe StatusCodes.OK
       val actualAllRecords = responseAs[List[LibraryEntryRoutesDto]]
@@ -391,7 +392,7 @@ class LibrarySpec
 
     val recordFromDB = maybeRecord.get
 
-    val bearerToken = getToken(userService, UserCredentials("admin", "zxcv"))
+    val bearerToken = getToken(userService, adminCredentials)
 
     Put(s"$libraryEndpoint?uid=${recordFromDB.uid}&status=accepted").withHeaders(Authorization(OAuth2BearerToken(bearerToken))) ~> libraryRoute ~> check {
       status shouldBe StatusCodes.OK

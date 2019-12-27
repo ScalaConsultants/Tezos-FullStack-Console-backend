@@ -1,3 +1,5 @@
 package io.scalac.tezos.translator.model
 
-case class UserCredentials(username: String, password: String)
+import io.scalac.tezos.translator.model.types.Auth.{Password, Username}
+
+case class UserCredentials(username: Username, password: Password)

@@ -4,22 +4,22 @@ import com.github.t3hnar.bcrypt._
 import io.scalac.tezos.translator.model.UserModel
 import io.scalac.tezos.translator.repository.UserRepository
 import io.scalac.tezos.translator.routes.dto.DTO.Error
-import io.scalac.tezos.translator.model.types.Auth.{UserToken, UserTokenType}
-import eu.timepit.refined._
+import io.scalac.tezos.translator.model.types.Auth.{Password, UserToken, UserTokenType, Username}
 import slick.jdbc.PostgresProfile.api._
 import cats.syntax.either._
 import io.scalac.tezos.translator.routes.Endpoints.ErrorResponse
 import sttp.model.StatusCode
+import eu.timepit.refined._
 import scala.annotation.tailrec
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Random
 
 class UserService(repository: UserRepository, db: Database)(implicit ec: ExecutionContext) {
 
-  private val tokenToUser = new scala.collection.concurrent.TrieMap[UserToken, String]
+  private val tokenToUser = new scala.collection.concurrent.TrieMap[UserToken, Username]
 
   @tailrec
-  private def createToken(username: String): UserToken = {
+  private def createToken(username: Username): UserToken = {
     val newToken = generateRandomToken
     tokenToUser.putIfAbsent(newToken, username) match {
       case None => newToken
@@ -36,11 +36,11 @@ class UserService(repository: UserRepository, db: Database)(implicit ec: Executi
     }
   }
 
-  private def checkPassword(user: UserModel, password: String): Boolean = {
-    password.isBcrypted(user.passwordHash)
+  private def checkPassword(user: UserModel, password: Password): Boolean = {
+    password.v.value.isBcrypted(user.passwordHash)
   }
 
-  def authenticateAndCreateToken(username: String, password: String): Future[Option[UserToken]] = {
+  def authenticateAndCreateToken(username: Username, password: Password): Future[Option[UserToken]] = {
     db.run(repository.getByUsername(username))
       .map { userOption =>
         val isAuthenticated = userOption.exists(user => checkPassword(user, password))
@@ -48,11 +48,10 @@ class UserService(repository: UserRepository, db: Database)(implicit ec: Executi
       }
   }
 
-
-  def authenticate(token: UserToken): Future[Either[ErrorResponse, (String, UserToken)]] = Future {
+  def authenticate(token: UserToken): Future[Either[ErrorResponse, (Username, UserToken)]] = Future {
     tokenToUser.get(token)
       .fold {
-        (Error("Token not found"), StatusCode.Unauthorized).asLeft[(String, UserToken)]
+        (Error("Token not found"), StatusCode.Unauthorized).asLeft[(Username, UserToken)]
       } {
         username => (username, token).asRight
       }

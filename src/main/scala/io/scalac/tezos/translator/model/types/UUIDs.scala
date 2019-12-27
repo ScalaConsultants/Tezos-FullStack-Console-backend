@@ -1,11 +1,8 @@
 package io.scalac.tezos.translator.model.types
 
 import java.util.UUID
-
 import io.estatico.newtype.macros.newtype
 import io.circe.{Decoder, DecodingFailure, Encoder, HCursor}
-import io.estatico.newtype.Coercible
-
 import slick.ast.BaseTypedType
 import slick.jdbc.JdbcType
 import slick.jdbc.PostgresProfile.api._
@@ -13,17 +10,14 @@ import sttp.tapir.{Schema, SchemaType}
 import io.circe.syntax._
 import cats.syntax.either._
 import cats.syntax.option._
-
 import scala.reflect.ClassTag
+import Util._
 
 object UUIDs {
 
   @newtype case class LibraryEntryId(v: UUID)
 
   @newtype case class SendEmailId(v: UUID)
-
-  implicit def coercibleClassTag[R, N](implicit ev: Coercible[ClassTag[R], ClassTag[N]], R: ClassTag[R]): ClassTag[N] =
-    ev(R)
 
   def buildUUIDTypeMapper[T: ClassTag](build: UUID => T): JdbcType[T] with BaseTypedType[T] =
     MappedColumnType.base[T, String](s => s.toString, s => build(UUID.fromString(s)))
