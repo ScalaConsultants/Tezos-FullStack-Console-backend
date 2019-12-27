@@ -4,11 +4,12 @@ import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.server.Route
 import akka.http.scaladsl.testkit.ScalatestRouteTest
 import io.scalac.tezos.translator.config.CaptchaConfig
-import io.scalac.tezos.translator.model.{ContactFormContent, EmailAddress, Errors, FullContact, SendEmail}
+import io.scalac.tezos.translator.model.{ContactFormContent, EmailAddress, FullContact, SendEmail}
 import io.scalac.tezos.translator.repository.Emails2SendRepository
 import io.scalac.tezos.translator.repository.dto.SendEmailDbDto
 import io.scalac.tezos.translator.routes.MessageRoutes
 import io.scalac.tezos.translator.routes.dto.SendEmailRoutesDto
+import io.scalac.tezos.translator.routes.dto.DTO.Errors
 import io.scalac.tezos.translator.schema.Emails2SendTable
 import io.scalac.tezos.translator.service.Emails2SendService
 import org.scalatest.{Assertion, BeforeAndAfterEach, Matchers, WordSpec}
@@ -26,11 +27,11 @@ class MessageSpec
   with ScalatestRouteTest
   with BeforeAndAfterEach {
     import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport._
-    import io.circe.generic.auto._
 
     override def beforeEach(): Unit = DbTestBase.recreateTables()
 
-    val testDb = DbTestBase.db
+    val messageEndpoint = "/v1/message"
+    val testDb          = DbTestBase.db
 
     val reCaptchaConfig = CaptchaConfig(checkOn = false, "", "", "")
     val emails2SendRepo = new Emails2SendRepository
@@ -40,7 +41,7 @@ class MessageSpec
     val messageRoute: Route = new MessageRoutes(email2SendService, system.log, reCaptchaConfig, adminEmail).routes
 
     private def checkValidationErrorsWithExpected(dto: SendEmailRoutesDto, expectedErrors: List[String]): Assertion = {
-      Post("/message", dto) ~> messageRoute ~> check {
+      Post(messageEndpoint, dto) ~> messageRoute ~> check {
         status shouldBe StatusCodes.BadRequest
         responseAs[Errors].errors should contain theSameElementsAs expectedErrors
       }
@@ -79,7 +80,7 @@ class MessageSpec
 
       "save proper dto" in {
         val validDto = SendEmailRoutesDto("name", Some("+77072123434"),Some( "email@gmail.com"), "I wanna pizza")
-        Post("/message", validDto) ~> messageRoute ~> check {
+        Post(messageEndpoint, validDto) ~> messageRoute ~> check {
           status shouldBe StatusCodes.OK
         }
         val tableActual = getAllSendEmailsFromDb

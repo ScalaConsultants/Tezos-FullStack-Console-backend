@@ -2,16 +2,21 @@ package io.scalac.tezos.translator.routes
 
 import akka.actor.ActorSystem
 import akka.event.LoggingAdapter
-import akka.http.scaladsl.model.StatusCodes
-import akka.http.scaladsl.server.{Directive, Route, StandardRoute}
+import akka.http.scaladsl.server.Route
 import io.scalac.tezos.translator.config.CaptchaConfig
 import io.scalac.tezos.translator.model.LibraryEntry.{Accepted, PendingApproval, Status}
-import io.scalac.tezos.translator.model.{EmailAddress, Error, SendEmail, Uid}
-import io.scalac.tezos.translator.routes.directives.DTOValidationDirective._
-import io.scalac.tezos.translator.routes.directives.ReCaptchaDirective._
-import io.scalac.tezos.translator.routes.dto.{LibraryEntryRoutesAdminDto, LibraryEntryRoutesDto}
+import io.scalac.tezos.translator.model.{EmailAddress, SendEmail, Uid}
+import io.scalac.tezos.translator.routes.dto.DTOValidation
+import io.scalac.tezos.translator.routes.dto.DTO.Error
+import io.scalac.tezos.translator.routes.utils.ReCaptcha._
+import io.scalac.tezos.translator.routes.dto.{DTO, LibraryEntryDTO, LibraryEntryRoutesAdminDto, LibraryEntryRoutesDto}
 import io.scalac.tezos.translator.service.{Emails2SendService, LibraryService, UserService}
-
+import sttp.model.StatusCode
+import sttp.tapir._
+import sttp.tapir.json.circe._
+import sttp.tapir.server.akkahttp._
+import cats.syntax.either._
+import io.scalac.tezos.translator.routes.Endpoints._
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success}
 
@@ -23,109 +28,164 @@ class LibraryRoutes(
   captchaConfig: CaptchaConfig,
   adminEmail: EmailAddress
 )(implicit as: ActorSystem, ec: ExecutionContext) extends HttpRoutes {
-  import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport._
   import io.circe.generic.auto._
 
-  override def routes: Route =
-    (path("library") & pathEndOrSingleSlash) {
-      (post & withReCaptchaVerify(log, captchaConfig)(as) & withLibraryDTOValidation) { libraryDto =>
-        val sendEmailF = libraryDto.email match {
-          case Some(_) =>
-            val e = SendEmail.approvalRequest(libraryDto, adminEmail)
+  private val libraryCaptchaEndpoint: Endpoint[Option[String], (DTO.ErrorDTO, StatusCode), Unit, Nothing] = Endpoints.captchaEndpoint(captchaConfig).in("library")
+  private  val libraryEndpoint: Endpoint[Unit, Unit, Unit, Nothing] = Endpoints.baseEndpoint.in("library")
+
+  private val libraryAddEndpoint: Endpoint[(Option[String], LibraryEntryRoutesDto), (DTO.ErrorDTO, StatusCode), StatusCode, Nothing] =
+    libraryCaptchaEndpoint
+      .in(jsonBody[LibraryEntryRoutesDto])
+      .post
+      .out(statusCode)
+      .description("Will add LibraryEntryRoutesDto to storage")
+
+  private val getDtoEndpoint: Endpoint[(Option[String], Option[Int], Option[Int]), ErrorResponse, Seq[LibraryEntryDTO], Nothing] =
+    libraryEndpoint
+      .in(maybeAuthHeader)
+      .in(offsetQuery.and(limitQuery))
+      .errorOut(errorResponse)
+      .out(jsonBody[Seq[LibraryEntryDTO]])
+      .get
+      .description("Will return sequence of LibraryEntryRoutesDto or LibraryEntryRoutesAdminDto if auth header provided")
+
+  private val putEntryEndpoint: Endpoint[(String, String, String), ErrorResponse, StatusCode, Nothing] =
+    libraryEndpoint
+      .in(auth.bearer)
+      .in(uidQuery.and(statusQuery))
+      .errorOut(errorResponse)
+      .out(statusCode)
+      .put
+      .description("Will change the status of entry with passed uid")
+
+  private val deleteEntryEndpoint: Endpoint[(String, String), ErrorResponse, StatusCode, Nothing] =
+    libraryEndpoint
+      .in(auth.bearer)
+      .in(uidQuery)
+      .errorOut(errorResponse)
+      .out(statusCode)
+      .delete
+      .description("Will delete an entry with passed uid")
+
+  private def addNewEntryRoute(): Route =
+    libraryAddEndpoint.toRoute {
+      (withReCaptchaVerify(_, log, captchaConfig))
+        .andThenFirstE { t: (Unit, LibraryEntryRoutesDto) => DTOValidation.validateDto(t._2) }
+        .andThenFirstE(addNewEntry)
+    }
+
+  private def getDTORoute: Route =
+    getDtoEndpoint.toRoute {
+      (getDto _).tupled
+    }
+
+  private def putEntryRoute: Route =
+    putEntryEndpoint.toRoute {
+      (userService.authenticate _).andThenFirstE((putDto _).tupled)
+    }
+
+  private def deleteEntryRoute: Route =
+    deleteEntryEndpoint.toRoute {
+      (userService.authenticate _).andThenFirstE((deleteDto _).tupled)
+    }
+
+  private def addNewEntry(libraryDTO: LibraryEntryRoutesDto): Future[Either[ErrorResponse, StatusCode]] = {
+    val sendEmailF = libraryDTO.email match {
+      case Some(_) =>
+        val e = SendEmail.approvalRequest(libraryDTO, adminEmail)
+        emails2SendService
+          .addNewEmail2Send(e)
+          .recover { case err => log.error(s"Can't add new email to send, error - $err") }
+
+      case None => Future.successful(())
+    }
+
+    val operationPerformed = for {
+      entry       <-  Future.fromTry(libraryDTO.toDomain)
+      addResult   <-  service.addNew(entry)
+      _           <-  sendEmailF
+    } yield addResult
+    operationPerformed.map(_ => StatusCode.Ok.asRight).recover { case e =>
+      log.error(s"Can't save library dto $libraryDTO, error - $e")
+      (Error("Can't save payload"), StatusCode.InternalServerError).asLeft
+    }
+  }
+
+  private def getAdminsDto(maybeOffset: Option[Int],
+                            maybeLimit: Option[Int]): Future[Either[ErrorResponse, Seq[LibraryEntryDTO]]] = {
+    service
+      .getRecords(maybeOffset, maybeLimit)
+      .map(_.map(LibraryEntryRoutesAdminDto.fromDomain).asRight)
+      .recover { case e =>
+        log.error(s"Can't show accepted library models, error - $e")
+        (Error("Can't get records"), StatusCode.InternalServerError).asLeft
+      }
+  }
+
+  private def getDto(maybeHeader: Option[String],
+                     maybeOffset: Option[Int],
+                     maybeLimit: Option[Int]): Future[Either[ErrorResponse, Seq[LibraryEntryDTO]]] =
+    maybeHeader
+      .withMaybeAuth(userService)(getAdminsDto(maybeOffset, maybeLimit))(getJustDto(maybeOffset, maybeLimit))
+      .value
+
+  private def getJustDto(maybeOffset: Option[Int],
+                     maybeLimit: Option[Int]): Future[Either[ErrorResponse, Seq[LibraryEntryDTO]]] =
+    service
+      .getRecords(maybeOffset, maybeLimit, Some(Accepted))
+      .map(_.map(LibraryEntryRoutesDto.fromDomain).asRight)
+    .recover { case e =>
+      log.error(s"Can't show accepted library models, limit - $maybeLimit error - $e")
+      (Error("Can't get records"), StatusCode.InternalServerError).asLeft
+    }
+
+  private def putDto(userData: (String, String),
+                     uid: String,
+                     status: String): Future[Either[ErrorResponse, StatusCode]] = {
+    val statusChangeWithEmail =
+      for {
+        u             <-  Future.fromTry(Uid.fromString(uid))
+        parsedStatus  =   Status.fromString(status) match {
+          case Success(PendingApproval) =>
+            Failure(new IllegalArgumentException("Cannot change status to 'pending_approval' !"))
+          case other => other
+        }
+        s             <-  Future.fromTry(parsedStatus)
+        updatedEntry  <-  service.changeStatus(u, s)
+        _             <-  updatedEntry.email match {
+          case Some(email) =>
+            val e = SendEmail.statusChange(email, updatedEntry.title , s)
             emails2SendService
               .addNewEmail2Send(e)
               .recover { case err => log.error(s"Can't add new email to send, error - $err") }
-
           case None => Future.successful(())
         }
-
-        val operationPerformed = for {
-          entry       <-  Future.fromTry(libraryDto.toDomain)
-          addResult   <-  service.addNew(entry)
-          _           <-  sendEmailF
-        } yield addResult
-
-        onComplete(operationPerformed) {
-          case Success(_) => complete(StatusCodes.OK)
-          case Failure(err) =>
-            log.error(s"Can't save library dto $libraryDto, error - $err")
-            complete(StatusCodes.InternalServerError, Error("Can't save payload"))
-        }
-      } ~
-        (get
-          & authenticateOAuth2("", userService.authenticateOAuth2AndPrependUsername)
-          & parameters('offset.as[Int].?, 'limit.as[Int].?)) { case (_, offset, limit) =>
-          val operationPerformed = service.getRecords(offset, limit)
-          onComplete(operationPerformed) {
-            case Success(libraryEntries) => complete(libraryEntries.map(LibraryEntryRoutesAdminDto.fromDomain))
-            case Failure(err) =>
-              log.error(s"Can't show accepted library models, error - $err")
-              complete(StatusCodes.InternalServerError, Error("Can't get records"))
-          }
-        } ~
-        (get & parameters('offset.as[Int].?, 'limit.as[Int].?)) { case (offset, limit) =>
-          val operationPerformed = service.getRecords(offset, limit, Some(Accepted))
-          onComplete(operationPerformed) {
-            case Success(libraryEntries) => complete(libraryEntries.map(LibraryEntryRoutesDto.fromDomain))
-            case Failure(err) =>
-              log.error(s"Can't show accepted library models, limit - $limit error - $err")
-              complete(StatusCodes.InternalServerError, Error("Can't get records"))
-          }
-        } ~
-        (authenticateOAuth2("", userService.authenticateOAuth2AndPrependUsername) &
-          put &
-          parameters('uid.as[String], 'status.as[String])
-          ) { case (_, uid, status) =>
-
-            val statusChangeWithEmail =
-              for {
-                u             <-  Future.fromTry(Uid.fromString(uid))
-                parsedStatus  =   Status.fromString(status) match {
-                                    case Success(PendingApproval) => Failure(new IllegalArgumentException("Cannot change status to 'pending_approval' !"))
-                                    case other => other
-                                  }
-                s             <-  Future.fromTry(parsedStatus)
-                updatedEntry  <-  service.changeStatus(u, s)
-                _             <-  updatedEntry.email match {
-                                    case Some(email) =>
-                                      val e = SendEmail.statusChange(email, updatedEntry.title , s)
-                                      emails2SendService
-                                        .addNewEmail2Send(e)
-                                        .recover { case err => log.error(s"Can't add new email to send, error - $err") }
-                                    case None => Future.successful(())
-                                  }
-              } yield updatedEntry
-
-            onComplete(statusChangeWithEmail) {
-              case Success(_) =>
-                complete(StatusCodes.OK)
-
-              case Failure(err) =>
-                log.error(s"Cannot update library entry, uid: $uid, error - $err")
-                handleError(err)
-            }
-        } ~
-        (authenticateOAuth2("", userService.authenticateOAuth2AndPrependUsername) &
-          delete &
-          parameters('uid.as[String])
-          ) { case (_, uid) =>
-              onComplete(Future.fromTry(Uid.fromString(uid).map(service.delete)).flatten) {
-                case Success(_) =>
-                  complete(StatusCodes.OK)
-
-                case Failure(err) =>
-                  log.error(s"Can't delete library entry, uid: $uid, error - $err")
-                  handleError(err)
-              }
-            }
+      } yield updatedEntry
+    statusChangeWithEmail.map(_ => StatusCode.Ok.asRight).recover { case e =>
+      log.error(s"Cannot update library entry, uid: $uid, error - $e")
+      handleError(e).asLeft
     }
+  }
 
-  def withLibraryDTOValidation: Directive[Tuple1[LibraryEntryRoutesDto]] = withDTOValidation[LibraryEntryRoutesDto]
+  private def deleteDto(userData: (String, String), uid: String): Future[Either[ErrorResponse, StatusCode]] =
+    Future
+      .fromTry(Uid.fromString(uid).map(service.delete))
+      .flatten
+      .map(_ => StatusCode.Ok.asRight)
+      .recover { case e =>
+        log.error(s"Can't delete library entry, uid: $uid, error - $e")
+        handleError(e).asLeft
+      }
 
-  private def handleError(t: Throwable): StandardRoute =
+  private def handleError(t: Throwable): ErrorResponse =
     t match {
-      case _: IllegalArgumentException => complete(StatusCodes.NotFound, Error(t.getMessage))
-      case _ => complete(StatusCodes.InternalServerError, Error("Can't update"))
+      case _: IllegalArgumentException => (Error(t.getMessage), StatusCode.NotFound)
+      case _ => (Error("Can't update"), StatusCode.InternalServerError)
     }
+
+  override def routes: Route = addNewEntryRoute ~ getDTORoute ~ putEntryRoute ~ deleteEntryRoute
+
+  override def docs: List[Endpoint[_, _ ,_ ,_]] =
+    List(libraryAddEndpoint, getDtoEndpoint, putEntryEndpoint, deleteEntryEndpoint)
 
 }

@@ -8,7 +8,7 @@ import io.scalac.tezos.translator.actor.EmailSender
 import io.scalac.tezos.translator.config.Configuration
 import io.scalac.tezos.translator.model.EmailAddress
 import io.scalac.tezos.translator.repository.{Emails2SendRepository, LibraryRepository, UserRepository}
-import io.scalac.tezos.translator.routes.util.MMTranslator
+import io.scalac.tezos.translator.routes.utils.MMTranslator
 import io.scalac.tezos.translator.service.{Emails2SendService, LibraryService, SendEmailsServiceImpl, UserService}
 import slick.jdbc.PostgresProfile
 import slick.jdbc.PostgresProfile.api._

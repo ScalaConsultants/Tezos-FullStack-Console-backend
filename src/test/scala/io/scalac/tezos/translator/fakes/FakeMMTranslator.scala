@@ -1,7 +1,7 @@
 package io.scalac.tezos.translator.fakes
 
 import io.scalac.tezos.translator.Samples
-import io.scalac.tezos.translator.routes.util.Translator
+import io.scalac.tezos.translator.routes.utils.Translator
 
 object FakeMMTranslator extends Translator {
 

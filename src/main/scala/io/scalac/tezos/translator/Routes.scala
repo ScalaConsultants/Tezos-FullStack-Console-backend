@@ -8,7 +8,7 @@ import ch.megard.akka.http.cors.scaladsl.CorsDirectives._
 import io.scalac.tezos.translator.config.CaptchaConfig
 import io.scalac.tezos.translator.model.EmailAddress
 import io.scalac.tezos.translator.routes._
-import io.scalac.tezos.translator.routes.util.Translator
+import io.scalac.tezos.translator.routes.utils.Translator
 import io.scalac.tezos.translator.service.{Emails2SendService, LibraryService, UserService}
 
 import scala.concurrent.ExecutionContext
@@ -33,9 +33,20 @@ class Routes(
 
   lazy val allRoutes: Route =
     cors() {
-      pathPrefix("v1") {
-        apis.map(_.routes).reduce(_ ~ _)
-      }
-    }
+      apis.map(_.routes).reduce(_ ~ _)
+    } ~ docs
+
+  lazy val docs: Route = {
+    import sttp.tapir.docs.openapi._
+    import sttp.tapir.openapi.circe.yaml._
+    import sttp.tapir.swagger.akkahttp.SwaggerAkka
+    import akka.http.scaladsl.Http
+    import akka.http.scaladsl.server.Directives._
+
+    import scala.concurrent.Await
+    import scala.concurrent.duration._
+    val docs = apis.flatMap(_.docs).toOpenAPI("Tezos API", "1.0")
+    new SwaggerAkka(docs.toYaml).routes
+  }
 
 }

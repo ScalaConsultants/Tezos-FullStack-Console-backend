@@ -9,8 +9,8 @@ lazy val root = (project in file(".")).settings(
   resolvers += "Scalac" at "https://raw.githubusercontent.com/ScalaConsultants/mvn-repo/master/",
 
   libraryDependencies ++= akkaHttp ++ akkaHttpCors ++ akkaStream ++ cats ++ circe ++ courier ++ greenMail ++
-    jodaTime ++ logBack ++ postgres ++ pureConfig ++ scalactic ++ scalaTest ++ sl4j ++ slick ++ tesozFCTM ++ 
-    wireMock ++ testContainers ++ bcrypt ++ flyway,
+    jodaTime ++ logBack ++ postgres ++ pureConfig ++ scalactic ++ scalaTest ++ sl4j ++ slick ++ tapir ++
+    tesozFCTM ++ wireMock ++ testContainers ++ bcrypt ++ flyway,
   
   Defaults.itSettings,
 

@@ -4,7 +4,7 @@ object Version {
 
   val akkaHttp                = "10.1.10"
   val akkaHttpCors            = "0.4.1"
-  val akkaStream              = "2.5.23"
+  val akkaStream              = "2.5.26"
   val akkaHttpCirce           = "1.29.1"
   val circeVersion            = "0.11.1"
   val cats                    = "2.0.0"
@@ -18,6 +18,8 @@ object Version {
   val scalaTest               = "3.0.5"
   val sl4j                    = "1.7.26"
   val slick                   = "3.3.1"
+  val tapir                   = "0.12.12"
+  val tapirModel              = "1.0.0-RC1"
   val tesozFCTM               = "0.1"
   val wireMock                = "1.58"
   val testContainersScala     = "0.32.0"
@@ -93,6 +95,16 @@ object Dependencies {
   val slick: Seq[ModuleID] = Seq(
     "com.typesafe.slick" %% "slick"          % Version.slick,
     "com.typesafe.slick" %% "slick-hikaricp" % Version.slick
+  )
+
+  val tapir = Seq(
+    "com.softwaremill.sttp.tapir" %% "tapir-core" % Version.tapir,
+    "com.softwaremill.sttp.tapir" %% "tapir-akka-http-server" % Version.tapir exclude("com.typesafe.akka", "akka-stream_2.12"),
+    "com.softwaremill.sttp.tapir" %% "tapir-json-circe" % Version.tapir,
+    "com.softwaremill.sttp.tapir" %% "tapir-openapi-docs" % Version.tapir,
+    "com.softwaremill.sttp.tapir" %% "tapir-openapi-circe-yaml" % Version.tapir,
+    "com.softwaremill.sttp.tapir" %% "tapir-swagger-ui-akka-http" % Version.tapir exclude("com.typesafe.akka", "akka-stream_2.12"),
+    "com.softwaremill.sttp.model" %% "core" % Version.tapirModel,
   )
 
   val tesozFCTM: Seq[ModuleID] = Seq(
