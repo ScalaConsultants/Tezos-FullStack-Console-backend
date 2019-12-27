@@ -177,11 +177,6 @@ class LibraryRoutes(
         handleError(e).asLeft
       }
 
-  private def validateLibraryEntryRoutesDTO(x: Unit,
-                                            LibraryEntryRoutesDTO: LibraryEntryRoutesDto)
-                                           (implicit ec: ExecutionContext): Future[Either[ErrorResponse, LibraryEntryRoutesDto]] =
-    DTOValidation.validateDto(LibraryEntryRoutesDTO)
-
   private def handleError(t: Throwable): ErrorResponse =
     t match {
       case _: IllegalArgumentException => (Error(t.getMessage), StatusCode.NotFound)
