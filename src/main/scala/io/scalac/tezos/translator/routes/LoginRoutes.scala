@@ -4,14 +4,14 @@ import akka.actor.ActorSystem
 import akka.event.LoggingAdapter
 import akka.http.scaladsl.server.Route
 import io.scalac.tezos.translator.model.UserCredentials
+import io.scalac.tezos.translator.model.types.Auth.UserToken
+import io.scalac.tezos.translator.routes.Endpoints.bearer2TokenF
 import io.scalac.tezos.translator.routes.Endpoints.ErrorResponse
 import io.scalac.tezos.translator.routes.dto.DTOValidation
 import io.scalac.tezos.translator.routes.dto.DTO.{Error, ErrorDTO}
 import io.scalac.tezos.translator.service.UserService
 import cats.syntax.either._
 import io.circe.generic.auto._
-import io.scalac.tezos.translator.model.Types.UserToken
-import io.scalac.tezos.translator.routes.Endpoints.bearer2TokenF
 import sttp.model.StatusCode
 import sttp.tapir._
 import sttp.tapir.json.circe._

@@ -1,7 +1,7 @@
 package io.scalac.tezos.translator.service
 
-import io.scalac.tezos.translator.model.Types.SendEmailId
 import io.scalac.tezos.translator.model.SendEmail
+import io.scalac.tezos.translator.model.types.UUIDs.SendEmailId
 import io.scalac.tezos.translator.repository.Emails2SendRepository
 import io.scalac.tezos.translator.repository.dto.SendEmailDbDto
 import slick.jdbc.PostgresProfile.api._

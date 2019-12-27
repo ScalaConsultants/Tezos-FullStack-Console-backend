@@ -3,7 +3,7 @@ package io.scalac.tezos.translator.repository.dto
 import java.sql.Timestamp
 import java.time.Instant
 
-import io.scalac.tezos.translator.model.Types.SendEmailId
+import io.scalac.tezos.translator.model.types.UUIDs.SendEmailId
 import io.scalac.tezos.translator.model.{EmailContent, SendEmail}
 
 case class SendEmailDbDto(

@@ -4,6 +4,9 @@ import cats.data.EitherT
 import cats.instances.future._
 import io.scalac.tezos.translator.config.CaptchaConfig
 import io.scalac.tezos.translator.routes.dto.DTO.{Error, ErrorDTO}
+import io.scalac.tezos.translator.service.UserService
+import io.scalac.tezos.translator.model.types.Auth.{UserToken, UserTokenType}
+import io.scalac.tezos.translator.model.types.Params.{Limit, Offset}
 import sttp.tapir.{Endpoint, endpoint, header, jsonBody, statusCode}
 import io.circe.generic.auto._
 import sttp.model.StatusCode
@@ -12,10 +15,7 @@ import sttp.tapir.json.circe._
 import cats.syntax.option._
 import cats.syntax.flatMap._
 import cats.syntax.either._
-import io.scalac.tezos.translator.service.UserService
 import scala.concurrent.{ExecutionContext, Future}
-import io.scalac.tezos.translator.model.Types._
-import io.scalac.tezos.translator.model.TypesStuff._
 import eu.timepit.refined._
 
 object Endpoints {

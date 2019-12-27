@@ -22,7 +22,8 @@ import org.scalatest.{Assertion, BeforeAndAfterEach, Matchers, WordSpec}
 import slick.jdbc.PostgresProfile.api._
 import eu.timepit.refined._
 import eu.timepit.refined.numeric.Positive
-import io.scalac.tezos.translator.model.Types.{LibraryEntryId, Limit}
+import io.scalac.tezos.translator.model.types.Params.Limit
+import io.scalac.tezos.translator.model.types.UUIDs.LibraryEntryId
 
 import scala.collection.immutable
 import scala.concurrent.duration._

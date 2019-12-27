@@ -4,10 +4,10 @@ import com.github.t3hnar.bcrypt._
 import io.scalac.tezos.translator.model.UserModel
 import io.scalac.tezos.translator.repository.UserRepository
 import io.scalac.tezos.translator.routes.dto.DTO.Error
+import io.scalac.tezos.translator.routes.Endpoints.ErrorResponse
+import io.scalac.tezos.translator.model.types.Auth.{UserToken, UserTokenType}
 import slick.jdbc.PostgresProfile.api._
 import cats.syntax.either._
-import io.scalac.tezos.translator.model.Types.{UserToken, UserTokenType}
-import io.scalac.tezos.translator.routes.Endpoints.ErrorResponse
 import sttp.model.StatusCode
 import eu.timepit.refined._
 import scala.annotation.tailrec

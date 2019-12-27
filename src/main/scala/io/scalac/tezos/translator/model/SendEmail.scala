@@ -1,8 +1,8 @@
 package io.scalac.tezos.translator.model
 
 import io.scalac.tezos.translator.model.LibraryEntry.Status
-import io.scalac.tezos.translator.model.Types.SendEmailId
-import io.scalac.tezos.translator.model.UUIDTypesGenerator.generateSendEmailId
+import io.scalac.tezos.translator.model.types.UUIDs.SendEmailId
+import io.scalac.tezos.translator.model.types.UUIDs.generateSendEmailId
 import io.scalac.tezos.translator.repository.dto.SendEmailDbDto
 import io.scalac.tezos.translator.routes.dto.{LibraryEntryRoutesDto, SendEmailRoutesDto}
 

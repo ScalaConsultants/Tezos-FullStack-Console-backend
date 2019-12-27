@@ -1,6 +1,7 @@
 package io.scalac.tezos.translator.routes
 
 import java.util.UUID
+
 import akka.actor.ActorSystem
 import akka.event.LoggingAdapter
 import akka.http.scaladsl.server.Route
@@ -13,9 +14,7 @@ import io.scalac.tezos.translator.routes.utils.ReCaptcha._
 import io.scalac.tezos.translator.routes.dto.{DTO, LibraryEntryDTO, LibraryEntryRoutesAdminDto, LibraryEntryRoutesDto}
 import io.scalac.tezos.translator.routes.dto.LibraryEntryDTO._
 import io.scalac.tezos.translator.service.{Emails2SendService, LibraryService, UserService}
-import io.scalac.tezos.translator.model.Types.{LibraryEntryId, Limit, Offset, UserToken}
-import io.scalac.tezos.translator.model.TypesStuff._
-import io.scalac.tezos.translator.model.TypesStuff._
+import io.scalac.tezos.translator.model.types.UUIDs.LibraryEntryId
 import io.scalac.tezos.translator.routes.Endpoints._
 import sttp.model.StatusCode
 import sttp.tapir._
@@ -23,6 +22,8 @@ import sttp.tapir.json.circe._
 import sttp.tapir.server.akkahttp._
 import sttp.tapir.CodecFormat.Json._
 import cats.syntax.either._
+import io.scalac.tezos.translator.model.Types.UserToken
+import io.scalac.tezos.translator.model.types.Params._
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success}
 

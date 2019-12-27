@@ -5,8 +5,7 @@ import io.circe.{Decoder, Encoder}
 import io.circe.generic.semiauto.deriveEncoder
 import io.circe.generic.semiauto.deriveDecoder
 import io.scalac.tezos.translator.model.LibraryEntry.PendingApproval
-import io.scalac.tezos.translator.model.Types.LibraryEntryId
-import io.scalac.tezos.translator.model.TypesStuff._
+import io.scalac.tezos.translator.model.types.UUIDs.LibraryEntryId
 import io.scalac.tezos.translator.model.{EmailAddress, LibraryEntry}
 
 import scala.util.{Success, Try}

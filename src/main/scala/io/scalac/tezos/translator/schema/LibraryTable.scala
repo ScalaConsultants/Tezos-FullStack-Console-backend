@@ -2,8 +2,7 @@ package io.scalac.tezos.translator.schema
 
 import java.sql.Timestamp
 
-import io.scalac.tezos.translator.model.Types.LibraryEntryId
-import io.scalac.tezos.translator.model.TypesStuff._
+import io.scalac.tezos.translator.model.types.UUIDs.LibraryEntryId
 import io.scalac.tezos.translator.repository.dto.LibraryEntryDbDto
 import slick.lifted.{ProvenShape, Tag}
 import slick.jdbc.PostgresProfile.api._

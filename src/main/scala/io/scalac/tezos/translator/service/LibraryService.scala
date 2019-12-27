@@ -2,8 +2,9 @@ package io.scalac.tezos.translator.service
 
 import akka.event.LoggingAdapter
 import io.scalac.tezos.translator.model.LibraryEntry._
-import io.scalac.tezos.translator.model.Types.{LibraryEntryId, Limit, Offset}
 import io.scalac.tezos.translator.model.LibraryEntry
+import io.scalac.tezos.translator.model.types.Params.{Limit, Offset}
+import io.scalac.tezos.translator.model.types.UUIDs.LibraryEntryId
 import io.scalac.tezos.translator.repository.LibraryRepository
 import io.scalac.tezos.translator.repository.dto.LibraryEntryDbDto
 
