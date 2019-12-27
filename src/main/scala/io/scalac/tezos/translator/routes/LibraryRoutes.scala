@@ -70,7 +70,7 @@ class LibraryRoutes(
   private def addNewEntryRoute(): Route =
     libraryAddEndpoint.toRoute {
       (withReCaptchaVerify(_, log, captchaConfig))
-        .andThenFirstE((validateLibraryEntryRoutesDTO _).tupled)
+        .andThenFirstE { t: (Unit, LibraryEntryRoutesDto) => DTOValidation.validateDto(t._2) }
         .andThenFirstE(addNewEntry)
     }
 
