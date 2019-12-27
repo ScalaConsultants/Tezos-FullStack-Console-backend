@@ -92,13 +92,13 @@ class LibrarySpec
 
     "validate payload before storing" in {
       val emptyPayload = LibraryEntryRoutesDto("", Some("asda"), None, Some("asd"), "", "")
-      val expectedErrors1 = List("name field is empty",
+      val expectedErrors1 = List("title field is empty",
         "micheline field is empty", "michelson field is empty")
 
       checkValidationErrorsWithExpected(emptyPayload, expectedErrors1)
 
       val toLongPayload = LibraryEntryRoutesDto(longField, Some(longField), None, None, "some", "some")
-      val expectedErrors2 = List("field name is too long, max length - 255", "field author is too long, max length - 255")
+      val expectedErrors2 = List("field title is too long, max length - 255", "field author is too long, max length - 255")
 
       checkValidationErrorsWithExpected(toLongPayload, expectedErrors2)
     }
@@ -135,7 +135,7 @@ class LibrarySpec
         addedRecord.micheline shouldBe "micheline"
         addedRecord.michelson shouldBe "michelson"
       }
-      "payload with UperCased Email make lower " in {
+      "payload with UpperCased Email make lower " in {
         val properPayload = LibraryEntryRoutesDto("vss", None, Some("Aeaaast@service.pl"), Some("Some thing for some things"), "micheline", "michelson")
         Post(libraryEndpoint, properPayload) ~> Route.seal(libraryRoute) ~> check {
           status shouldBe StatusCodes.OK
@@ -414,9 +414,9 @@ class LibrarySpec
 
 
   private trait SampleEntries {
-    val record1 = LibraryEntry(Uid.fromString("d7327913-4957-4417-96d2-e5c1d4311f80").get, "nameE1", Some(("authorE1")), None, Some(("descriptionE1")), "michelineE1", "michelsonE1", PendingApproval)
-    val record2 = LibraryEntry(Uid.fromString("17976f3a-505b-4d66-854a-243a70bb94c0").get, "nameE2", Some(("authorE2")), Some(EmailAddress.fromString("name@service.com").get), Some(("descriptionE2")), "michelineE2", "michelsonE2", Accepted)
-    val record3 = LibraryEntry(Uid.fromString("5d8face2-ab24-49e0-b792-a0b99a031645").get, "nameE3", Some(("authorE3")), None, Some(("descriptionE3")), "michelineE3", "michelsonE3", Declined)
+    val record1 = LibraryEntry(Uid.fromString("d7327913-4957-4417-96d2-e5c1d4311f80").get, "nameE1", Some("authorE1"), None, Some("descriptionE1"), "michelineE1", "michelsonE1", PendingApproval)
+    val record2 = LibraryEntry(Uid.fromString("17976f3a-505b-4d66-854a-243a70bb94c0").get, "nameE2", Some("authorE2"), Some(EmailAddress.fromString("name@service.com").get), Some("descriptionE2"), "michelineE2", "michelsonE2", Accepted)
+    val record3 = LibraryEntry(Uid.fromString("5d8face2-ab24-49e0-b792-a0b99a031645").get, "nameE3", Some("authorE3"), None, Some("descriptionE3"), "michelineE3", "michelsonE3", Declined)
 
     val toInsert = Seq(record1, record2, record3)
 

@@ -42,7 +42,7 @@ object DTOValidation {
     case FieldIsInvalid(fieldName, field) => s"invalid $fieldName - $field"
   }
 
-  sealed trait DTOValidationError
+  sealed trait DTOValidationError extends Product with Serializable
 
   final case class FieldToLong(field: String, maxLength: Int) extends DTOValidationError
 
@@ -84,28 +84,40 @@ object DTOValidation {
       string.asRight
   }
 
-  implicit val SendEmailDTOValidation: DTOValidation[SendEmailRoutesDto] = { dto =>
+  implicit val SendEmailDTOValidation: DTOValidation[SendEmailRoutesDto] = { dto => validateSendEmailDTO(dto) }
+
+  def validateSendEmailDTO: SendEmailRoutesDto => ValidationResult[SendEmailRoutesDto] = { dto =>
     val checkingNameResult: ValidationResult[String] =
       checkStringNotEmptyAndLength(dto.name, maxTinyLength, FieldIsEmpty("name"), FieldToLong("name", maxTinyLength))
 
     val checkingPhoneIsValid: Either[NonEmptyList[DTOValidationError], Option[String]] =
-      dto.phone.map( maybePhone => checkStringMatchRegExp(maybePhone, phoneRegex, FieldIsInvalid("phone number", maybePhone)).map(Some(_))
-        ).getOrElse(None.asRight)
+      checkOptionalString(dto.phone, phoneStr => checkStringMatchRegExp(phoneStr, phoneRegex, FieldIsInvalid("phone", phoneStr)))
 
     val checkContentNotEmpty: ValidationResult[String] = checkStringNotEmpty(dto.content, FieldIsEmpty("content"))
-    val checkEmail: Either[NonEmptyList[DTOValidationError], Option[String]] =
-      dto.email.map(mail => checkEmailIsValid(mail).map(x => Some(x.toLowerCase))).getOrElse(None.asRight)
 
-    if( dto.email.isEmpty && dto.phone.isEmpty)
-      {
-        (checkingNameResult, NonEmptyList.one(FieldIsEmpty("Both, Email field is empty and Phone")).asLeft, checkEmail, checkContentNotEmpty)
-          .parMapN(SendEmailRoutesDto.apply)
+    val checkEmail: Either[NonEmptyList[DTOValidationError], Option[String]] = checkOptionalString(dto.email, checkEmailIsValid)
+
+    val phoneEmailNonEmptyCheck =
+      if (checkingPhoneIsValid.right.exists(_.isEmpty) && checkEmail.right.exists(_.isEmpty)) {
+        NonEmptyList.one(FieldIsInvalid("email, phone", "At least one field should be filled")).asLeft
+      } else {
+        ().asRight
       }
-    else {
-      (checkingNameResult, checkingPhoneIsValid, checkEmail, checkContentNotEmpty)
-      .parMapN(SendEmailRoutesDto.apply)
-    }
+
+    val v = (checkingNameResult, checkingPhoneIsValid,checkEmail, checkContentNotEmpty).parMapN(SendEmailRoutesDto.apply)
+
+    (phoneEmailNonEmptyCheck, v).parMapN((_, dto) => dto)
+
   }
+
+  private def checkOptionalString(
+    maybeStr: Option[String],
+    validate: String => ValidationResult[String]
+  ): ValidationResult[Option[String]] =
+    maybeStr match {
+      case Some(v) if v.nonEmpty => validate(v).map(Some(_))
+      case _ => Right(None)
+    }
 
   private def checkEmailIsValid(email: String): ValidationResult[String] =
     checkStringNotEmptyAndLength(email, maxTinyLength, FieldIsEmpty("email"), FieldToLong("email", maxTinyLength))
@@ -122,27 +134,32 @@ object DTOValidation {
     checkStringNotEmptyAndLength(value, maxTinyLength, FieldIsEmpty(name), FieldToLong(name, maxTinyLength))
   }
 
-  implicit val LibraryDTOValidation: DTOValidation[LibraryEntryRoutesDto] = { dto =>
-    val checkName =
-      checkStringNotEmptyAndLength(dto.title, maxTinyLength, FieldIsEmpty("name"), FieldToLong("name", maxTinyLength))
+  implicit val LibraryDTOValidation: DTOValidation[LibraryEntryRoutesDto] = { dto => validateLibraryEntryRoutesDto(dto) }
+
+  def validateLibraryEntryRoutesDto: LibraryEntryRoutesDto => ValidationResult[LibraryEntryRoutesDto] = { dto =>
+    val checkTitle =
+      checkStringNotEmptyAndLength(dto.title, maxTinyLength, FieldIsEmpty("title"), FieldToLong("title", maxTinyLength))
     val checkAuthor =
-      dto.author.map(author => checkAuthorIsValid(author).map(Some(_))).getOrElse(None.asRight)
+      checkOptionalString(dto.author, a => checkAuthorIsValid(a))
     val checkEmail =
-      dto.email.map(mail => checkEmailIsValid(mail).map( x => Some(x.toLowerCase))).getOrElse(None.asRight)
+      checkOptionalString(dto.email, checkEmailIsValid).map(_.map(_.toLowerCase))
     val checkDescription =
-      dto.description.map(description => checkDescriptionsValid(description).map(Some(_))).getOrElse(None.asRight)
+      checkOptionalString(dto.description, d => checkDescriptionsValid(d))
     val checkMicheline =
       checkStringNotEmpty(dto.micheline, FieldIsEmpty("micheline"))
     val checkMichelson =
       checkStringNotEmpty(dto.michelson, FieldIsEmpty("michelson"))
 
-    (checkName, checkAuthor, checkEmail, checkDescription, checkMicheline, checkMichelson).parMapN(LibraryEntryRoutesDto.apply)
+    (checkTitle, checkAuthor, checkEmail, checkDescription, checkMicheline, checkMichelson).parMapN(LibraryEntryRoutesDto.apply)
   }
 
-  implicit val UserCredentialsValidation: DTOValidation[UserCredentials] = { dto =>
+  implicit val UserCredentialsValidation: DTOValidation[UserCredentials] = { dto => validateUserCredentials(dto) }
+
+  def validateUserCredentials: UserCredentials => ValidationResult[UserCredentials] = { dto =>
     val checkUsername =
       checkStringNotEmptyAndLength(dto.username, maxUsernameLength, FieldIsEmpty("username"), FieldToLong("username", maxUsernameLength))
     val checkPassword = checkStringNotEmpty(dto.password, FieldIsEmpty("password"))
+
     (checkUsername, checkPassword).parMapN(UserCredentials.apply)
   }
 
