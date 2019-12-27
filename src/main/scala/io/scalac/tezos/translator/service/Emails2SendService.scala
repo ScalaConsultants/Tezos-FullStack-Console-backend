@@ -1,6 +1,7 @@
 package io.scalac.tezos.translator.service
 
-import io.scalac.tezos.translator.model.{SendEmail, Uid}
+import io.scalac.tezos.translator.model.Types.SendEmailId
+import io.scalac.tezos.translator.model.SendEmail
 import io.scalac.tezos.translator.repository.Emails2SendRepository
 import io.scalac.tezos.translator.repository.dto.SendEmailDbDto
 import slick.jdbc.PostgresProfile.api._
@@ -22,9 +23,9 @@ class Emails2SendService(repository: Emails2SendRepository, db: Database) {
     } yield entries
 
 
-  def removeSentMessage(uid: Uid): Future[Int] = {
+  def removeSentMessage(uid: SendEmailId): Future[Int] = {
     db.run(
-      repository.removeEmail2Send(uid.value)
+      repository.removeEmail2Send(uid)
     )
   }
 

@@ -1,23 +1,28 @@
 package io.scalac.tezos.translator.routes
 
+import java.util.UUID
 import akka.actor.ActorSystem
 import akka.event.LoggingAdapter
 import akka.http.scaladsl.server.Route
 import io.scalac.tezos.translator.config.CaptchaConfig
 import io.scalac.tezos.translator.model.LibraryEntry.{Accepted, PendingApproval, Status}
-import io.scalac.tezos.translator.model.{EmailAddress, SendEmail, Types, Uid}
+import io.scalac.tezos.translator.model.{EmailAddress, SendEmail}
 import io.scalac.tezos.translator.routes.dto.DTOValidation
 import io.scalac.tezos.translator.routes.dto.DTO.Error
 import io.scalac.tezos.translator.routes.utils.ReCaptcha._
 import io.scalac.tezos.translator.routes.dto.{DTO, LibraryEntryDTO, LibraryEntryRoutesAdminDto, LibraryEntryRoutesDto}
+import io.scalac.tezos.translator.routes.dto.LibraryEntryDTO._
 import io.scalac.tezos.translator.service.{Emails2SendService, LibraryService, UserService}
+import io.scalac.tezos.translator.model.Types.{LibraryEntryId, Limit, Offset, UserToken}
+import io.scalac.tezos.translator.model.TypesStuff._
+import io.scalac.tezos.translator.model.TypesStuff._
+import io.scalac.tezos.translator.routes.Endpoints._
 import sttp.model.StatusCode
 import sttp.tapir._
 import sttp.tapir.json.circe._
 import sttp.tapir.server.akkahttp._
+import sttp.tapir.CodecFormat.Json._
 import cats.syntax.either._
-import io.scalac.tezos.translator.model.Types.{Limit, Offset, UserToken}
-import io.scalac.tezos.translator.routes.Endpoints._
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success}
 
@@ -145,15 +150,14 @@ class LibraryRoutes(
                      status: String): Future[Either[ErrorResponse, StatusCode]] = {
     val statusChangeWithEmail =
       for {
-        u             <-  Future.fromTry(Uid.fromString(uid))
-        parsedStatus  =   Status.fromString(status) match {
+        s             <-  Future.fromTry(Status.fromString(status) match {
           case Success(PendingApproval) =>
             Failure(new IllegalArgumentException("Cannot change status to 'pending_approval' !"))
           case other => other
-        }
-        s             <-  Future.fromTry(parsedStatus)
-        updatedEntry  <-  service.changeStatus(u, s)
-        _             <-  updatedEntry.email match {
+        })
+        u             =  LibraryEntryId(UUID.fromString(uid))
+        updatedEntry  <- service.changeStatus(u, s)
+        _             <- updatedEntry.email match {
           case Some(email) =>
             val e = SendEmail.statusChange(email, updatedEntry.title , s)
             emails2SendService
@@ -169,9 +173,7 @@ class LibraryRoutes(
   }
 
   private def deleteDto(userData: (String, UserToken), uid: String): Future[Either[ErrorResponse, StatusCode]] =
-    Future
-      .fromTry(Uid.fromString(uid).map(service.delete))
-      .flatten
+    service.delete(LibraryEntryId(UUID.fromString(uid)))
       .map(_ => StatusCode.Ok.asRight)
       .recover { case e =>
         log.error(s"Can't delete library entry, uid: $uid, error - $e")

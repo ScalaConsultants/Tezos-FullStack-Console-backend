@@ -1,13 +1,15 @@
 package io.scalac.tezos.translator.model
 
 import io.scalac.tezos.translator.model.LibraryEntry.Status
+import io.scalac.tezos.translator.model.Types.SendEmailId
+import io.scalac.tezos.translator.model.UUIDTypesGenerator.generateSendEmailId
 import io.scalac.tezos.translator.repository.dto.SendEmailDbDto
 import io.scalac.tezos.translator.routes.dto.{LibraryEntryRoutesDto, SendEmailRoutesDto}
 
-import scala.util.{Failure, Success, Try}
+import scala.util.{Success, Try}
 
 sealed abstract case class SendEmail(
-                                      uid: Uid,
+                                      uid: SendEmailId,
                                       to: EmailAddress,
                                       subject: String,
                                       content: EmailContent
@@ -15,21 +17,21 @@ sealed abstract case class SendEmail(
 
 object SendEmail {
   def approvalRequest(libraryDto: LibraryEntryRoutesDto, adminEmail: EmailAddress): SendEmail = {
-    val uid = Uid()
+    val uid = generateSendEmailId
     val subject = "Library approval request"
     val message = TextContent {
       s"""
          |Please add my translation to your library:
          |Title: ${libraryDto.title}
          |Description: ${libraryDto.description}
-         |Uid: ${uid.value}
+         |Uid: $uid
       """.stripMargin
     }
-    new SendEmail(Uid(), adminEmail, subject, message) {}
+    new SendEmail(uid, adminEmail, subject, message) {}
   }
 
   def statusChange(emailAddress: EmailAddress, title: String, newStatus: Status): SendEmail = {
-    val uid = Uid()
+    val uid = generateSendEmailId
     val subject = "Acceptance status of your Translation has changed"
     val message = TextContent(s"""Acceptance status of your translation: "$title" has changed to: $newStatus""")
 
@@ -45,7 +47,7 @@ object SendEmail {
       contact <- Contact.create(dto.phone, email)
     } yield
       new SendEmail(
-        uid = Uid(),
+        uid = generateSendEmailId,
         to = adminEmail,
         subject = "Contact request",
         content = ContactFormContent(
@@ -58,12 +60,11 @@ object SendEmail {
 
   def fromSendEmailDbDto(dto: SendEmailDbDto): Try[SendEmail] =
     for {
-      uid <- Uid.fromString(dto.uid)
       c   <- EmailContent.fromJson(dto.content)
       to  <- EmailAddress.fromString(dto.to)
     } yield
       new SendEmail(
-        uid = uid,
+        uid = dto.uid,
         to = to,
         subject = dto.subject,
         content = c

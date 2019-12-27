@@ -2,8 +2,8 @@ package io.scalac.tezos.translator.service
 
 import akka.event.LoggingAdapter
 import io.scalac.tezos.translator.model.LibraryEntry._
-import io.scalac.tezos.translator.model.Types.{Limit, Offset}
-import io.scalac.tezos.translator.model.{LibraryEntry, Uid}
+import io.scalac.tezos.translator.model.Types.{LibraryEntryId, Limit, Offset}
+import io.scalac.tezos.translator.model.LibraryEntry
 import io.scalac.tezos.translator.repository.LibraryRepository
 import io.scalac.tezos.translator.repository.dto.LibraryEntryDbDto
 
@@ -22,30 +22,30 @@ class LibraryService(repository: LibraryRepository, log: LoggingAdapter)(implici
         entries <- Future.sequence(entriesFSeq)
       } yield entries
 
-  def changeStatus(uid: Uid, newStatus: Status): Future[LibraryEntry] = {
-    val uidNotExistsException = Future.failed(new IllegalArgumentException(s"Library Entry does not exist for uid: ${uid.value}"))
+  def changeStatus(id: LibraryEntryId, newStatus: Status): Future[LibraryEntry] = {
+    val uidNotExistsException = Future.failed(new IllegalArgumentException(s"Library Entry does not exist for uid: $id"))
 
     for {
-      entry       <-  repository.get(uid).flatMap {
+      entry       <-  repository.get(id).flatMap {
                         case Some(v) => Future.successful(v)
                         case None => uidNotExistsException
                       }
-      updatedDto  <-  repository.update(uid, entry.copy(status = newStatus.value)).flatMap {
+      updatedDto  <-  repository.update(id, entry.copy(status = newStatus.value)).flatMap {
                         case Some(v) => Future.successful(v)
                         case None => uidNotExistsException
                       }
       updated     <-  updatedDto.toDomain match {
                         case Success(e) => Future.successful(e)
                         case Failure(ex) =>
-                          log.error(s"Invalid library entry data in DB for uid: ${uid.value} ! ${ex.getMessage}")
-                          Future.failed(new IllegalStateException(s"Library entry for ${uid.value} has a wrong format in DB ! ${ex.getMessage}"))
+                          log.error(s"Invalid library entry data in DB for uid: id ! ${ex.getMessage}")
+                          Future.failed(new IllegalStateException(s"Library entry for id has a wrong format in DB ! ${ex.getMessage}"))
                       }
     } yield updated
   }
 
-  def delete(uid: Uid): Future[Unit] =
-    repository.delete(uid).flatMap {
-      case 0 => Future.failed(new IllegalArgumentException(s"There is no Library Entry for uid: $uid"))
+  def delete(id: LibraryEntryId): Future[Unit] =
+    repository.delete(id).flatMap {
+      case 0 => Future.failed(new IllegalArgumentException(s"There is no Library Entry for uid: $id"))
       case 1 => Future.successful(())
     }
 }

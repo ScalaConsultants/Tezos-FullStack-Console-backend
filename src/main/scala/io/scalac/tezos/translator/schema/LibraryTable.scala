@@ -2,6 +2,8 @@ package io.scalac.tezos.translator.schema
 
 import java.sql.Timestamp
 
+import io.scalac.tezos.translator.model.Types.LibraryEntryId
+import io.scalac.tezos.translator.model.TypesStuff._
 import io.scalac.tezos.translator.repository.dto.LibraryEntryDbDto
 import slick.lifted.{ProvenShape, Tag}
 import slick.jdbc.PostgresProfile.api._
@@ -15,7 +17,7 @@ object LibraryTable {
 
 class LibraryTable(tag: Tag) extends Table[LibraryEntryDbDto](tag, "library") {
 
-  def uid: Rep[String] = column[String]("uid", NotNull, O.Unique, O.SqlType("VARCHAR(36)"))
+  def uid: Rep[LibraryEntryId] = column[LibraryEntryId]("uid", NotNull, O.Unique, O.SqlType("VARCHAR(36)"))
 
   def name: Rep[String] = column[String]("name", NotNull, O.SqlType("TEXT"))
 

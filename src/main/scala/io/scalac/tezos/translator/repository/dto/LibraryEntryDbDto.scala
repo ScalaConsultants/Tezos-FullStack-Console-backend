@@ -4,12 +4,13 @@ import java.sql.Timestamp
 import java.time.Instant
 
 import io.scalac.tezos.translator.model.LibraryEntry.Status
-import io.scalac.tezos.translator.model.{EmailAddress, LibraryEntry, Uid}
+import io.scalac.tezos.translator.model.Types.LibraryEntryId
+import io.scalac.tezos.translator.model.{EmailAddress, LibraryEntry}
 
 import scala.util.{Success, Try}
 
 case class LibraryEntryDbDto(
-                              uid: String,
+                              id: LibraryEntryId,
                               title: String,
                               author: Option[String],
                               email: Option[String],
@@ -23,14 +24,13 @@ case class LibraryEntryDbDto(
   def toDomain: Try[LibraryEntry] =
     for {
       status <- Status.fromInt(status)
-      uid <- Uid.fromString(uid)
       emailAdress <- email match {
         case Some(e) => EmailAddress.fromString(e).map(Some(_))
         case None => Success(None)
       }
     } yield
       LibraryEntry(
-        uid = uid,
+        uid = id,
         title = title,
         author = author,
         email = emailAdress,
@@ -44,7 +44,7 @@ case class LibraryEntryDbDto(
 object LibraryEntryDbDto {
   def fromDomain(v: LibraryEntry) =
     LibraryEntryDbDto(
-      uid = v.uid.value,
+      id = v.uid,
       title = v.title,
       author = v.author.map(_.toString),
       email = v.email.map(_.toString),

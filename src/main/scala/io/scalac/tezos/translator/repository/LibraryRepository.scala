@@ -2,8 +2,8 @@ package io.scalac.tezos.translator.repository
 
 import io.scalac.tezos.translator.config.DBUtilityConfiguration
 import io.scalac.tezos.translator.model.LibraryEntry.Status
-import io.scalac.tezos.translator.model.Types.{Limit, Offset}
-import io.scalac.tezos.translator.model.Uid
+import io.scalac.tezos.translator.model.Types.{LibraryEntryId, Limit, Offset}
+import io.scalac.tezos.translator.model.TypesStuff._
 import io.scalac.tezos.translator.repository.dto.LibraryEntryDbDto
 import io.scalac.tezos.translator.schema.LibraryTable
 import slick.jdbc.PostgresProfile.api._
@@ -24,18 +24,18 @@ class LibraryRepository(config: DBUtilityConfiguration, db: Database)(implicit e
         .result
     }
 
-  def get(uid: Uid): Future[Option[LibraryEntryDbDto]] = db.run {
+  def get(uid: LibraryEntryId): Future[Option[LibraryEntryDbDto]] = db.run {
     LibraryTable.library
-      .filter(_.uid === uid.value)
+      .filter(_.uid === uid)
       .take(1)
       .result
       .headOption
   }
 
-  def update(uid: Uid, libraryEntry: LibraryEntryDbDto): Future[Option[LibraryEntryDbDto]] =
+  def update(uid: LibraryEntryId, libraryEntry: LibraryEntryDbDto): Future[Option[LibraryEntryDbDto]] =
     db.run {
       LibraryTable.library
-        .filter(_.uid === uid.value)
+        .filter(_.uid === uid)
         .update(libraryEntry)
         .map {
           case 0 => None
@@ -43,10 +43,10 @@ class LibraryRepository(config: DBUtilityConfiguration, db: Database)(implicit e
         }
     }
 
-  def delete(uid: Uid): Future[Int] =
+  def delete(uid: LibraryEntryId): Future[Int] =
     db.run {
       LibraryTable.library
-        .filter(_.uid === uid.value)
+        .filter(_.uid === uid)
         .delete
     }
 }

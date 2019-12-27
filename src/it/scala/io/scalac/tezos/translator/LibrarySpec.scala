@@ -1,5 +1,7 @@
 package io.scalac.tezos.translator
 
+import java.util.UUID
+
 import akka.event.LoggingAdapter
 import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.model.headers.{Authorization, OAuth2BearerToken}
@@ -20,7 +22,8 @@ import org.scalatest.{Assertion, BeforeAndAfterEach, Matchers, WordSpec}
 import slick.jdbc.PostgresProfile.api._
 import eu.timepit.refined._
 import eu.timepit.refined.numeric.Positive
-import io.scalac.tezos.translator.model.Types.Limit
+import io.scalac.tezos.translator.model.Types.{LibraryEntryId, Limit}
+
 import scala.collection.immutable
 import scala.concurrent.duration._
 import scala.concurrent.{Await, Future}
@@ -57,7 +60,7 @@ class LibrarySpec
     val inserts = for {
       i <- 1 to size
       dummyData = LibraryEntry(
-        Uid(),
+        LibraryEntryId(UUID.randomUUID()),
         "name",
         Option("ThomasTheTest"),
         EmailAddress.fromString("name@service.com").toOption,
@@ -389,7 +392,7 @@ class LibrarySpec
 
     val bearerToken = getToken(userService, UserCredentials("admin", "zxcv"))
 
-    Put(s"$libraryEndpoint?uid=${recordFromDB.uid.value}&status=accepted").withHeaders(Authorization(OAuth2BearerToken(bearerToken))) ~> libraryRoute ~> check {
+    Put(s"$libraryEndpoint?uid=${recordFromDB.uid}&status=accepted").withHeaders(Authorization(OAuth2BearerToken(bearerToken))) ~> libraryRoute ~> check {
       status shouldBe StatusCodes.OK
     }
 
@@ -416,9 +419,9 @@ class LibrarySpec
 
 
   private trait SampleEntries {
-    val record1 = LibraryEntry(Uid.fromString("d7327913-4957-4417-96d2-e5c1d4311f80").get, "nameE1", Some(("authorE1")), None, Some(("descriptionE1")), "michelineE1", "michelsonE1", PendingApproval)
-    val record2 = LibraryEntry(Uid.fromString("17976f3a-505b-4d66-854a-243a70bb94c0").get, "nameE2", Some(("authorE2")), Some(EmailAddress.fromString("name@service.com").get), Some(("descriptionE2")), "michelineE2", "michelsonE2", Accepted)
-    val record3 = LibraryEntry(Uid.fromString("5d8face2-ab24-49e0-b792-a0b99a031645").get, "nameE3", Some(("authorE3")), None, Some(("descriptionE3")), "michelineE3", "michelsonE3", Declined)
+    val record1 = LibraryEntry(LibraryEntryId(UUID.fromString("d7327913-4957-4417-96d2-e5c1d4311f80")), "nameE1", Some(("authorE1")), None, Some(("descriptionE1")), "michelineE1", "michelsonE1", PendingApproval)
+    val record2 = LibraryEntry(LibraryEntryId(UUID.fromString("17976f3a-505b-4d66-854a-243a70bb94c0")), "nameE2", Some(("authorE2")), Some(EmailAddress.fromString("name@service.com").get), Some(("descriptionE2")), "michelineE2", "michelsonE2", Accepted)
+    val record3 = LibraryEntry(LibraryEntryId(UUID.fromString("5d8face2-ab24-49e0-b792-a0b99a031645")), "nameE3", Some(("authorE3")), None, Some(("descriptionE3")), "michelineE3", "michelsonE3", Declined)
 
     val toInsert = Seq(record1, record2, record3)
 

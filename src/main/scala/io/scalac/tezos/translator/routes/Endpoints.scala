@@ -15,7 +15,7 @@ import cats.syntax.either._
 import io.scalac.tezos.translator.service.UserService
 import scala.concurrent.{ExecutionContext, Future}
 import io.scalac.tezos.translator.model.Types._
-import io.scalac.tezos.translator.model.TypesCodecs._
+import io.scalac.tezos.translator.model.TypesStuff._
 import eu.timepit.refined._
 
 object Endpoints {
