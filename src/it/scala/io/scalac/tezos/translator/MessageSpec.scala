@@ -55,11 +55,11 @@ class MessageSpec
     "message endpoint" should {
       "validate dto before storing" in {
         val invalidDto = SendEmailRoutesDto("", None, None, "")
-        val expectedErrorsList1 = List("name field is empty", "Both, Email field is empty and Phone field is empty", "content field is empty")
+        val expectedErrorsList1 = List("name field is empty", "invalid email, phone - At least one field should be filled", "content field is empty")
         checkValidationErrorsWithExpected(invalidDto, expectedErrorsList1)
 
         val dtoInvalidPhoneAndEmail = SendEmailRoutesDto("name", Some("+7777777777777777777777"), Some("email@@@gmail.com"), "whatsup man")
-        val expectedErrorsList2 = List("invalid phone number - +7777777777777777777777", "invalid email - email@@@gmail.com")
+        val expectedErrorsList2 = List("invalid phone - +7777777777777777777777", "invalid email - email@@@gmail.com")
         checkValidationErrorsWithExpected(dtoInvalidPhoneAndEmail, expectedErrorsList2)
 
         val dtoNameAndEmailToLong = SendEmailRoutesDto(
