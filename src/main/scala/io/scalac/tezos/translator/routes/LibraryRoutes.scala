@@ -8,6 +8,7 @@ import akka.http.scaladsl.server.Route
 import io.scalac.tezos.translator.config.CaptchaConfig
 import io.scalac.tezos.translator.model.LibraryEntry.{Accepted, PendingApproval, Status}
 import io.scalac.tezos.translator.model.{EmailAddress, SendEmail}
+import io.scalac.tezos.translator.model.{EmailAddress, SendEmail}
 import io.scalac.tezos.translator.routes.dto.DTOValidation
 import io.scalac.tezos.translator.routes.dto.DTO.Error
 import io.scalac.tezos.translator.routes.utils.ReCaptcha._
@@ -16,14 +17,18 @@ import io.scalac.tezos.translator.routes.dto.LibraryEntryDTO._
 import io.scalac.tezos.translator.service.{Emails2SendService, LibraryService, UserService}
 import io.scalac.tezos.translator.model.types.UUIDs.LibraryEntryId
 import io.scalac.tezos.translator.routes.Endpoints._
+import io.scalac.tezos.translator.service.{Emails2SendService, LibraryService, UserService}
 import sttp.model.StatusCode
 import sttp.tapir._
 import sttp.tapir.json.circe._
 import sttp.tapir.server.akkahttp._
 import sttp.tapir.CodecFormat.Json._
 import cats.syntax.either._
-import io.scalac.tezos.translator.model.Types.UserToken
 import io.scalac.tezos.translator.model.types.Params._
+import cats.syntax.either._
+import io.scalac.tezos.translator.model.types.Auth.UserToken
+import io.scalac.tezos.translator.routes.Endpoints._
+
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success}
 
@@ -77,7 +82,7 @@ class LibraryRoutes(
   private def addNewEntryRoute(): Route =
     libraryAddEndpoint.toRoute {
       (withReCaptchaVerify(_, log, captchaConfig))
-        .andThenFirstE((validateLibraryEntryRoutesDTO _).tupled)
+        .andThenFirstE { t: (Unit, LibraryEntryRoutesDto) => DTOValidation.validateDto(t._2) }
         .andThenFirstE(addNewEntry)
     }
 
@@ -180,11 +185,6 @@ class LibraryRoutes(
         log.error(s"Can't delete library entry, uid: $uid, error - $e")
         handleError(e).asLeft
       }
-
-  private def validateLibraryEntryRoutesDTO(x: Unit,
-                                            LibraryEntryRoutesDTO: LibraryEntryRoutesDto)
-                                           (implicit ec: ExecutionContext): Future[Either[ErrorResponse, LibraryEntryRoutesDto]] =
-    DTOValidation.validateDto(LibraryEntryRoutesDTO)
 
   private def handleError(t: Throwable): ErrorResponse =
     t match {

@@ -4,12 +4,12 @@ import com.github.t3hnar.bcrypt._
 import io.scalac.tezos.translator.model.UserModel
 import io.scalac.tezos.translator.repository.UserRepository
 import io.scalac.tezos.translator.routes.dto.DTO.Error
-import io.scalac.tezos.translator.routes.Endpoints.ErrorResponse
 import io.scalac.tezos.translator.model.types.Auth.{UserToken, UserTokenType}
+import eu.timepit.refined._
 import slick.jdbc.PostgresProfile.api._
 import cats.syntax.either._
+import io.scalac.tezos.translator.routes.Endpoints.ErrorResponse
 import sttp.model.StatusCode
-import eu.timepit.refined._
 import scala.annotation.tailrec
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Random
@@ -48,16 +48,8 @@ class UserService(repository: UserRepository, db: Database)(implicit ec: Executi
       }
   }
 
-  def authenticate(token: UserToken): Future[Either[ErrorResponse, (String, UserToken)]] = Future {
-    tokenToUser.get(token)
-      .fold {
-        (Error("Token not found"), StatusCode.Unauthorized).asLeft[(String, UserToken)]
-      } {
-        username => (username, token).asRight
-      }
-  }
 
-  def authenticate1(string: String, token: UserToken): Future[Either[ErrorResponse, (String, UserToken)]] = Future {
+  def authenticate(token: UserToken): Future[Either[ErrorResponse, (String, UserToken)]] = Future {
     tokenToUser.get(token)
       .fold {
         (Error("Token not found"), StatusCode.Unauthorized).asLeft[(String, UserToken)]

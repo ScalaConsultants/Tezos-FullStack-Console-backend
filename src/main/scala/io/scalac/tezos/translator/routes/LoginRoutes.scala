@@ -20,7 +20,6 @@ import scala.concurrent.{ExecutionContext, Future}
 
 class LoginRoutes(userService: UserService, log: LoggingAdapter)(implicit as: ActorSystem, ec: ExecutionContext) extends HttpRoutes {
 
-
   val loginEndpoint: Endpoint[UserCredentials, ErrorResponse, String, Nothing] =
     Endpoints
       .baseEndpoint

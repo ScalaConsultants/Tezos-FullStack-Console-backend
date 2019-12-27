@@ -5,6 +5,7 @@ import io.scalac.tezos.translator.routes.utils.ReCaptcha
 import io.scalac.tezos.translator.routes.dto.DTO.Error
 import io.scalac.tezos.translator.routes.dto.DTOValidation
 import io.scalac.tezos.translator.routes.dto.SendEmailRoutesDto
+import io.scalac.tezos.translator.routes.dto.{DTO, SendEmailRoutesDto}
 import io.scalac.tezos.translator.service.Emails2SendService
 import akka.event.LoggingAdapter
 import akka.http.scaladsl.server.Route
