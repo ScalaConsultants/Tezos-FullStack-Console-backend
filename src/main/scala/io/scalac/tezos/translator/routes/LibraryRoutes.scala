@@ -11,7 +11,7 @@ import io.scalac.tezos.translator.model.{AuthUserData, EmailAddress, SendEmail}
 import io.scalac.tezos.translator.routes.dto.DTOValidation
 import io.scalac.tezos.translator.routes.dto.DTO.Error
 import io.scalac.tezos.translator.routes.utils.ReCaptcha._
-import io.scalac.tezos.translator.routes.dto.{DTO, LibraryEntryDTO, LibraryEntryRoutesAdminDto, LibraryEntryRoutesDto}
+import io.scalac.tezos.translator.routes.dto.{LibraryEntryDTO, LibraryEntryRoutesAdminDto, LibraryEntryRoutesDto}
 import io.scalac.tezos.translator.routes.dto.LibraryEntryDTO._
 import io.scalac.tezos.translator.model.types.UUIDs.LibraryEntryId
 import io.scalac.tezos.translator.service.{Emails2SendService, LibraryService, UserService}
@@ -55,7 +55,7 @@ class LibraryRoutes(
       .get
       .description("Will return sequence of LibraryEntryRoutesDto or LibraryEntryRoutesAdminDto if auth header provided")
 
-  private val putEntryEndpoint: Endpoint[(String, String, String), ErrorResponse, StatusCode, Nothing] =
+  private val putEntryEndpoint: Endpoint[(String, UUID, String), ErrorResponse, StatusCode, Nothing] =
     libraryEndpoint
       .in(auth.bearer)
       .in(uidQuery.and(statusQuery))
@@ -64,7 +64,7 @@ class LibraryRoutes(
       .put
       .description("Will change the status of entry with passed uid")
 
-  private val deleteEntryEndpoint: Endpoint[(String, String), ErrorResponse, StatusCode, Nothing] =
+  private val deleteEntryEndpoint: Endpoint[(String, UUID), ErrorResponse, StatusCode, Nothing] =
     libraryEndpoint
       .in(auth.bearer)
       .in(uidQuery)
@@ -146,7 +146,7 @@ class LibraryRoutes(
     }
 
   private def putDto(userData: AuthUserData,
-                     uid: String,
+                     uid: UUID,
                      status: String): Future[Either[ErrorResponse, StatusCode]] = {
     val statusChangeWithEmail =
       for {
@@ -155,7 +155,7 @@ class LibraryRoutes(
             Failure(new IllegalArgumentException("Cannot change status to 'pending_approval' !"))
           case other => other
         })
-        u             =  LibraryEntryId(UUID.fromString(uid))
+        u             =  LibraryEntryId(uid)
         updatedEntry  <- service.changeStatus(u, s)
         _             <- updatedEntry.email match {
           case Some(email) =>
@@ -172,8 +172,8 @@ class LibraryRoutes(
     }
   }
 
-  private def deleteDto(userData: AuthUserData, uid: String): Future[Either[ErrorResponse, StatusCode]] =
-    service.delete(LibraryEntryId(UUID.fromString(uid)))
+  private def deleteDto(userData: AuthUserData, uid: UUID): Future[Either[ErrorResponse, StatusCode]] =
+    service.delete(LibraryEntryId(uid))
       .map(_ => StatusCode.Ok.asRight)
       .recover { case e =>
         log.error(s"Can't delete library entry, uid: $uid, error - $e")

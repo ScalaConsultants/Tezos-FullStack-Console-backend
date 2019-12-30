@@ -1,5 +1,6 @@
 package io.scalac.tezos.translator.routes
 
+import java.util.UUID
 import cats.data.EitherT
 import cats.instances.future._
 import io.scalac.tezos.translator.config.CaptchaConfig
@@ -52,8 +53,8 @@ object Endpoints {
     query[Option[Offset]](offset).description("Offset")
   val limitQuery: EndpointInput.Query[Option[Limit]] =
     query[Option[Limit]](limit).description("Limit")
-  val uidQuery: EndpointInput.Query[String] =
-    query[String]("uid").description("Uid").example("4a5c1b83-c263-49be-95d2-620e4a832e94")
+  val uidQuery: EndpointInput.Query[UUID] =
+    query[UUID]("uid").description("Uid").example(UUID.randomUUID())
   val statusQuery: EndpointInput.Query[String] =
     query[String]("status").description("Desired status").example("accepted")
 
