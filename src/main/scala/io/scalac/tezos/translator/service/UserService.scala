@@ -1,7 +1,7 @@
 package io.scalac.tezos.translator.service
 
 import com.github.t3hnar.bcrypt._
-import io.scalac.tezos.translator.model.UserModel
+import io.scalac.tezos.translator.model.{AuthUserData, UserModel}
 import io.scalac.tezos.translator.repository.UserRepository
 import io.scalac.tezos.translator.routes.dto.DTO.Error
 import io.scalac.tezos.translator.model.types.Auth.{Password, UserToken, UserTokenType, Username}
@@ -48,12 +48,12 @@ class UserService(repository: UserRepository, db: Database)(implicit ec: Executi
       }
   }
 
-  def authenticate(token: UserToken): Future[Either[ErrorResponse, (Username, UserToken)]] = Future {
+  def authenticate(token: UserToken): Future[Either[ErrorResponse, AuthUserData]] = Future {
     tokenToUser.get(token)
       .fold {
-        (Error("Token not found"), StatusCode.Unauthorized).asLeft[(Username, UserToken)]
+        (Error("Token not found"), StatusCode.Unauthorized).asLeft[AuthUserData]
       } {
-        username => (username, token).asRight
+        username => AuthUserData(username, token).asRight
       }
   }
 

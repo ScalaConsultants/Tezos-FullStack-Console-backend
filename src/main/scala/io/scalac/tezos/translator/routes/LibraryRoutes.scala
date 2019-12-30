@@ -7,7 +7,7 @@ import akka.event.LoggingAdapter
 import akka.http.scaladsl.server.Route
 import io.scalac.tezos.translator.config.CaptchaConfig
 import io.scalac.tezos.translator.model.LibraryEntry.{Accepted, PendingApproval, Status}
-import io.scalac.tezos.translator.model.{EmailAddress, SendEmail}
+import io.scalac.tezos.translator.model.{AuthUserData, EmailAddress, SendEmail}
 import io.scalac.tezos.translator.routes.dto.DTOValidation
 import io.scalac.tezos.translator.routes.dto.DTO.Error
 import io.scalac.tezos.translator.routes.utils.ReCaptcha._
@@ -145,7 +145,7 @@ class LibraryRoutes(
       (Error("Can't get records"), StatusCode.InternalServerError).asLeft
     }
 
-  private def putDto(userData: (Username, UserToken),
+  private def putDto(userData: AuthUserData,
                      uid: String,
                      status: String): Future[Either[ErrorResponse, StatusCode]] = {
     val statusChangeWithEmail =
@@ -172,7 +172,7 @@ class LibraryRoutes(
     }
   }
 
-  private def deleteDto(userData: (Username, UserToken), uid: String): Future[Either[ErrorResponse, StatusCode]] =
+  private def deleteDto(userData: AuthUserData, uid: String): Future[Either[ErrorResponse, StatusCode]] =
     service.delete(LibraryEntryId(UUID.fromString(uid)))
       .map(_ => StatusCode.Ok.asRight)
       .recover { case e =>

@@ -40,7 +40,7 @@ class LoginRoutes(userService: UserService, log: LoggingAdapter)(implicit as: Ac
   }
 
   def logoutLogic(token: UserToken): Future[Either[ErrorResponse, Unit]] =
-    userService.authenticate(token).map(_.map { case  (_, t) => userService.logout(t) })
+    userService.authenticate(token).map(_.map { uData => userService.logout(uData.token) })
 
   val logoutEndpoint: Endpoint[String, ErrorResponse, Unit, Nothing] =
     Endpoints
