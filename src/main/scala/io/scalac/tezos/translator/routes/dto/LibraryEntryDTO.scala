@@ -5,8 +5,10 @@ import io.circe.{Decoder, Encoder}
 import io.circe.generic.semiauto.deriveEncoder
 import io.circe.generic.semiauto.deriveDecoder
 import io.scalac.tezos.translator.model.LibraryEntry.PendingApproval
+import io.scalac.tezos.translator.model.types.ContactData.{NameAndEmailReq, RefinedEmailString}
 import io.scalac.tezos.translator.model.types.UUIDs.LibraryEntryId
 import io.scalac.tezos.translator.model.{EmailAddress, LibraryEntry}
+import eu.timepit.refined.refineV
 import scala.util.{Success, Try}
 
 sealed trait LibraryEntryDTO
@@ -58,7 +60,7 @@ object LibraryEntryRoutesAdminDto {
 case class LibraryEntryRoutesDto(
                                   title: String,
                                   author: Option[String],
-                                  email: Option[String],
+                                  email: Option[RefinedEmailString],
                                   description: Option[String],
                                   micheline: String,
                                   michelson: String
@@ -66,7 +68,7 @@ case class LibraryEntryRoutesDto(
   def toDomain: Try[LibraryEntry] = {
 
     val emailAdress = email match {
-      case Some(e) => EmailAddress.fromString(e).map(Some(_))
+      case Some(e) => EmailAddress.fromString(e.v.value).map(Some(_))
       case None => Success(None)
     }
 
@@ -91,11 +93,14 @@ object LibraryEntryRoutesDto {
     LibraryEntryRoutesDto(
       title = v.title,
       author = v.author,
-      email = v.email.map(_.toString),
+      email = v.email.flatMap(emailRefinedFromMail),
       description = v.description,
       micheline = v.micheline,
       michelson = v.michelson
     )
+
+  private def emailRefinedFromMail(email: EmailAddress): Option[RefinedEmailString] =
+    refineV[NameAndEmailReq](email.toString).map(RefinedEmailString.apply).toOption
 
   implicit val libraryEntryRoutesDtoEncoder: Encoder[LibraryEntryRoutesDto] =
     deriveEncoder[LibraryEntryRoutesDto]

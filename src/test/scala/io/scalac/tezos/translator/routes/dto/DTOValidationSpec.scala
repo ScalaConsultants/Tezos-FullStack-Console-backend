@@ -1,16 +1,13 @@
 package io.scalac.tezos.translator.routes.dto
 
 import cats.data.NonEmptyList
-import io.scalac.tezos.translator.routes.dto.DTOValidation.{DTOValidationError, FieldIsEmpty, FieldIsInvalid, FieldToLong}
+import eu.timepit.refined.collection.NonEmpty
+import io.scalac.tezos.translator.model.types.ContactData.{Content, Name, NameAndEmailReq, Phone, PhoneReq, RefinedEmailString}
+import io.scalac.tezos.translator.routes.dto.DTOValidation.{DTOValidationError, FieldIsEmpty, FieldIsInvalid}
 import org.scalatest.{Matchers, WordSpec}
+import eu.timepit.refined.refineMV
 
 class DTOValidationSpec extends WordSpec with Matchers {
-
-  val strign255chars: String =
-    "verylongstringverylongstringverylongstringverylongstringverylongstringverylongstringverylongstringverylongstring" +
-      "verylongstringverylongstringverylongstringverylongstringverylongstringverylongstringverylongstringverylongstring" +
-      "verylongstringverylongstring123"
-
 
   "DTOValidation.validateSendEmailDTO" should {
 
@@ -23,22 +20,10 @@ class DTOValidationSpec extends WordSpec with Matchers {
         DTOValidation.validateSendEmailDTO(input) shouldBe Right(input)
       }
 
-      "very long name is given" in {
-        val input = validSendEmailRoutesDto(name = strign255chars)
-
-        DTOValidation.validateSendEmailDTO(input) shouldBe Right(input)
-      }
-
       "no phone is given" in {
         val input = validSendEmailRoutesDto(phone = None)
 
         DTOValidation.validateSendEmailDTO(input) shouldBe Right(input)
-      }
-
-      "phone is empty" in {
-        val input = validSendEmailRoutesDto(phone = Some(""))
-
-        DTOValidation.validateSendEmailDTO(input) shouldBe Right(input.copy(phone = None))
       }
 
       "no email is given" in {
@@ -47,49 +32,12 @@ class DTOValidationSpec extends WordSpec with Matchers {
         DTOValidation.validateSendEmailDTO(input) shouldBe Right(input)
       }
 
-      "email is empty" in {
-        val input = validSendEmailRoutesDto(email = Some(""))
-
-        DTOValidation.validateSendEmailDTO(input) shouldBe Right(input.copy(email = None))
-      }
-
     }
 
     "not pass validation" when {
 
-      "all fields are empty" in {
-        val input = SendEmailRoutesDto("", None, None, "")
-
-        DTOValidation.validateSendEmailDTO(input) shouldBe
-          validationError(FieldIsInvalid("email, phone", "At least one field should be filled"), FieldIsEmpty("name"), FieldIsEmpty("content"))
-      }
-
-      "name is empty" in {
-        val input = validSendEmailRoutesDto(name = "")
-
-        DTOValidation.validateSendEmailDTO(input) shouldBe validationError(FieldIsEmpty("name"))
-      }
-
-      "name is too long" in {
-        val input = validSendEmailRoutesDto(name = strign255chars + "1")
-
-        DTOValidation.validateSendEmailDTO(input) shouldBe validationError(FieldToLong("name", 255))
-      }
-
-      "content is empty" in {
-        val input = validSendEmailRoutesDto(content = "")
-
-        DTOValidation.validateSendEmailDTO(input) shouldBe validationError(FieldIsEmpty("content"))
-      }
-
-      "phone is invalid" in {
-        val input = validSendEmailRoutesDto(phone = Some("abcd"))
-
-        DTOValidation.validateSendEmailDTO(input) shouldBe validationError(FieldIsInvalid("phone", "abcd"))
-      }
-
       "email is invalid" in {
-        val input = validSendEmailRoutesDto(email = Some("emailemail.com"))
+        val input = validSendEmailRoutesDto(email = Some(RefinedEmailString(refineMV[NameAndEmailReq]("emailemail.com"))))
 
         DTOValidation.validateSendEmailDTO(input) shouldBe validationError(FieldIsInvalid("email", "emailemail.com"))
       }
@@ -100,11 +48,6 @@ class DTOValidationSpec extends WordSpec with Matchers {
         DTOValidation.validateSendEmailDTO(input) shouldBe validationError(FieldIsInvalid("email, phone", "At least one field should be filled"))
       }
 
-      "phone and email are empty" in {
-        val input = validSendEmailRoutesDto(phone = Some(""), email = Some(""))
-
-        DTOValidation.validateSendEmailDTO(input) shouldBe validationError(FieldIsInvalid("email, phone", "At least one field should be filled"))
-      }
     }
 
   }
@@ -135,12 +78,6 @@ class DTOValidationSpec extends WordSpec with Matchers {
         val input = validLibraryEntryRoutesDto(email = None)
 
         DTOValidation.validateLibraryEntryRoutesDto(input) shouldBe Right(input)
-      }
-
-      "email is an empty string" in {
-        val input = validLibraryEntryRoutesDto(email = Some(""))
-
-        DTOValidation.validateLibraryEntryRoutesDto(input) shouldBe Right(input.copy(email = None))
       }
 
       "description is not given" in {
@@ -203,7 +140,7 @@ class DTOValidationSpec extends WordSpec with Matchers {
       }
 
       "email is invalid" in {
-        val input = validLibraryEntryRoutesDto(email = Some("emailemail.com"))
+        val input = validLibraryEntryRoutesDto(email = Some(RefinedEmailString(refineMV[NameAndEmailReq]("emailemail.com"))))
 
         DTOValidation.validateLibraryEntryRoutesDto(input) shouldBe validationError(FieldIsInvalid("email", "emailemail.com"))
       }
@@ -225,16 +162,16 @@ class DTOValidationSpec extends WordSpec with Matchers {
   private def validationError(errors: DTOValidationError*) = Left(NonEmptyList.fromListUnsafe(errors.toList))
 
   private def validSendEmailRoutesDto(
-    name: String = "name",
-    phone: Option[String] = Some("123123123"),
-    email: Option[String] = Some("email@email.com"),
-    content: String = "content"
+                                       name: Name = Name(refineMV[NameAndEmailReq]("name")),
+                                       phone: Option[Phone] = Some(Phone(refineMV[PhoneReq]("123123123"))),
+                                       email: Option[RefinedEmailString] = Some(RefinedEmailString(refineMV[NameAndEmailReq]("email@email.com"))),
+                                       content: Content = Content(refineMV[NonEmpty]("content"))
   ): SendEmailRoutesDto = SendEmailRoutesDto(name, phone, email, content)
 
   private def validLibraryEntryRoutesDto(
     title: String = "title",
     author: Option[String] = Some("author"),
-    email: Option[String] = Some("email@email.com"),
+    email: Option[RefinedEmailString] = Some(RefinedEmailString(refineMV[NameAndEmailReq]("email@email.com"))),
     description: Option[String] = Some("description"),
     micheline: String = "micheline",
     michelson: String = "michelson"

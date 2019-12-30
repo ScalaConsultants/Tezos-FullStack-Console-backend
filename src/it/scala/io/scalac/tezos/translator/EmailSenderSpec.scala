@@ -4,6 +4,7 @@ import akka.actor.ActorSystem
 import akka.event.LoggingAdapter
 import akka.testkit.TestKit
 import com.icegreen.greenmail.util.{GreenMail, GreenMailUtil, ServerSetupTest}
+import eu.timepit.refined.collection.NonEmpty
 import io.scalac.tezos.translator.actor.EmailSender
 import io.scalac.tezos.translator.config.{CronConfiguration, EmailConfiguration}
 import io.scalac.tezos.translator.model.{EmailAddress, SendEmail}
@@ -13,6 +14,8 @@ import io.scalac.tezos.translator.service.{Emails2SendService, SendEmailsService
 import javax.mail.internet.MimeMessage
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, Matchers, WordSpecLike}
+import eu.timepit.refined.refineMV
+import io.scalac.tezos.translator.model.types.ContactData.{Content, Name, NameAndEmailReq, Phone, PhoneReq, RefinedEmailString}
 
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContextExecutor, Future}
@@ -57,10 +60,10 @@ class EmailSenderSpec
     override def beforeEach(): Unit = greenMail.purgeEmailFromAllMailboxes()
 
     "Email sender" should {
-      val testName = "testName-tezostests"
-      val testPhone = "+79025680396"
-      val testMail = "some-tezostests@service.com"
-      val testContent = "some content"
+      val testName = Name(refineMV[NameAndEmailReq]("testName-tezostests"))
+      val testPhone = Phone(refineMV[PhoneReq]("+79025680396"))
+      val testMail = RefinedEmailString(refineMV[NameAndEmailReq]("some-tezostests@service.com"))
+      val testContent = Content(refineMV[NonEmpty]("some content"))
 
       val newEmail2Send = SendEmail.fromSendEmailRoutesDto(SendEmailRoutesDto(testName, Some(testPhone), Some(testMail), testContent), adminEmail)
       val emailSenderService = SendEmailsServiceImpl(email2SendService, log, testEmailConfig, testCronConfig).get

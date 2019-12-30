@@ -42,8 +42,7 @@ object Dependencies {
   val circe: Seq[ModuleID] = Seq(
     "io.circe" %% "circe-core"    % Version.circeVersion,
     "io.circe" %% "circe-generic" % Version.circeVersion,
-    "io.circe" %% "circe-parser"  % Version.circeVersion,
-    "io.circe" %% "circe-refined" % Version.circeVersion
+    "io.circe" %% "circe-parser"  % Version.circeVersion
   )
 
   val akkaHttpCors: Seq[ModuleID] = Seq(

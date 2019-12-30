@@ -23,6 +23,7 @@ import slick.jdbc.PostgresProfile.api._
 import eu.timepit.refined._
 import eu.timepit.refined.numeric.Positive
 import Helper.adminCredentials
+import io.scalac.tezos.translator.model.types.ContactData.{NameAndEmailReq, RefinedEmailString}
 import io.scalac.tezos.translator.model.types.Params.Limit
 import io.scalac.tezos.translator.model.types.UUIDs.LibraryEntryId
 
@@ -143,7 +144,7 @@ class LibrarySpec
         addedRecord.michelson shouldBe "michelson"
       }
       "payload with UpperCased Email make lower " in {
-        val properPayload = LibraryEntryRoutesDto("vss", None, Some("Aeaaast@service.pl"), Some("Some thing for some things"), "micheline", "michelson")
+        val properPayload = LibraryEntryRoutesDto("vss", None, Some(RefinedEmailString(refineMV[NameAndEmailReq]("Aeaaast@service.pl"))), Some("Some thing for some things"), "micheline", "michelson")
         Post(libraryEndpoint, properPayload) ~> Route.seal(libraryRoute) ~> check {
           status shouldBe StatusCodes.OK
         }
@@ -163,7 +164,7 @@ class LibrarySpec
       whenReady(email2SendService.getEmails2Send(10)) {
         _ shouldBe 'empty
       }
-      val userEmail = "name@service.com"
+      val userEmail = RefinedEmailString(refineMV[NameAndEmailReq]("name@service.com"))
       val record = LibraryEntryRoutesDto("name", Some("Author"), Some(userEmail), Some("description"), "micheline", "michelson")
       Post(libraryEndpoint, record) ~> Route.seal(libraryRoute) ~> check {
         status shouldBe StatusCodes.OK
@@ -179,7 +180,7 @@ class LibrarySpec
     }
 
     // it was the only one accepted
-    val expectedRecord2 = LibraryEntryRoutesDto("nameE2", Some("authorE2"), Some("name@service.com"), Some("descriptionE2"), "michelineE2", "michelsonE2")
+    val expectedRecord2 = LibraryEntryRoutesDto("nameE2", Some("authorE2"), Some(RefinedEmailString(refineMV[NameAndEmailReq]("name@service.com"))), Some("descriptionE2"), "michelineE2", "michelsonE2")
 
     whenReady(libraryService.getRecords()) {
       _ should contain theSameElementsAs toInsert
@@ -221,7 +222,7 @@ class LibrarySpec
       _ should contain theSameElementsAs Seq(1, 1, 1)
     }
 
-    val expectedRecord2 = LibraryEntryRoutesDto("nameE2", Some("authorE2"), Some("name@service.com"), Some("descriptionE2"), "michelineE2", "michelsonE2")
+    val expectedRecord2 = LibraryEntryRoutesDto("nameE2", Some("authorE2"), Some(RefinedEmailString(refineMV[NameAndEmailReq]("name@service.com"))), Some("descriptionE2"), "michelineE2", "michelsonE2")
 
     Get(libraryEndpoint) ~> libraryRoute ~> check {
       status shouldBe StatusCodes.OK
@@ -247,7 +248,7 @@ class LibrarySpec
 
     // invalid uid
     Put(s"$libraryEndpoint?uid=aada8ebe&status=accepted").withHeaders(Authorization(OAuth2BearerToken(bearerToken))) ~> libraryRoute ~> check {
-      status shouldBe StatusCodes.NotFound
+      status shouldBe StatusCodes.BadRequest
     }
     // non exisitng uid
     Put(s"$libraryEndpoint?uid=4cb9f377-718c-4d5d-be0d-118a5c99e298&status=accepted").withHeaders(Authorization(OAuth2BearerToken(bearerToken))) ~> libraryRoute ~> check {
@@ -274,7 +275,7 @@ class LibrarySpec
       _ should contain theSameElementsAs Seq(1, 1, 1)
     }
 
-    val expectedRecord2 = LibraryEntryRoutesDto("nameE2", Some("authorE2"), Some("name@service.com"), Some("descriptionE2"), "michelineE2", "michelsonE2")
+    val expectedRecord2 = LibraryEntryRoutesDto("nameE2", Some("authorE2"), Some(RefinedEmailString(refineMV[NameAndEmailReq]("name@service.com"))), Some("descriptionE2"), "michelineE2", "michelsonE2")
 
     Get(libraryEndpoint) ~> libraryRoute ~> check {
       status shouldBe StatusCodes.OK
@@ -355,7 +356,7 @@ class LibrarySpec
       _ shouldBe 'empty
     }
 
-    val userEmail = "name@service.com"
+    val userEmail = RefinedEmailString(refineMV[NameAndEmailReq]("name@service.com"))
     val userDescription = "name@service.com"
     val userName = "name@service.com"
     val record = LibraryEntryRoutesDto("name", Some(userName), Some(userEmail), Some(userDescription), "micheline", "michelson")
@@ -410,7 +411,7 @@ class LibrarySpec
 
       val approvalRequest = emails2send.head
 
-      approvalRequest.to.toString shouldBe userEmail
+      approvalRequest.to.toString shouldBe userEmail.toString
       approvalRequest.subject shouldBe "Acceptance status of your Translation has changed"
       approvalRequest.content shouldBe TextContent("""Acceptance status of your translation: "name" has changed to: accepted""")
 

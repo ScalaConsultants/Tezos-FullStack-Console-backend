@@ -2,13 +2,14 @@ package io.scalac.tezos.translator.routes.dto
 
 import io.circe.{Decoder, Encoder}
 import io.circe.generic.semiauto.{deriveDecoder, deriveEncoder}
+import io.scalac.tezos.translator.model.types.ContactData._
 
 case class SendEmailRoutesDto(
-  name: String,
-  phone: Option[String],
-  email: Option[String],
-  content: String
-)
+                               name: Name,
+                               phone: Option[Phone],
+                               email: Option[RefinedEmailString],
+                               content: Content
+                             )
 
 object SendEmailRoutesDto {
 

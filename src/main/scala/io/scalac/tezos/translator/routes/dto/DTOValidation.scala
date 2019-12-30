@@ -2,9 +2,14 @@ package io.scalac.tezos.translator.routes.dto
 
 import cats.data.NonEmptyList
 import cats.instances.parallel._
+import cats.instances.option._
+import cats.instances.either._
+import cats.syntax.traverse._
 import cats.syntax.either._
 import cats.syntax.parallel._
+import eu.timepit.refined.refineV
 import io.scalac.tezos.translator.model._
+import io.scalac.tezos.translator.model.types.ContactData.{NameAndEmailReq, RefinedEmailString}
 import io.scalac.tezos.translator.routes.dto.DTO.{ErrorDTO, Errors}
 import io.scalac.tezos.translator.routes.dto.DTOValidation.ValidationResult
 import sttp.model.StatusCode
@@ -87,24 +92,16 @@ object DTOValidation {
   implicit val SendEmailDTOValidation: DTOValidation[SendEmailRoutesDto] = { dto => validateSendEmailDTO(dto) }
 
   def validateSendEmailDTO: SendEmailRoutesDto => ValidationResult[SendEmailRoutesDto] = { dto =>
-    val checkingNameResult: ValidationResult[String] =
-      checkStringNotEmptyAndLength(dto.name, maxTinyLength, FieldIsEmpty("name"), FieldToLong("name", maxTinyLength))
-
-    val checkingPhoneIsValid: Either[NonEmptyList[DTOValidationError], Option[String]] =
-      checkOptionalString(dto.phone, phoneStr => checkStringMatchRegExp(phoneStr, phoneRegex, FieldIsInvalid("phone", phoneStr)))
-
-    val checkContentNotEmpty: ValidationResult[String] = checkStringNotEmpty(dto.content, FieldIsEmpty("content"))
-
-    val checkEmail: Either[NonEmptyList[DTOValidationError], Option[String]] = checkOptionalString(dto.email, checkEmailIsValid)
+    val checkEmail: ValidationResult[Option[RefinedEmailString]] = dto.email.traverse(checkEmailIsValid)
 
     val phoneEmailNonEmptyCheck =
-      if (checkingPhoneIsValid.right.exists(_.isEmpty) && checkEmail.right.exists(_.isEmpty)) {
+      if (dto.phone.isEmpty && checkEmail.right.exists(_.isEmpty)) {
         NonEmptyList.one(FieldIsInvalid("email, phone", "At least one field should be filled")).asLeft
       } else {
         ().asRight
       }
 
-    val v = (checkingNameResult, checkingPhoneIsValid,checkEmail, checkContentNotEmpty).parMapN(SendEmailRoutesDto.apply)
+    val v = checkEmail.map(maybeEmail => SendEmailRoutesDto(dto.name, dto.phone, maybeEmail, dto.content))
 
     (phoneEmailNonEmptyCheck, v).parMapN((_, dto) => dto)
 
@@ -119,14 +116,18 @@ object DTOValidation {
       case _ => Right(None)
     }
 
-  private def checkEmailIsValid(email: String): ValidationResult[String] =
-    checkStringNotEmptyAndLength(email, maxTinyLength, FieldIsEmpty("email"), FieldToLong("email", maxTinyLength))
-      .flatMap { mail =>
-        EmailAddress.fromString(mail).toEither.bimap(
-          _ => NonEmptyList.one(FieldIsInvalid("email", mail)),
-          a => a.toString
-        )
-      }
+  private def checkEmailIsValid(email: RefinedEmailString): ValidationResult[RefinedEmailString] =
+    EmailAddress
+      .fromString(email.v.value)
+      .toEither
+      .leftMap(_ => NonEmptyList.one(FieldIsInvalid("email", email.v.value)))
+      .flatMap(
+        a => refineV[NameAndEmailReq](a.toString.toLowerCase) match {
+          case Left(_)      => NonEmptyList.one(FieldIsInvalid("email", email.v.value)).asLeft
+          case Right(value) => RefinedEmailString(value).asRight
+        }
+      )
+
   private def checkAuthorIsValid(value: String, name: String = "author"): ValidationResult[String] = {
     checkStringNotEmptyAndLength(value, maxTinyLength, FieldIsEmpty(name), FieldToLong(name, maxTinyLength))
   }
@@ -141,8 +142,8 @@ object DTOValidation {
       checkStringNotEmptyAndLength(dto.title, maxTinyLength, FieldIsEmpty("title"), FieldToLong("title", maxTinyLength))
     val checkAuthor =
       checkOptionalString(dto.author, a => checkAuthorIsValid(a))
-    val checkEmail =
-      checkOptionalString(dto.email, checkEmailIsValid).map(_.map(_.toLowerCase))
+    val checkEmail: Either[NonEmptyList[DTOValidationError], Option[RefinedEmailString]] =
+      dto.email.traverse(checkEmailIsValid)
     val checkDescription =
       checkOptionalString(dto.description, d => checkDescriptionsValid(d))
     val checkMicheline =
@@ -152,8 +153,5 @@ object DTOValidation {
 
     (checkTitle, checkAuthor, checkEmail, checkDescription, checkMicheline, checkMichelson).parMapN(LibraryEntryRoutesDto.apply)
   }
-
-  val phoneRegex: String =
-    """^\+?\d{6,18}$"""
 
 }

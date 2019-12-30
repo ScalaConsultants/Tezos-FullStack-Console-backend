@@ -41,7 +41,7 @@ object SendEmail {
   def fromSendEmailRoutesDto(dto: SendEmailRoutesDto, adminEmail: EmailAddress): Try[SendEmail] = {
     for {
       email   <-   dto.email match {
-                   case Some(e) => EmailAddress.fromString(e).map(Some(_))
+                   case Some(e) => EmailAddress.fromString(e.v.value).map(Some(_))
                    case None => Success(None)
                          }
       contact <- Contact.create(dto.phone, email)
@@ -51,9 +51,9 @@ object SendEmail {
         to = adminEmail,
         subject = "Contact request",
         content = ContactFormContent(
-          name = dto.name,
+          name = dto.name.v.value,
           contact = contact,
-          content = dto.content
+          content = dto.content.v.value
         )
       ) {}
   }
