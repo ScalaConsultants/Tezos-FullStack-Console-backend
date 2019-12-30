@@ -5,7 +5,7 @@ import cats.instances.future._
 import io.scalac.tezos.translator.config.CaptchaConfig
 import io.scalac.tezos.translator.routes.dto.DTO.{Error, ErrorDTO}
 import io.scalac.tezos.translator.service.UserService
-import io.scalac.tezos.translator.model.types.Auth.{UserToken, UserTokenType}
+import io.scalac.tezos.translator.model.types.Auth.{Captcha, UserToken, UserTokenType}
 import io.scalac.tezos.translator.model.types.Params.{Limit, Offset}
 import sttp.tapir.{Endpoint, endpoint, header, jsonBody, statusCode}
 import io.circe.generic.auto._
@@ -28,8 +28,8 @@ object Endpoints {
   def baseEndpoint: Endpoint[Unit, Unit, Unit, Nothing] =
     endpoint.in("v1")
 
-  def captchaEndpoint(reCaptchaConfig: CaptchaConfig): Endpoint[Option[String], ErrorResponse, Unit, Nothing] =
-    baseEndpoint.in(header[Option[String]](reCaptchaConfig.headerName)).errorOut(jsonBody[ErrorDTO].and(statusCode))
+  def captchaEndpoint(reCaptchaConfig: CaptchaConfig): Endpoint[Option[Captcha], ErrorResponse, Unit, Nothing] =
+    baseEndpoint.in(header[Option[Captcha]](reCaptchaConfig.headerName)).errorOut(jsonBody[ErrorDTO].and(statusCode))
 
   implicit class OptionAuthOps(val maybeToken: Option[UserToken]) extends AnyVal {
     def withMaybeAuth[R](userService: UserService)

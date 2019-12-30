@@ -5,12 +5,12 @@ import io.scalac.tezos.translator.routes.utils.ReCaptcha
 import io.scalac.tezos.translator.routes.dto.DTO.Error
 import io.scalac.tezos.translator.routes.dto.DTOValidation
 import io.scalac.tezos.translator.routes.dto.SendEmailRoutesDto
-import io.scalac.tezos.translator.routes.dto.{DTO, SendEmailRoutesDto}
 import io.scalac.tezos.translator.service.Emails2SendService
 import akka.event.LoggingAdapter
 import akka.http.scaladsl.server.Route
 import cats.syntax.either._
 import io.scalac.tezos.translator.config.CaptchaConfig
+import io.scalac.tezos.translator.model.types.Auth.Captcha
 import io.scalac.tezos.translator.routes.Endpoints.ErrorResponse
 import sttp.model.StatusCode
 import sttp.tapir._
@@ -25,7 +25,7 @@ class MessageRoutes(
   adminEmail: EmailAddress
 )(implicit actorSystem: ActorSystem, ec: ExecutionContext) extends HttpRoutes {
 
-  private val messageEndpoint: Endpoint[(Option[String], SendEmailRoutesDto), ErrorResponse, StatusCode, Nothing] =
+  private val messageEndpoint: Endpoint[(Option[Captcha], SendEmailRoutesDto), ErrorResponse, StatusCode, Nothing] =
     Endpoints
       .captchaEndpoint(reCaptchaConfig)
       .post
@@ -46,16 +46,11 @@ class MessageRoutes(
     }
   }
 
-  private def validateSendMessage(x: Unit,
-                                  sendEmailRoutesDto: SendEmailRoutesDto)
-                                 (implicit ec: ExecutionContext): Future[Either[ErrorResponse, SendEmailRoutesDto]] =
-    DTOValidation.validateDto(sendEmailRoutesDto)
-
   def buildRoute(log: LoggingAdapter, reCaptchaConfig: CaptchaConfig)(implicit ec: ExecutionContext): Route =
     messageEndpoint
       .toRoute {
         (ReCaptcha.withReCaptchaVerify(_, log, reCaptchaConfig))
-          .andThenFirstE((validateSendMessage _).tupled)
+          .andThenFirstE{ t: (Unit, SendEmailRoutesDto) => DTOValidation.validateDto(t._2) }
           .andThenFirstE(addNewEmail)
       }
 

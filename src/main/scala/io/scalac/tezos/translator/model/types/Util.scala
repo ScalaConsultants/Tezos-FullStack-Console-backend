@@ -3,11 +3,14 @@ package io.scalac.tezos.translator.model.types
 import eu.timepit.refined.api.{Refined, Validate}
 import eu.timepit.refined.numeric.Positive
 import eu.timepit.refined.refineV
+import io.circe.{Decoder, DecodingFailure, Encoder, HCursor}
+import io.circe.syntax._
 import io.estatico.newtype.Coercible
 import slick.ast.BaseTypedType
 import slick.jdbc.JdbcType
 import slick.jdbc.PostgresProfile.api._
 import sttp.tapir.DecodeResult
+import cats.syntax.either._
 import scala.reflect.ClassTag
 import scala.util.{Failure, Success, Try}
 
@@ -21,6 +24,26 @@ object Util {
       }
     case Failure(f) => DecodeResult.Error(s, f)
   }
+
+  private[types] def decodeFromStringWithRefine[T, Req](s: String,
+                                                        build: Refined[String, Req] => T)
+                                                       (implicit v: Validate[String, Req]): DecodeResult[T] =
+    refineV[Req](s) match {
+      case Left(error)  => DecodeResult.Mismatch(error, s)
+      case Right(value) => DecodeResult.Value(build(value))
+    }
+
+  private[types] def buildStringRefinedDecoder[T, Req](errorString: String, build: Refined[String, Req] => T)
+                                                      (implicit v: Validate[String, Req]): Decoder[T] =
+    (c: HCursor) => c.as[String] match {
+      case Left(_)      => DecodingFailure(errorString, c.history).asLeft
+      case Right(value) => refineV[Req](value) match {
+        case Left(refineEr)     => DecodingFailure(refineEr, c.history).asLeft
+        case Right(refineValue) => build(refineValue).asRight
+      }
+    }
+
+  private[types] def buildToStringEncoder[T]: Encoder[T] = (a: T) => a.toString.asJson
 
   private[types] def refinedMapper2String[T: ClassTag, Req](build: Refined[String, Req] => T)
                                                            (implicit v: Validate[String, Req]): JdbcType[T] with BaseTypedType[T] =

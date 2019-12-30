@@ -22,7 +22,6 @@ object UUIDs {
   def buildUUIDTypeMapper[T: ClassTag](build: UUID => T): JdbcType[T] with BaseTypedType[T] =
     MappedColumnType.base[T, String](s => s.toString, s => build(UUID.fromString(s)))
 
-  def buildUUIDEncoder[T]: Encoder[T] = (a: T) => a.toString.asJson
   def buildUUIDDecoder[T](build: UUID => T): Decoder[T] = (c: HCursor) => c.as[UUID] match {
     case Left(_)      => DecodingFailure("Can't parse uuid", c.history).asLeft
     case Right(value) => build(value).asRight
@@ -36,7 +35,7 @@ object UUIDs {
 
   implicit val libraryEntryId: Schema[LibraryEntryId] =
     new Schema[LibraryEntryId](SchemaType.SString, false, "UUID of library entry".some)
-  implicit val libraryEntryIdEncoder: Encoder[LibraryEntryId] = buildUUIDEncoder
+  implicit val libraryEntryIdEncoder: Encoder[LibraryEntryId] = buildToStringEncoder
   implicit val libraryEntryIdDecoder: Decoder[LibraryEntryId] = buildUUIDDecoder(LibraryEntryId.apply)
 
   implicit val libraryIdMapper: JdbcType[LibraryEntryId] with BaseTypedType[LibraryEntryId] =

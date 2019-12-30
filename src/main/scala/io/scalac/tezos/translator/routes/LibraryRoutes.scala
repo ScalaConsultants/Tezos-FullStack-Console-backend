@@ -21,7 +21,7 @@ import sttp.tapir.json.circe._
 import sttp.tapir.server.akkahttp._
 import cats.syntax.either._
 import io.scalac.tezos.translator.routes.Endpoints._
-import io.scalac.tezos.translator.model.types.Auth.{UserToken, Username}
+import io.scalac.tezos.translator.model.types.Auth.{Captcha, UserToken}
 import io.scalac.tezos.translator.model.types.Params._
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success}
@@ -36,10 +36,10 @@ class LibraryRoutes(
 )(implicit as: ActorSystem, ec: ExecutionContext) extends HttpRoutes {
   import io.circe.generic.auto._
 
-  private val libraryCaptchaEndpoint: Endpoint[Option[String], (DTO.ErrorDTO, StatusCode), Unit, Nothing] = Endpoints.captchaEndpoint(captchaConfig).in("library")
+  private val libraryCaptchaEndpoint: Endpoint[Option[Captcha], ErrorResponse, Unit, Nothing] = Endpoints.captchaEndpoint(captchaConfig).in("library")
   private  val libraryEndpoint: Endpoint[Unit, Unit, Unit, Nothing] = Endpoints.baseEndpoint.in("library")
 
-  private val libraryAddEndpoint: Endpoint[(Option[String], LibraryEntryRoutesDto), ErrorResponse, StatusCode, Nothing] =
+  private val libraryAddEndpoint: Endpoint[(Option[Captcha], LibraryEntryRoutesDto), ErrorResponse, StatusCode, Nothing] =
     libraryCaptchaEndpoint
       .in(jsonBody[LibraryEntryRoutesDto])
       .post
