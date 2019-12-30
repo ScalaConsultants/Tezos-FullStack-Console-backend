@@ -13,7 +13,7 @@ import Helper._
 import eu.timepit.refined.collection.NonEmpty
 import io.scalac.tezos.translator.model.UserCredentials
 import eu.timepit.refined.refineMV
-import io.scalac.tezos.translator.model.types.Auth.{Password, Username, UsernameType}
+import io.scalac.tezos.translator.model.types.Auth.{Password, Username, UsernameReq}
 
 import scala.language.postfixOps
 
@@ -48,7 +48,7 @@ class LoginRoutesSpec
     }
 
     it should "handle non-existing username gracefully" in {
-      Post(loginEndpoint, UserCredentials(Username(refineMV[UsernameType]("zxcv")), adminPassword)) ~> loginRoute ~> check {
+      Post(loginEndpoint, UserCredentials(Username(refineMV[UsernameReq]("zxcv")), adminPassword)) ~> loginRoute ~> check {
         status shouldBe StatusCodes.Forbidden
       }
     }

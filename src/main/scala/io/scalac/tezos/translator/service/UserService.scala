@@ -4,7 +4,7 @@ import com.github.t3hnar.bcrypt._
 import io.scalac.tezos.translator.model.{AuthUserData, UserModel}
 import io.scalac.tezos.translator.repository.UserRepository
 import io.scalac.tezos.translator.routes.dto.DTO.Error
-import io.scalac.tezos.translator.model.types.Auth.{Password, UserToken, UserTokenType, Username}
+import io.scalac.tezos.translator.model.types.Auth.{Password, UserToken, UserTokenReq, Username}
 import slick.jdbc.PostgresProfile.api._
 import cats.syntax.either._
 import io.scalac.tezos.translator.routes.Endpoints.ErrorResponse
@@ -29,7 +29,7 @@ class UserService(repository: UserRepository, db: Database)(implicit ec: Executi
 
   @tailrec
   private def generateRandomToken: UserToken = {
-    val maybeNewTokenEntry = refineV[UserTokenType](Random.alphanumeric.take(30).mkString)
+    val maybeNewTokenEntry = refineV[UserTokenReq](Random.alphanumeric.take(30).mkString)
     maybeNewTokenEntry match {
       case Left(_)      => generateRandomToken
       case Right(value) => UserToken(value)

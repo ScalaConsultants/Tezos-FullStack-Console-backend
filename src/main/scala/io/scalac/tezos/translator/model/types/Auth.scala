@@ -19,13 +19,13 @@ import Util._
 
 object Auth {
 
-  type AuthBearerHeaderEntryType = StartsWith[W.`"Bearer "`.T] And Size[Greater[W.`7`.T]]
+  type AuthBearerHeaderEntryReq = StartsWith[W.`"Bearer "`.T] And Size[Greater[W.`7`.T]]
 
-  type UserTokenType = Size[Equal[W.`30`.T]]
+  type UserTokenReq = Size[Equal[W.`30`.T]]
 
-  type UsernameType = NonEmpty And Size[Not[Greater[W.`30`.T]]]
+  type UsernameReq = NonEmpty And Size[Not[Greater[W.`30`.T]]]
 
-  @newtype case class AuthBearerHeader(v: String Refined AuthBearerHeaderEntryType)
+  @newtype case class AuthBearerHeader(v: String Refined AuthBearerHeaderEntryReq)
 
   @newtype case class Captcha(v: String Refined NonEmpty)
 
@@ -33,19 +33,19 @@ object Auth {
 
   @newtype case class PasswordHash(v: String Refined NonEmpty)
 
-  @newtype case class UserToken(v: String Refined UserTokenType)
+  @newtype case class UserToken(v: String Refined UserTokenReq)
 
-  @newtype case class Username(v: String Refined UsernameType)
+  @newtype case class Username(v: String Refined UsernameReq)
 
   def decodeAuthHeader(s: String): DecodeResult[AuthBearerHeader] =
-    decodeFromStringWithRefine[AuthBearerHeader, AuthBearerHeaderEntryType](s, AuthBearerHeader.apply)
+    decodeFromStringWithRefine[AuthBearerHeader, AuthBearerHeaderEntryReq](s, AuthBearerHeader.apply)
 
   def decodeCaptchaHeader(s: String): DecodeResult[Captcha] =
     decodeFromStringWithRefine[Captcha, NonEmpty](s, Captcha.apply)
 
   def decodeTokenCodec(s: String): DecodeResult[UserToken] =
     decodeAuthHeader(s) match {
-      case Value(v) => refineV[UserTokenType](v.v.value.drop(7)) match {
+      case Value(v) => refineV[UserTokenReq](v.v.value.drop(7)) match {
         case Left(error)  => DecodeResult.Mismatch(error, s)
         case Right(value) => Value(UserToken(value))
       }
@@ -76,7 +76,7 @@ object Auth {
     new Schema[Password](SchemaType.SString, false, "Password of user".some)
 
   implicit val usernameMapper: JdbcType[Username] with BaseTypedType[Username] =
-    refinedMapper2String[Username, UsernameType](Username.apply)
+    refinedMapper2String[Username, UsernameReq](Username.apply)
 
   implicit val passwordHashMapper: JdbcType[PasswordHash] with BaseTypedType[PasswordHash] =
     refinedMapper2String[PasswordHash, NonEmpty](PasswordHash.apply)

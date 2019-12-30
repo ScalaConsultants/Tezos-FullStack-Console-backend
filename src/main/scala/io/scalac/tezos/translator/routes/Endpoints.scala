@@ -6,7 +6,7 @@ import cats.instances.future._
 import io.scalac.tezos.translator.config.CaptchaConfig
 import io.scalac.tezos.translator.routes.dto.DTO.{Error, ErrorDTO}
 import io.scalac.tezos.translator.service.UserService
-import io.scalac.tezos.translator.model.types.Auth.{Captcha, UserToken, UserTokenType}
+import io.scalac.tezos.translator.model.types.Auth.{Captcha, UserToken, UserTokenReq}
 import io.scalac.tezos.translator.model.types.Params.{Limit, Offset}
 import sttp.tapir.{Endpoint, endpoint, header, jsonBody, statusCode}
 import io.circe.generic.auto._
@@ -44,7 +44,7 @@ object Endpoints {
     Future.successful(bearer2Token(value))
 
   def bearer2Token(value: String): Either[ErrorResponse, UserToken] =
-    refineV[UserTokenType](value).bimap(er => (Error(er), StatusCode.BadRequest), UserToken.apply)
+    refineV[UserTokenReq](value).bimap(er => (Error(er), StatusCode.BadRequest), UserToken.apply)
 
 
   val errorResponse: EndpointOutput[ErrorResponse] = jsonBody[ErrorDTO].and(statusCode)
@@ -63,7 +63,7 @@ object Endpoints {
       .description("Optional authorization header")
       .example(
         UserToken(
-          refineMV[UserTokenType]("WcPvrwuCTJYghiz2vxQsvmOzmPA9uH")
+          refineMV[UserTokenReq]("WcPvrwuCTJYghiz2vxQsvmOzmPA9uH")
         ).some
       )
 
