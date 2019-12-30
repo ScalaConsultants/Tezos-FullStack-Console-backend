@@ -101,7 +101,7 @@ object ReCaptcha {
     }.recover {
       case err =>
         log.error(s"Can't parse google reCaptcha response, err - $err")
-        (Error("Can't parse captcha response from google"), StatusCode.InternalServerError).asLeft
+        (Error(response.toString()), StatusCode.InternalServerError).asLeft
     }
   }
 
