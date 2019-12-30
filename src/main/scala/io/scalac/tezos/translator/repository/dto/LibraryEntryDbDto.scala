@@ -10,7 +10,7 @@ import io.scalac.tezos.translator.model.{EmailAddress, LibraryEntry}
 import scala.util.{Success, Try}
 
 case class LibraryEntryDbDto(
-                              id: LibraryEntryId,
+                              uid: LibraryEntryId,
                               title: String,
                               author: Option[String],
                               email: Option[String],
@@ -30,7 +30,7 @@ case class LibraryEntryDbDto(
       }
     } yield
       LibraryEntry(
-        uid = id,
+        uid = uid,
         title = title,
         author = author,
         email = emailAdress,
@@ -44,7 +44,7 @@ case class LibraryEntryDbDto(
 object LibraryEntryDbDto {
   def fromDomain(v: LibraryEntry) =
     LibraryEntryDbDto(
-      id = v.uid,
+      uid = v.uid,
       title = v.title,
       author = v.author.map(_.toString),
       email = v.email.map(_.toString),
