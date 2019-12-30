@@ -13,7 +13,6 @@ import sttp.tapir.DecodeResult.Value
 import sttp.tapir.{Codec, DecodeFailure, DecodeResult, Schema, SchemaType}
 import slick.ast.BaseTypedType
 import slick.jdbc.JdbcType
-import slick.jdbc.PostgresProfile.api._
 import io.circe.{Decoder, DecodingFailure, Encoder, HCursor}
 import io.circe.syntax._
 import cats.syntax.either._
@@ -31,6 +30,8 @@ object Auth {
   @newtype case class AuthBearerHeader(v: String Refined AuthBearerHeaderEntryType)
 
   @newtype case class Password(v: String Refined NonEmpty)
+
+  @newtype case class PasswordHash(v: String Refined NonEmpty)
 
   @newtype case class UserToken(v: String Refined UserTokenType)
 
@@ -57,9 +58,6 @@ object Auth {
   implicit val userTokenStringCodec: Codec[UserToken, TextPlain, String] = Codec.stringPlainCodecUtf8
     .mapDecode(decodeTokenCodec)(t => s"Bearer ${t.v.value}")
 
-  implicit val usernameMapper: JdbcType[Username] with BaseTypedType[Username] =
-    MappedColumnType.base[Username, String](encodeToString, s => Username(refineV[UsernameType](s).toOption.get))
-
   implicit val usernameEncoder: Encoder[Username] = (a: Username) => a.toString.asJson
   implicit val usernameDecoder: Decoder[Username] = (c: HCursor) => c.as[String] match {
     case Left(_)      => DecodingFailure("Can't username", c.history).asLeft
@@ -68,9 +66,6 @@ object Auth {
       case Right(refineValue) => Username(refineValue).asRight
     }
   }
-
-  implicit val usernameSchema: Schema[Username] =
-    new Schema[Username](SchemaType.SString, false, "Username".some)
 
   implicit val passwordEncoder: Encoder[Password] = (a: Password) => a.toString.asJson
   implicit val passwordDecoder: Decoder[Password] = (c: HCursor) => c.as[String] match {
@@ -81,7 +76,16 @@ object Auth {
     }
   }
 
+  implicit val usernameSchema: Schema[Username] =
+    new Schema[Username](SchemaType.SString, false, "Username".some)
+
   implicit val passwordSchema: Schema[Password] =
     new Schema[Password](SchemaType.SString, false, "Password of user".some)
+
+  implicit val usernameMapper: JdbcType[Username] with BaseTypedType[Username] =
+    refinedMapper2String[Username, UsernameType](Username.apply)
+
+  implicit val passwordHashMapper: JdbcType[PasswordHash] with BaseTypedType[PasswordHash] =
+    refinedMapper2String[PasswordHash, NonEmpty](PasswordHash.apply)
 
 }

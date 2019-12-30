@@ -1,11 +1,13 @@
 package io.scalac.tezos.translator.model.types
 
-import eu.timepit.refined.api.Refined
+import eu.timepit.refined.api.{Refined, Validate}
 import eu.timepit.refined.numeric.Positive
 import eu.timepit.refined.refineV
 import io.estatico.newtype.Coercible
+import slick.ast.BaseTypedType
+import slick.jdbc.JdbcType
+import slick.jdbc.PostgresProfile.api._
 import sttp.tapir.DecodeResult
-
 import scala.reflect.ClassTag
 import scala.util.{Failure, Success, Try}
 
@@ -20,9 +22,13 @@ object Util {
     case Failure(f) => DecodeResult.Error(s, f)
   }
 
+  private[types] def refinedMapper2String[T: ClassTag, Req](build: Refined[String, Req] => T)
+                                                           (implicit v: Validate[String, Req]): JdbcType[T] with BaseTypedType[T] =
+    MappedColumnType.base[T, String](encodeToString, s => build(refineV[Req](s).toOption.get))
+
   private[types] def encodeToString[T](item: T): String = item.toString
 
-  implicit def coercibleClassTag[R, N](implicit ev: Coercible[ClassTag[R], ClassTag[N]],
+  private[types] implicit def coercibleClassTag[R, N](implicit ev: Coercible[ClassTag[R], ClassTag[N]],
                                                       R: ClassTag[R]): ClassTag[N] = ev(R)
 
 }

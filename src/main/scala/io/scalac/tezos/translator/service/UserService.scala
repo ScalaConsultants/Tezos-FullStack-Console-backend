@@ -37,7 +37,7 @@ class UserService(repository: UserRepository, db: Database)(implicit ec: Executi
   }
 
   private def checkPassword(user: UserModel, password: Password): Boolean = {
-    password.v.value.isBcrypted(user.passwordHash)
+    password.v.value.isBcrypted(user.passwordHash.v.value)
   }
 
   def authenticateAndCreateToken(username: Username, password: Password): Future[Option[UserToken]] = {
