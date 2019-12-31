@@ -19,6 +19,13 @@ import io.scalac.tezos.translator.service.{Emails2SendService, LibraryService, U
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.{Assertion, BeforeAndAfterEach, Matchers, WordSpec}
 import slick.jdbc.PostgresProfile.api._
+
+import scala.collection.immutable
+import scala.concurrent.duration._
+import scala.concurrent.{Await, Future}
+import scala.language.postfixOps
+import scalacache._
+import scalacache.caffeine._
 import eu.timepit.refined._
 import eu.timepit.refined.numeric.Positive
 import eu.timepit.refined.string.Uuid
@@ -28,10 +35,7 @@ import io.scalac.tezos.translator.model.types.ContactData.{EmailReq, EmailS}
 import io.scalac.tezos.translator.model.types.Library._
 import io.scalac.tezos.translator.model.types.Params.Limit
 import cats.syntax.option._
-import scala.collection.immutable
-import scala.concurrent.duration._
-import scala.concurrent.{Await, Future}
-import scala.language.postfixOps
+import io.scalac.tezos.translator.model.types.Auth
 
 //noinspection TypeAnnotation
 class LibrarySpec
@@ -59,7 +63,8 @@ class LibrarySpec
   val properMicheline   = Micheline(refineMV[NonEmpty]("micheline"))
   val properMichelson   = Michelson(refineMV[NonEmpty]("michelson"))
 
-  val userService = new UserService(new UserRepository, testDb)
+  val tokenToUser: Cache[Auth.Username] = CaffeineCache[Auth.Username]
+  val userService = new UserService(new UserRepository, tokenToUser, testDb)
   val emails2SendRepo = new Emails2SendRepository
   val email2SendService = new Emails2SendService(emails2SendRepo, testDb)
   val libraryRepo = new LibraryRepository(dbUtilityConfig, testDb)
