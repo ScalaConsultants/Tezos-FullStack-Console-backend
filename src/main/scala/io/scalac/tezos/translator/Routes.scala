@@ -25,10 +25,10 @@ class Routes(
 
   private val apis: List[HttpRoutes] =
     List(
-      new TranslatorRoutes(translator, log, captchaConfig),
+      new TranslatorRoutes(translator),
       new MessageRoutes(emails2SendService, log, captchaConfig, adminEmail),
       new LibraryRoutes(libraryService, userService, emails2SendService, log, captchaConfig, adminEmail),
-      new LoginRoutes(userService, log)
+      new LoginRoutes(userService)
     )
 
   lazy val allRoutes: Route =
@@ -40,11 +40,7 @@ class Routes(
     import sttp.tapir.docs.openapi._
     import sttp.tapir.openapi.circe.yaml._
     import sttp.tapir.swagger.akkahttp.SwaggerAkka
-    import akka.http.scaladsl.Http
-    import akka.http.scaladsl.server.Directives._
 
-    import scala.concurrent.Await
-    import scala.concurrent.duration._
     val docs = apis.flatMap(_.docs).toOpenAPI("Tezos API", "1.0")
     new SwaggerAkka(docs.toYaml).routes
   }

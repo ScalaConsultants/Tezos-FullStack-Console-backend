@@ -43,7 +43,7 @@ object DbTestBase {
   def recreateTables()(implicit ec: ExecutionContext): Unit = {
     runDB(sqlu"DROP TABLE if exists flyway_schema_history;")
     dropTables()
-    Await.result(dbEvolutions.runEvolutions(), 20.seconds)
+    Await.result(dbEvolutions.runEvolutions().map(_ => ()), 20.seconds)
   }
 
 }

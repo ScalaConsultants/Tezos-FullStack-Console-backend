@@ -5,10 +5,7 @@ import akka.http.scaladsl.Http
 import akka.http.scaladsl.model.{HttpMethods, HttpRequest, HttpResponse}
 import akka.http.scaladsl.unmarshalling.Unmarshal
 import akka.stream.ActorMaterializer
-import io.circe.Decoder
 import io.scalac.tezos.translator.routes.dto.DTO.{CaptchaVerifyResponse, Error}
-import org.joda.time.DateTime
-import org.joda.time.format.DateTimeFormat
 import akka.event.LoggingAdapter
 import cats.syntax.either._
 import io.scalac.tezos.translator.config.CaptchaConfig
@@ -16,7 +13,6 @@ import io.scalac.tezos.translator.model.types.Auth.Captcha
 import io.scalac.tezos.translator.routes.Endpoints.ErrorResponse
 import sttp.model.StatusCode
 import scala.concurrent.{ExecutionContext, Future}
-import scala.util.control.NonFatal
 
 object ReCaptcha {
   import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport._
@@ -83,15 +79,6 @@ object ReCaptcha {
                                     log: LoggingAdapter)
                                    (implicit am: ActorMaterializer,
                                     ec: ExecutionContext): Future[Either[ErrorResponse, Unit]] = {
-
-    val dateFormatter = DateTimeFormat.forPattern("yyyyMMdd")
-    implicit val decodeDateTime: Decoder[DateTime] = Decoder.decodeString.emap { s =>
-      try {
-        DateTime.parse(s, dateFormatter).asRight
-      } catch {
-        case NonFatal(e) => e.getMessage.asLeft
-      }
-    }
 
     val unmarshalResult = Unmarshal(response).to[CaptchaVerifyResponse]
     unmarshalResult.map { value =>

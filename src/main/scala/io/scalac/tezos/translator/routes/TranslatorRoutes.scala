@@ -1,9 +1,7 @@
 package io.scalac.tezos.translator.routes
 
-import akka.event.LoggingAdapter
 import akka.http.scaladsl.server.Route
 import cats.syntax.either._
-import io.scalac.tezos.translator.config.CaptchaConfig
 import io.scalac.tezos.translator.routes.TranslatorRoutes._
 import io.scalac.tezos.translator.routes.utils.Translator
 import sttp.model.StatusCode
@@ -13,9 +11,7 @@ import sttp.tapir.server.akkahttp._
 import scala.concurrent.{ExecutionContext, Future}
 
 class TranslatorRoutes(
-  translator: Translator,
-  log: LoggingAdapter,
-  reCaptchaConfig: CaptchaConfig
+  translator: Translator
 )(implicit ec: ExecutionContext) extends HttpRoutes {
 
   override def routes: Route =

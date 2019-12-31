@@ -85,12 +85,17 @@ class LibraryRoutes(
 
   private def putEntryRoute: Route =
     putEntryEndpoint.toRoute {
-      (bearer2TokenF _).andThenFirstE(userService.authenticate).andThenFirstE((putDto _).tupled)
+      (bearer2TokenF _)
+        .andThenFirstE(userService.authenticate)
+        .andThenFirstE { args: (AuthUserData, UUIDString, String) => putDto(args._2, args._3) }
     }
 
   private def deleteEntryRoute: Route =
     deleteEntryEndpoint.toRoute {
-      (bearer2TokenF _).andThenFirstE(userService.authenticate).andThenFirstE((deleteDto _).tupled)
+      (bearer2TokenF _)
+        .andThenFirstE(userService.authenticate)
+        .andThenFirstE {
+          args: (AuthUserData, UUIDString) => deleteDto(args._2) }
     }
 
   private def addNewEntry(libraryDTO: LibraryEntryRoutesDto): Future[Either[ErrorResponse, StatusCode]] = {
@@ -99,7 +104,10 @@ class LibraryRoutes(
         val e = SendEmail.approvalRequest(libraryDTO, adminEmail)
         emails2SendService
           .addNewEmail2Send(e)
-          .recover { case err => log.error(s"Can't add new email to send, error - $err") }
+          .recover {
+            case err => log.error(s"Can't add new email to send, error - $err")
+            1
+          }
 
       case None => Future.successful(())
     }
@@ -143,8 +151,7 @@ class LibraryRoutes(
       (Error("Can't get records"), StatusCode.InternalServerError).asLeft
     }
 
-  private def putDto(userData: AuthUserData,
-                     uid: UUIDString,
+  private def putDto(uid: UUIDString,
                      status: String): Future[Either[ErrorResponse, StatusCode]] = {
     val statusChangeWithEmail =
       for {
@@ -170,7 +177,7 @@ class LibraryRoutes(
     }
   }
 
-  private def deleteDto(userData: AuthUserData, uid: UUIDString): Future[Either[ErrorResponse, StatusCode]] =
+  private def deleteDto(uid: UUIDString): Future[Either[ErrorResponse, StatusCode]] =
     service.delete(LibraryEntryId(uid))
       .map(_ => StatusCode.Ok.asRight)
       .recover { case e =>
