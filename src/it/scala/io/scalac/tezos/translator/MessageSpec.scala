@@ -6,7 +6,7 @@ import akka.http.scaladsl.testkit.ScalatestRouteTest
 import eu.timepit.refined.collection.NonEmpty
 import eu.timepit.refined.refineMV
 import io.scalac.tezos.translator.config.CaptchaConfig
-import io.scalac.tezos.translator.model.types.ContactData.{Content, Name, NameAndEmailReq, Phone, PhoneReq, RefinedEmailString}
+import io.scalac.tezos.translator.model.types.ContactData.{Content, EmailReq, EmailS, Name, NameReq, Phone, PhoneReq}
 import io.scalac.tezos.translator.model.{ContactFormContent, EmailAddress, FullContact, SendEmail}
 import io.scalac.tezos.translator.repository.Emails2SendRepository
 import io.scalac.tezos.translator.repository.dto.SendEmailDbDto
@@ -58,7 +58,7 @@ class MessageSpec
     "message endpoint" should {
       "validate dto before storing" in {
         val invalidDto = SendEmailRoutesDto(
-          Name(refineMV[NameAndEmailReq]("Dude")),
+          Name(refineMV[NameReq]("Dude")),
           None,
           None,
           Content(refineMV[NonEmpty]("some content"))
@@ -72,9 +72,9 @@ class MessageSpec
 
       "save proper dto" in {
         val validDto = SendEmailRoutesDto(
-          Name(refineMV[NameAndEmailReq]("name")),
+          Name(refineMV[NameReq]("name")),
           Some(Phone(refineMV[PhoneReq]("+77072123434"))),
-          Some(RefinedEmailString(refineMV[NameAndEmailReq]("email@gmail.com"))),
+          Some(EmailS(refineMV[EmailReq]("email@gmail.com"))),
           Content(refineMV[NonEmpty]("I wanna pizza")))
         Post(messageEndpoint, validDto) ~> messageRoute ~> check {
           status shouldBe StatusCodes.OK

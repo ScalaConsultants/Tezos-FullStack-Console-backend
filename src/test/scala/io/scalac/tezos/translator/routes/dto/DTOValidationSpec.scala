@@ -2,7 +2,7 @@ package io.scalac.tezos.translator.routes.dto
 
 import cats.data.NonEmptyList
 import eu.timepit.refined.collection.NonEmpty
-import io.scalac.tezos.translator.model.types.ContactData.{Content, Name, NameAndEmailReq, Phone, PhoneReq, RefinedEmailString}
+import io.scalac.tezos.translator.model.types.ContactData.{Content, EmailReq, EmailS, Name, NameReq, Phone, PhoneReq}
 import io.scalac.tezos.translator.routes.dto.DTOValidation.{DTOValidationError, FieldIsEmpty, FieldIsInvalid}
 import org.scalatest.{Matchers, WordSpec}
 import eu.timepit.refined.refineMV
@@ -35,12 +35,6 @@ class DTOValidationSpec extends WordSpec with Matchers {
     }
 
     "not pass validation" when {
-
-      "email is invalid" in {
-        val input = validSendEmailRoutesDto(email = Some(RefinedEmailString(refineMV[NameAndEmailReq]("emailemail.com"))))
-
-        DTOValidation.validateSendEmailDTO(input) shouldBe validationError(FieldIsInvalid("email", "emailemail.com"))
-      }
 
       "phone and email is not given" in {
         val input = validSendEmailRoutesDto(phone = None, email = None)
@@ -139,12 +133,6 @@ class DTOValidationSpec extends WordSpec with Matchers {
         DTOValidation.validateLibraryEntryRoutesDto(input) shouldBe validationError(FieldIsEmpty("title"))
       }
 
-      "email is invalid" in {
-        val input = validLibraryEntryRoutesDto(email = Some(RefinedEmailString(refineMV[NameAndEmailReq]("emailemail.com"))))
-
-        DTOValidation.validateLibraryEntryRoutesDto(input) shouldBe validationError(FieldIsInvalid("email", "emailemail.com"))
-      }
-
       "micheline is empty" in {
         val input = validLibraryEntryRoutesDto(micheline = "")
 
@@ -162,19 +150,19 @@ class DTOValidationSpec extends WordSpec with Matchers {
   private def validationError(errors: DTOValidationError*) = Left(NonEmptyList.fromListUnsafe(errors.toList))
 
   private def validSendEmailRoutesDto(
-                                       name: Name = Name(refineMV[NameAndEmailReq]("name")),
+                                       name: Name = Name(refineMV[NameReq]("name")),
                                        phone: Option[Phone] = Some(Phone(refineMV[PhoneReq]("123123123"))),
-                                       email: Option[RefinedEmailString] = Some(RefinedEmailString(refineMV[NameAndEmailReq]("email@email.com"))),
+                                       email: Option[EmailS] = Some(EmailS(refineMV[EmailReq]("email@email.com"))),
                                        content: Content = Content(refineMV[NonEmpty]("content"))
   ): SendEmailRoutesDto = SendEmailRoutesDto(name, phone, email, content)
 
   private def validLibraryEntryRoutesDto(
-    title: String = "title",
-    author: Option[String] = Some("author"),
-    email: Option[RefinedEmailString] = Some(RefinedEmailString(refineMV[NameAndEmailReq]("email@email.com"))),
-    description: Option[String] = Some("description"),
-    micheline: String = "micheline",
-    michelson: String = "michelson"
+                                          title: String = "title",
+                                          author: Option[String] = Some("author"),
+                                          email: Option[EmailS] = Some(EmailS(refineMV[EmailReq]("email@email.com"))),
+                                          description: Option[String] = Some("description"),
+                                          micheline: String = "micheline",
+                                          michelson: String = "michelson"
   ): LibraryEntryRoutesDto = LibraryEntryRoutesDto(title, author, email, description, micheline, michelson)
 
 }

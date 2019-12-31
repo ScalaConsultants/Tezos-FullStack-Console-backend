@@ -7,7 +7,7 @@ import com.icegreen.greenmail.util.{GreenMail, GreenMailUtil, ServerSetupTest}
 import eu.timepit.refined.collection.NonEmpty
 import io.scalac.tezos.translator.config.{CronConfiguration, EmailConfiguration}
 import io.scalac.tezos.translator.model.LibraryEntry.Accepted
-import io.scalac.tezos.translator.model.types.ContactData.{Content, Name, NameAndEmailReq, Phone, PhoneReq, RefinedEmailString}
+import io.scalac.tezos.translator.model.types.ContactData.{Content, EmailReq, EmailS, Name, NameReq, Phone, PhoneReq}
 import io.scalac.tezos.translator.model.{EmailAddress, SendEmail}
 import io.scalac.tezos.translator.repository.Emails2SendRepository
 import io.scalac.tezos.translator.routes.dto.{LibraryEntryRoutesDto, SendEmailRoutesDto}
@@ -187,9 +187,9 @@ class SendEmailServiceSpec
     val e1: SendEmail = SendEmail.statusChange(unsafeEmailAddress("xxx@service.com"), "translation title", Accepted)
     val e2: SendEmail = SendEmail.fromSendEmailRoutesDto(
       SendEmailRoutesDto(
-        Name(refineMV[NameAndEmailReq]("Dude")),
+        Name(refineMV[NameReq]("Dude")),
         Some(Phone(refineMV[PhoneReq]("666666666"))),
-        Some(RefinedEmailString(refineMV[NameAndEmailReq]("dude@service.com"))),
+        Some(EmailS(refineMV[EmailReq]("dude@service.com"))),
         Content(refineMV[NonEmpty]("some content"))),
       testAdminEmail).get
     val e3: SendEmail = SendEmail.approvalRequest(LibraryEntryRoutesDto("contract name", Some("Thanos"), None, Some("Some description"), "micheline", "michelson"), testAdminEmail)

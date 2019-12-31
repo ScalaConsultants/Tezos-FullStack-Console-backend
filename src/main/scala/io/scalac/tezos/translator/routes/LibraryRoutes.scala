@@ -1,7 +1,5 @@
 package io.scalac.tezos.translator.routes
 
-import java.util.UUID
-
 import akka.actor.ActorSystem
 import akka.event.LoggingAdapter
 import akka.http.scaladsl.server.Route
@@ -13,7 +11,7 @@ import io.scalac.tezos.translator.routes.dto.DTO.Error
 import io.scalac.tezos.translator.routes.utils.ReCaptcha._
 import io.scalac.tezos.translator.routes.dto.{LibraryEntryDTO, LibraryEntryRoutesAdminDto, LibraryEntryRoutesDto}
 import io.scalac.tezos.translator.routes.dto.LibraryEntryDTO._
-import io.scalac.tezos.translator.model.types.UUIDs.LibraryEntryId
+import io.scalac.tezos.translator.model.types.UUIDs.{LibraryEntryId, UUIDString}
 import io.scalac.tezos.translator.service.{Emails2SendService, LibraryService, UserService}
 import sttp.model.StatusCode
 import sttp.tapir._
@@ -55,7 +53,7 @@ class LibraryRoutes(
       .get
       .description("Will return sequence of LibraryEntryRoutesDto or LibraryEntryRoutesAdminDto if auth header provided")
 
-  private val putEntryEndpoint: Endpoint[(String, UUID, String), ErrorResponse, StatusCode, Nothing] =
+  private val putEntryEndpoint: Endpoint[(String, UUIDString, String), ErrorResponse, StatusCode, Nothing] =
     libraryEndpoint
       .in(auth.bearer)
       .in(uidQuery.and(statusQuery))
@@ -64,7 +62,7 @@ class LibraryRoutes(
       .put
       .description("Will change the status of entry with passed uid")
 
-  private val deleteEntryEndpoint: Endpoint[(String, UUID), ErrorResponse, StatusCode, Nothing] =
+  private val deleteEntryEndpoint: Endpoint[(String, UUIDString), ErrorResponse, StatusCode, Nothing] =
     libraryEndpoint
       .in(auth.bearer)
       .in(uidQuery)
@@ -146,7 +144,7 @@ class LibraryRoutes(
     }
 
   private def putDto(userData: AuthUserData,
-                     uid: UUID,
+                     uid: UUIDString,
                      status: String): Future[Either[ErrorResponse, StatusCode]] = {
     val statusChangeWithEmail =
       for {
@@ -172,7 +170,7 @@ class LibraryRoutes(
     }
   }
 
-  private def deleteDto(userData: AuthUserData, uid: UUID): Future[Either[ErrorResponse, StatusCode]] =
+  private def deleteDto(userData: AuthUserData, uid: UUIDString): Future[Either[ErrorResponse, StatusCode]] =
     service.delete(LibraryEntryId(uid))
       .map(_ => StatusCode.Ok.asRight)
       .recover { case e =>

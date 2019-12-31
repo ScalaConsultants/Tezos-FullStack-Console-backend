@@ -7,7 +7,7 @@ import io.scalac.tezos.translator.model.types.ContactData._
 case class SendEmailRoutesDto(
                                name: Name,
                                phone: Option[Phone],
-                               email: Option[RefinedEmailString],
+                               email: Option[EmailS],
                                content: Content
                              )
 

@@ -9,7 +9,7 @@ import cats.syntax.either._
 import cats.syntax.parallel._
 import eu.timepit.refined.refineV
 import io.scalac.tezos.translator.model._
-import io.scalac.tezos.translator.model.types.ContactData.{NameAndEmailReq, RefinedEmailString}
+import io.scalac.tezos.translator.model.types.ContactData.{EmailReq, EmailS}
 import io.scalac.tezos.translator.routes.dto.DTO.{ErrorDTO, Errors}
 import io.scalac.tezos.translator.routes.dto.DTOValidation.ValidationResult
 import sttp.model.StatusCode
@@ -92,7 +92,7 @@ object DTOValidation {
   implicit val SendEmailDTOValidation: DTOValidation[SendEmailRoutesDto] = { dto => validateSendEmailDTO(dto) }
 
   def validateSendEmailDTO: SendEmailRoutesDto => ValidationResult[SendEmailRoutesDto] = { dto =>
-    val checkEmail: ValidationResult[Option[RefinedEmailString]] = dto.email.traverse(checkEmailIsValid)
+    val checkEmail: ValidationResult[Option[EmailS]] = dto.email.traverse(checkEmailIsValid)
 
     val phoneEmailNonEmptyCheck =
       if (dto.phone.isEmpty && checkEmail.right.exists(_.isEmpty)) {
@@ -116,15 +116,15 @@ object DTOValidation {
       case _ => Right(None)
     }
 
-  private def checkEmailIsValid(email: RefinedEmailString): ValidationResult[RefinedEmailString] =
+  private def checkEmailIsValid(email: EmailS): ValidationResult[EmailS] =
     EmailAddress
       .fromString(email.v.value)
       .toEither
       .leftMap(_ => NonEmptyList.one(FieldIsInvalid("email", email.v.value)))
       .flatMap(
-        a => refineV[NameAndEmailReq](a.toString.toLowerCase) match {
+        a => refineV[EmailReq](a.toString.toLowerCase) match {
           case Left(_)      => NonEmptyList.one(FieldIsInvalid("email", email.v.value)).asLeft
-          case Right(value) => RefinedEmailString(value).asRight
+          case Right(value) => EmailS(value).asRight
         }
       )
 
@@ -142,7 +142,7 @@ object DTOValidation {
       checkStringNotEmptyAndLength(dto.title, maxTinyLength, FieldIsEmpty("title"), FieldToLong("title", maxTinyLength))
     val checkAuthor =
       checkOptionalString(dto.author, a => checkAuthorIsValid(a))
-    val checkEmail: Either[NonEmptyList[DTOValidationError], Option[RefinedEmailString]] =
+    val checkEmail: Either[NonEmptyList[DTOValidationError], Option[EmailS]] =
       dto.email.traverse(checkEmailIsValid)
     val checkDescription =
       checkOptionalString(dto.description, d => checkDescriptionsValid(d))

@@ -6,7 +6,7 @@ object Version {
   val akkaHttpCors            = "0.4.1"
   val akkaStream              = "2.5.26"
   val akkaHttpCirce           = "1.29.1"
-  val circeVersion            = "0.12.3"
+  val circe                   = "0.12.3"
   val cats                    = "2.0.0"
   val courier                 = "2.0.0"
   val greenMail               = "1.5.11"
@@ -40,9 +40,10 @@ object Dependencies {
   )
 
   val circe: Seq[ModuleID] = Seq(
-    "io.circe" %% "circe-core"    % Version.circeVersion,
-    "io.circe" %% "circe-generic" % Version.circeVersion,
-    "io.circe" %% "circe-parser"  % Version.circeVersion
+    "io.circe" %% "circe-core"    % Version.circe,
+    "io.circe" %% "circe-generic" % Version.circe,
+    "io.circe" %% "circe-parser"  % Version.circe,
+    "io.circe" %% "circe-refined" % Version.circe
   )
 
   val akkaHttpCors: Seq[ModuleID] = Seq(

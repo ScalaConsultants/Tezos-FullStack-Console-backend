@@ -1,7 +1,5 @@
 package io.scalac.tezos.translator
 
-import java.util.UUID
-
 import akka.event.LoggingAdapter
 import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.model.headers.{Authorization, OAuth2BearerToken}
@@ -10,6 +8,7 @@ import akka.http.scaladsl.testkit.ScalatestRouteTest
 import io.scalac.tezos.translator.config.{CaptchaConfig, DBUtilityConfiguration}
 import io.scalac.tezos.translator.model.LibraryEntry._
 import io.scalac.tezos.translator.model._
+import io.scalac.tezos.translator.model.types.UUIDs._
 import io.scalac.tezos.translator.repository.dto.LibraryEntryDbDto
 import io.scalac.tezos.translator.repository.{Emails2SendRepository, LibraryRepository, UserRepository}
 import io.scalac.tezos.translator.routes.dto.{LibraryEntryRoutesAdminDto, LibraryEntryRoutesDto}
@@ -22,11 +21,10 @@ import org.scalatest.{Assertion, BeforeAndAfterEach, Matchers, WordSpec}
 import slick.jdbc.PostgresProfile.api._
 import eu.timepit.refined._
 import eu.timepit.refined.numeric.Positive
+import eu.timepit.refined.string.Uuid
 import Helper.adminCredentials
-import io.scalac.tezos.translator.model.types.ContactData.{NameAndEmailReq, RefinedEmailString}
+import io.scalac.tezos.translator.model.types.ContactData.{EmailReq, EmailS}
 import io.scalac.tezos.translator.model.types.Params.Limit
-import io.scalac.tezos.translator.model.types.UUIDs.LibraryEntryId
-
 import scala.collection.immutable
 import scala.concurrent.duration._
 import scala.concurrent.{Await, Future}
@@ -63,7 +61,7 @@ class LibrarySpec
     val inserts = for {
       i <- 1 to size
       dummyData = LibraryEntry(
-        LibraryEntryId(UUID.randomUUID()),
+        generateLibraryEntryId,
         "name",
         Option("ThomasTheTest"),
         EmailAddress.fromString("name@service.com").toOption,
@@ -144,7 +142,7 @@ class LibrarySpec
         addedRecord.michelson shouldBe "michelson"
       }
       "payload with UpperCased Email make lower " in {
-        val properPayload = LibraryEntryRoutesDto("vss", None, Some(RefinedEmailString(refineMV[NameAndEmailReq]("Aeaaast@service.pl"))), Some("Some thing for some things"), "micheline", "michelson")
+        val properPayload = LibraryEntryRoutesDto("vss", None, Some(EmailS(refineMV[EmailReq]("Aeaaast@service.pl"))), Some("Some thing for some things"), "micheline", "michelson")
         Post(libraryEndpoint, properPayload) ~> Route.seal(libraryRoute) ~> check {
           status shouldBe StatusCodes.OK
         }
@@ -164,7 +162,7 @@ class LibrarySpec
       whenReady(email2SendService.getEmails2Send(10)) {
         _ shouldBe 'empty
       }
-      val userEmail = RefinedEmailString(refineMV[NameAndEmailReq]("name@service.com"))
+      val userEmail = EmailS(refineMV[EmailReq]("name@service.com"))
       val record = LibraryEntryRoutesDto("name", Some("Author"), Some(userEmail), Some("description"), "micheline", "michelson")
       Post(libraryEndpoint, record) ~> Route.seal(libraryRoute) ~> check {
         status shouldBe StatusCodes.OK
@@ -180,7 +178,7 @@ class LibrarySpec
     }
 
     // it was the only one accepted
-    val expectedRecord2 = LibraryEntryRoutesDto("nameE2", Some("authorE2"), Some(RefinedEmailString(refineMV[NameAndEmailReq]("name@service.com"))), Some("descriptionE2"), "michelineE2", "michelsonE2")
+    val expectedRecord2 = LibraryEntryRoutesDto("nameE2", Some("authorE2"), Some(EmailS(refineMV[EmailReq]("name@service.com"))), Some("descriptionE2"), "michelineE2", "michelsonE2")
 
     whenReady(libraryService.getRecords()) {
       _ should contain theSameElementsAs toInsert
@@ -222,7 +220,7 @@ class LibrarySpec
       _ should contain theSameElementsAs Seq(1, 1, 1)
     }
 
-    val expectedRecord2 = LibraryEntryRoutesDto("nameE2", Some("authorE2"), Some(RefinedEmailString(refineMV[NameAndEmailReq]("name@service.com"))), Some("descriptionE2"), "michelineE2", "michelsonE2")
+    val expectedRecord2 = LibraryEntryRoutesDto("nameE2", Some("authorE2"), Some(EmailS(refineMV[EmailReq]("name@service.com"))), Some("descriptionE2"), "michelineE2", "michelsonE2")
 
     Get(libraryEndpoint) ~> libraryRoute ~> check {
       status shouldBe StatusCodes.OK
@@ -275,7 +273,7 @@ class LibrarySpec
       _ should contain theSameElementsAs Seq(1, 1, 1)
     }
 
-    val expectedRecord2 = LibraryEntryRoutesDto("nameE2", Some("authorE2"), Some(RefinedEmailString(refineMV[NameAndEmailReq]("name@service.com"))), Some("descriptionE2"), "michelineE2", "michelsonE2")
+    val expectedRecord2 = LibraryEntryRoutesDto("nameE2", Some("authorE2"), Some(EmailS(refineMV[EmailReq]("name@service.com"))), Some("descriptionE2"), "michelineE2", "michelsonE2")
 
     Get(libraryEndpoint) ~> libraryRoute ~> check {
       status shouldBe StatusCodes.OK
@@ -356,7 +354,7 @@ class LibrarySpec
       _ shouldBe 'empty
     }
 
-    val userEmail = RefinedEmailString(refineMV[NameAndEmailReq]("name@service.com"))
+    val userEmail = EmailS(refineMV[EmailReq]("name@service.com"))
     val userDescription = "name@service.com"
     val userName = "name@service.com"
     val record = LibraryEntryRoutesDto("name", Some(userName), Some(userEmail), Some(userDescription), "micheline", "michelson")
@@ -422,9 +420,9 @@ class LibrarySpec
 
 
   private trait SampleEntries {
-    val record1 = LibraryEntry(LibraryEntryId(UUID.fromString("d7327913-4957-4417-96d2-e5c1d4311f80")), "nameE1", Some("authorE1"), None, Some("descriptionE1"), "michelineE1", "michelsonE1", PendingApproval)
-    val record2 = LibraryEntry(LibraryEntryId(UUID.fromString("17976f3a-505b-4d66-854a-243a70bb94c0")), "nameE2", Some("authorE2"), Some(EmailAddress.fromString("name@service.com").get), Some("descriptionE2"), "michelineE2", "michelsonE2", Accepted)
-    val record3 = LibraryEntry(LibraryEntryId(UUID.fromString("5d8face2-ab24-49e0-b792-a0b99a031645")), "nameE3", Some("authorE3"), None, Some("descriptionE3"), "michelineE3", "michelsonE3", Declined)
+    val record1 = LibraryEntry(LibraryEntryId(refineMV[Uuid]("d7327913-4957-4417-96d2-e5c1d4311f80")), "nameE1", Some("authorE1"), None, Some("descriptionE1"), "michelineE1", "michelsonE1", PendingApproval)
+    val record2 = LibraryEntry(LibraryEntryId(refineMV[Uuid]("17976f3a-505b-4d66-854a-243a70bb94c0")), "nameE2", Some("authorE2"), Some(EmailAddress.fromString("name@service.com").get), Some("descriptionE2"), "michelineE2", "michelsonE2", Accepted)
+    val record3 = LibraryEntry(LibraryEntryId(refineMV[Uuid]("5d8face2-ab24-49e0-b792-a0b99a031645")), "nameE3", Some("authorE3"), None, Some("descriptionE3"), "michelineE3", "michelsonE3", Declined)
 
     val toInsert = Seq(record1, record2, record3)
 

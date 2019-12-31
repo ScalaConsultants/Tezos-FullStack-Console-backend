@@ -15,7 +15,7 @@ import javax.mail.internet.MimeMessage
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, Matchers, WordSpecLike}
 import eu.timepit.refined.refineMV
-import io.scalac.tezos.translator.model.types.ContactData.{Content, Name, NameAndEmailReq, Phone, PhoneReq, RefinedEmailString}
+import io.scalac.tezos.translator.model.types.ContactData.{Content, EmailReq, EmailS, Name, NameReq, Phone, PhoneReq}
 
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContextExecutor, Future}
@@ -60,9 +60,9 @@ class EmailSenderSpec
     override def beforeEach(): Unit = greenMail.purgeEmailFromAllMailboxes()
 
     "Email sender" should {
-      val testName = Name(refineMV[NameAndEmailReq]("testName-tezostests"))
+      val testName = Name(refineMV[NameReq]("testName-tezostests"))
       val testPhone = Phone(refineMV[PhoneReq]("+79025680396"))
-      val testMail = RefinedEmailString(refineMV[NameAndEmailReq]("some-tezostests@service.com"))
+      val testMail = EmailS(refineMV[EmailReq]("some-tezostests@service.com"))
       val testContent = Content(refineMV[NonEmpty]("some content"))
 
       val newEmail2Send = SendEmail.fromSendEmailRoutesDto(SendEmailRoutesDto(testName, Some(testPhone), Some(testMail), testContent), adminEmail)
