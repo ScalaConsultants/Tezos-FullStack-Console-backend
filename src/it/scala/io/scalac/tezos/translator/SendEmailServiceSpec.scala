@@ -22,7 +22,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.concurrent.duration._
 import scala.util.Success
-
+import scala.language.postfixOps
 
 //noinspection TypeAnnotation
 class SendEmailServiceSpec
@@ -86,10 +86,9 @@ class SendEmailServiceSpec
   behavior of "SendEmailsService.sendSingleMail"
 
   it should "send an email" in {
-    val title = "translation title"
     val email = SendEmail.statusChange(unsafeEmailAddress("xxx@service.com"), Title(refineMV("translation title")), Accepted)
 
-    whenReady(emailSenderService.sendSingleMail(email)) { _ shouldBe () }
+    whenReady(emailSenderService.sendSingleMail(email)) { _ shouldBe(()) }
 
     val received = greenMail.getReceivedMessages
     received.length shouldBe 1
@@ -115,7 +114,7 @@ class SendEmailServiceSpec
   it should "send all emails from a queue" in new SampleEmails {
     whenReady(insert(email2SendService)) { _ shouldBe Seq(1, 1, 1) }
 
-    whenReady(emailSenderService.sendEmails) { _ shouldBe () }
+    whenReady(emailSenderService.sendEmails) { _ shouldBe(()) }
 
     val received: Map[String, MimeMessage] =
       greenMail.getReceivedMessages

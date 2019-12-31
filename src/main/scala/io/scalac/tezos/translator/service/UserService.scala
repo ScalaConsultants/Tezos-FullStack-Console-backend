@@ -57,6 +57,6 @@ class UserService(repository: UserRepository, db: Database)(implicit ec: Executi
       }
   }
 
-  def logout(token: UserToken): Unit = tokenToUser.remove(token)
+  def logout(token: UserToken): Option[Username] = tokenToUser.remove(token)
 
 }
