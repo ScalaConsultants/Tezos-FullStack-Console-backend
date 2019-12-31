@@ -2,6 +2,7 @@ package io.scalac.tezos.translator.schema
 
 import java.sql.Timestamp
 
+import io.scalac.tezos.translator.model.types.UUIDs.SendEmailId
 import io.scalac.tezos.translator.repository.dto.SendEmailDbDto
 import slick.jdbc.PostgresProfile.api._
 import slick.lifted.{ProvenShape, Tag}
@@ -15,7 +16,7 @@ object Emails2SendTable {
 
 class Emails2SendTable(tag: Tag) extends Table[SendEmailDbDto](tag, "emails2send") {
 
-  def uid: Rep[String] = column[String]("uid", NotNull, O.Unique, O.SqlType("VARCHAR(36)"))
+  def uid: Rep[SendEmailId] = column[SendEmailId]("uid", NotNull, O.Unique, O.SqlType("VARCHAR(36)"))
 
   def to: Rep[String] = column[String]("to", NotNull, O.SqlType("TEXT"))
 

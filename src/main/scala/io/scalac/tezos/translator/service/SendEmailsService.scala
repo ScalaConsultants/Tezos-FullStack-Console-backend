@@ -31,7 +31,7 @@ class SendEmailsServiceImpl(
   override def getEmailsToSend: Future[Seq[SendEmail]] = service.getEmails2Send(batchSize)
 
   override def sendSingleMail(sendEmailModel: SendEmail): Future[Unit] = {
-    val emailUid = sendEmailModel.uid.value
+    val emailUid = sendEmailModel.uid
     val addressTo = sendEmailModel.to.value
 
 
