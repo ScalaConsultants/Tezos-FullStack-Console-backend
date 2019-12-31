@@ -98,11 +98,17 @@ Content-Type: application/json
 ]
 ```
 
-##Run in docker
+## Run Dev-Env
 
-```sbt assembly```
+Make sure this script has execution permissions. Also for the application to be working one need to update `EMAIL_PASS` with a proper value (or provide other account for the service to use).
+```./run.sh $EMAIL_PASS```
 
-```docker-compose up```
+
+Alternatively only the DB container can be run with `docker-compose up -d tezos-console-db` and the application run with:
+```
+TEZOS_DB_IP="127.0.0.1" \
+sbt run
+```
 
 ## References
 

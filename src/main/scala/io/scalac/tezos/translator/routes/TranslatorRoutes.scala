@@ -1,41 +1,57 @@
 package io.scalac.tezos.translator.routes
 
-import akka.http.scaladsl.model.{ContentType, HttpEntity, HttpResponse, MediaTypes, StatusCodes}
-import io.scalac.tezos.translator.TranslationsService
-import io.scalac.tezos.translator.micheline.MichelineTranslator
-import io.scalac.tezos.translator.michelson.JsonToMichelson
-import io.scalac.tezos.translator.michelson.dto.MichelsonSchema
-import io.scalac.tezos.translator.model.Translation
+import akka.event.LoggingAdapter
+import akka.http.scaladsl.server.Route
+import cats.syntax.either._
+import io.scalac.tezos.translator.config.CaptchaConfig
+import io.scalac.tezos.translator.routes.TranslatorRoutes._
+import io.scalac.tezos.translator.routes.utils.Translator
+import sttp.model.StatusCode
+import sttp.tapir._
+import sttp.tapir.json.circe._
+import sttp.tapir.server.akkahttp._
+import scala.concurrent.{ExecutionContext, Future}
 
-class TranslatorRoutes(translationsService: TranslationsService) extends HttpRoutes {
+class TranslatorRoutes(
+  translator: Translator,
+  log: LoggingAdapter,
+  reCaptchaConfig: CaptchaConfig
+)(implicit ec: ExecutionContext) extends HttpRoutes {
 
-  override def routes =
-    pathPrefix("translate") {
-      path("from" / "michelson" / "to" / "micheline") {
-        post {
-          entity(as[String]) { body =>
-            MichelineTranslator.michelsonToMicheline(body).fold(
-              error => complete(StatusCodes.BadRequest, error.toString),
-              parsed => {
-                translationsService.addTranslation(Translation.FromMichelson, body, parsed)
-                complete(HttpResponse(entity = HttpEntity(ContentType(MediaTypes.`application/json`), parsed)))
-              }
-            )
-          }
-        }
-      } ~ path("from" / "micheline" / "to" / "michelson") {
-        post {
-          entity(as[String]) { body =>
-            JsonToMichelson.convert[MichelsonSchema](body).fold(
-              error => complete(StatusCodes.BadRequest, error.toString),
-              parsed => {
-                translationsService.addTranslation(Translation.FromMicheline, body, parsed)
-                complete(parsed)
-              }
-            )
-          }
-        }
-      }
-    }
+  override def routes: Route =
+    fromMichelsonEndpoint.toRoute(
+      body =>
+        Future(
+          translator
+            .michelson2micheline(body)
+            .leftMap(_ => (StatusCode.BadRequest, "invalid syntax"))
+        )
+    ) ~ fromMichelineEndpoint.toRoute(
+      body =>
+        Future(
+          translator
+            .micheline2michelson(body)
+            .leftMap(_ => (StatusCode.BadRequest, "input json cannot be parsed"))
+        )
+    )
 
+  override def docs: List[Endpoint[_, _, _, _]] = List(fromMichelsonEndpoint, fromMichelineEndpoint)
+
+}
+
+object TranslatorRoutes {
+  private val translationEndpoint: Endpoint[String, (StatusCode, String), String, Nothing] =
+    Endpoints
+      .baseEndpoint
+      .post
+      .in("translate")
+      .errorOut(statusCode.and(jsonBody[String]))
+      .in(stringBody)
+      .out(stringBody)
+
+  private val fromMichelsonEndpoint: Endpoint[String, (StatusCode, String), String, Nothing] =
+    translationEndpoint.in("from" / "michelson" / "to" / "micheline")
+
+  private val fromMichelineEndpoint: Endpoint[String, (StatusCode, String), String, Nothing] =
+    translationEndpoint.in("from" / "micheline" / "to" / "michelson")
 }

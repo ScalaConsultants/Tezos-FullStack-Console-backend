@@ -10,8 +10,9 @@ WORKDIR /opt/app
 
 RUN npm i nearley@2.16.0
 
+COPY ./wait-for-it.sh /usr/wait-for-it.sh
+RUN chmod +x /usr/wait-for-it.sh
+
 EXPOSE 8080
 
-COPY ./target/scala-2.12/console.jar ./
-
-CMD java -jar console.jar
+COPY ./target/scala-2.12/tezos-console.jar ./

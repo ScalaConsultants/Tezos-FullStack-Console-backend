@@ -1,8 +1,9 @@
 version: "3"
 services:
   console-service:
-    container_name: tezos-fullstack-console-backend
-    image: scalaconsultants/tezos-fullstack-console-backend:latest
+    container_name: tezos-fullstack-console-backend-dev
+    image: scalaconsultants/tezos-fullstack-console-backend-dev:latest
+    restart: always
     tty: true
     stdin_open: true
     ports:
@@ -10,3 +11,15 @@ services:
     environment:
       TEZOS_CONSOLE_HTTP_HOST: 0.0.0.0
       TEZOS_CONSOLE_HTTP_PORT: 8080
+      TEZOS_DB_IP: ${POSTGRES_HOST}
+      TEZOS_DB_NAME: ${POSTGRES_DB}
+      TEZOS_DB_USERNAME: ${POSTGRES_USER}
+      TEZOS_DB_PASSWORD: ${POSTGRES_PASSWORD}
+      EMAIL_USER: ${EMAIL_USER}
+      EMAIL_PASS: ${EMAIL_PASS}
+      EMAIL_RECEIVER: ${EMAIL_RECEIVER}
+      FE_URL: ${FE_URL}
+      RE_CAPTCHA_CHECK_ON: ${RE_CAPTCHA_CHECK_ON}
+      RE_CAPTCHA_SECRET: ${RE_CAPTCHA_SECRET}
+    command: ["java", "-jar", "tezos-console.jar"]
+
