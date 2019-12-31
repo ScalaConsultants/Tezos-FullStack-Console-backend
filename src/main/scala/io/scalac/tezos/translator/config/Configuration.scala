@@ -19,7 +19,7 @@ case class CaptchaConfig(
   checkOn: Boolean = false,
   url: String = "https://www.google.com/recaptcha/api/siteverify",
   secret: String = "??",
-  headerName: String = "Captcha"
+  headerName: String = "CAPTCHA"
 )
 
 case class EmailConfiguration(

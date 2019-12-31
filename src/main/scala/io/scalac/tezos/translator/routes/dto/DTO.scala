@@ -6,13 +6,11 @@ import io.circe._, io.circe.generic.semiauto._
 object DTO {
 
   case class CaptchaVerifyResponse(
-                                    success: Boolean,      // whether this request was a valid reCAPTCHA token for your site
-                                    score:  Int ,           // the score for this request (0.0 - 1.0)
-                                    action: String,            // the action name for this request (important to verify)
-                                    challenge_ts:  Option[DateTime],  // timestamp of the challenge load (ISO format yyyy-MM-dd'T'HH:mm:ssZZ)
-                                    hostname:      Option[String],   // the hostname of the site where the reCAPTCHA was solved
-                                    `error-codes`: Option[List[String]]    // optional
-  )
+                                    success:       Boolean, // whether this request was a valid reCAPTCHA token for your site
+                                    score: Option[Float],   // the score for this request (0.0 - 1.0)
+                                    hostname:      Option[String],  // the hostname of the site where the reCAPTCHA was solved
+                                    `error-codes`: Option[List[String]]
+                                  )
 
 
 

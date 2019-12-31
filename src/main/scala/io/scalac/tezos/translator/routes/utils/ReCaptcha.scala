@@ -77,7 +77,16 @@ object ReCaptcha {
           Left(Error("Can't do request to verify captcha"))
       }
   }
-
+  protected def checkScore(score:Option[Float]): Either[ErrorResponse, Unit] = {
+    score match {
+      case (Some(number)) =>
+    if (number > 0.35)
+    ().asRight
+    else
+    (Error ("You are bot"), StatusCode.Unauthorized).asLeft
+      case _ => (Error ("Empty Score"), StatusCode.Unauthorized).asLeft
+    }
+  }
   protected def checkVerifyResponse(response: HttpResponse,
                                     log: LoggingAdapter)
                                    (implicit am: ActorMaterializer,
@@ -94,15 +103,16 @@ object ReCaptcha {
 
     val unmarshalResult = Unmarshal(response).to[CaptchaVerifyResponse]
     unmarshalResult.map { value =>
-      if (value.success)
-        ().asRight
-      else
+      if (value.success) {
+        checkScore(value.score)
+      } else
         (Error("Invalid captcha"), StatusCode.Unauthorized).asLeft
     }.recover {
       case err =>
         log.error(s"Can't parse google reCaptcha response, err - $err")
-        (Error(response.toString()), StatusCode.InternalServerError).asLeft
+        (Error("Can't parse captcha response from google"), StatusCode.InternalServerError).asLeft
     }
+
   }
 
 }
