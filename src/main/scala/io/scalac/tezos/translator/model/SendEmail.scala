@@ -54,7 +54,7 @@ object SendEmail {
         content = ContactFormContent(
           name = dto.name,
           contact = contact,
-          content = dto.content.v.value
+          content = dto.content
         )
       ) {}
   }
