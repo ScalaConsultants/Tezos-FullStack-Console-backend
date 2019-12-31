@@ -43,7 +43,7 @@ object UUIDs {
 
   def generateSendEmailId: SendEmailId = generateUUID(SendEmailId.apply)
 
-  def decodeUuid(s: String): DecodeResult[UUIDString] = decodeFromStringWithRefine[UUIDString, Uuid](s, identity)
+  def decodeUuid(s: String): DecodeResult[UUIDString] = buildDecoderFromStringWithRefine[UUIDString, Uuid](s, identity)
 
   implicit val libraryEntryId: Schema[LibraryEntryId] =
     new Schema[LibraryEntryId](SchemaType.SString, false, "UUID of library entry".some)

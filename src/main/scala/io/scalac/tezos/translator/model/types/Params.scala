@@ -14,9 +14,9 @@ object Params {
   @newtype case class Offset(v: Int Refined Positive)
 
   implicit val limitStringCodec: Codec[Limit, TextPlain, String] = Codec.stringPlainCodecUtf8
-    .mapDecode(decodeWithPositiveInt[Limit](_, Limit.apply))(encodeToString(_))
+    .mapDecode(buildDecoderWithPositiveInt[Limit](_, Limit.apply))(encodeToString(_))
 
   implicit val offsetStringCodec: Codec[Offset, TextPlain, String] = Codec.stringPlainCodecUtf8
-    .mapDecode(decodeWithPositiveInt[Offset](_, Offset.apply))(encodeToString(_))
+    .mapDecode(buildDecoderWithPositiveInt[Offset](_, Offset.apply))(encodeToString(_))
 
 }

@@ -23,8 +23,11 @@ import eu.timepit.refined._
 import eu.timepit.refined.numeric.Positive
 import eu.timepit.refined.string.Uuid
 import Helper.adminCredentials
+import eu.timepit.refined.collection.NonEmpty
 import io.scalac.tezos.translator.model.types.ContactData.{EmailReq, EmailS}
+import io.scalac.tezos.translator.model.types.Library._
 import io.scalac.tezos.translator.model.types.Params.Limit
+import cats.syntax.option._
 import scala.collection.immutable
 import scala.concurrent.duration._
 import scala.concurrent.{Await, Future}
@@ -49,6 +52,13 @@ class LibrarySpec
   val dbUtilityConfig = DBUtilityConfiguration()
   val log: LoggingAdapter = system.log
 
+  val properTitle  = Title(refineMV[NotEmptyAndNotLong]("name"))
+  val properAuthor = Author(refineMV[NotEmptyAndNotLong]("ThomasTheTest")).some
+  val properEmail  = EmailAddress.fromString("name@service.com").toOption
+  val properDescription = Description(refineMV[NotEmptyAndNotLong]("Testing thing")).some
+  val properMicheline   = Micheline(refineMV[NonEmpty]("micheline"))
+  val properMichelson   = Michelson(refineMV[NonEmpty]("michelson"))
+
   val userService = new UserService(new UserRepository, testDb)
   val emails2SendRepo = new Emails2SendRepository
   val email2SendService = new Emails2SendService(emails2SendRepo, testDb)
@@ -62,12 +72,12 @@ class LibrarySpec
       i <- 1 to size
       dummyData = LibraryEntry(
         generateLibraryEntryId,
-        "name",
-        Option("ThomasTheTest"),
-        EmailAddress.fromString("name@service.com").toOption,
-        Option("Testing thing"),
-        "micheline",
-        "michelson",
+        properTitle,
+        properAuthor,
+        properEmail,
+        properDescription,
+        properMicheline,
+        properMichelson,
         status.getOrElse(Status.fromInt(i % 3).toOption.get))
     } yield libraryService.addNew(dummyData)
 
@@ -95,67 +105,60 @@ class LibrarySpec
 
   "Library routes" should {
 
-
-    "validate payload before storing" in {
-      val emptyPayload = LibraryEntryRoutesDto("", Some("asda"), None, Some("asd"), "", "")
-      val expectedErrors1 = List("title field is empty",
-        "micheline field is empty", "michelson field is empty")
-
-      checkValidationErrorsWithExpected(emptyPayload, expectedErrors1)
-
-      val toLongPayload = LibraryEntryRoutesDto(longField, Some(longField), None, None, "some", "some")
-      val expectedErrors2 = List("field title is too long, max length - 255", "field author is too long, max length - 255")
-
-      checkValidationErrorsWithExpected(toLongPayload, expectedErrors2)
-    }
-
     "store proper payload" should {
       "full filed payload " in {
-        val properPayload = LibraryEntryRoutesDto("vss", Some("Mike"), None, Some("Some thing for some things"), "micheline", "michelson") // with all of some as none return 500
+        val titleForFilter  = Title(refineMV[NotEmptyAndNotLong]("vss"))
+        val testAuthor      = Author(refineMV[NotEmptyAndNotLong]("Mike")).some
+        val testDescription = Description(refineMV[NotEmptyAndNotLong]("Some thing for some things")).some
+
+        val properPayload = LibraryEntryRoutesDto(titleForFilter, testAuthor, None, testDescription, properMicheline, properMichelson) // with all of some as none return 500
         Post(libraryEndpoint, properPayload) ~> Route.seal(libraryRoute) ~> check {
           status shouldBe StatusCodes.OK
         }
 
-        val dbRequest: Future[Seq[LibraryEntryDbDto]] = testDb.run(LibraryTable.library.filter(_.name === "vss").result)
+        val dbRequest: Future[Seq[LibraryEntryDbDto]] = testDb.run(LibraryTable.library.filter(_.title === titleForFilter).result)
         val currentLibrary: Seq[LibraryEntryDbDto] = Await.result(dbRequest, 1 second)
 
         currentLibrary.headOption.isEmpty shouldBe false
         val addedRecord: LibraryEntryDbDto = currentLibrary.head
-        addedRecord.title shouldBe "vss"
-        addedRecord.author.get shouldBe "Mike"
-        addedRecord.description.get shouldBe "Some thing for some things"
-        addedRecord.micheline shouldBe "micheline"
-        addedRecord.michelson shouldBe "michelson"
+        addedRecord.title.toString shouldBe "vss"
+        addedRecord.author.get.toString shouldBe "Mike"
+        addedRecord.description.get.toString shouldBe "Some thing for some things"
+        addedRecord.micheline.toString shouldBe "micheline"
+        addedRecord.michelson.toString shouldBe "michelson"
       }
       "payload without options" in {
-        val properPayload = LibraryEntryRoutesDto("vss", None, None, None, "micheline", "michelson")
+        val titleForFilter = Title(refineMV[NotEmptyAndNotLong]("vss"))
+        val properPayload  = LibraryEntryRoutesDto(titleForFilter, None, None, None, properMicheline, properMichelson)
         Post(libraryEndpoint, properPayload) ~> Route.seal(libraryRoute) ~> check {
           status shouldBe StatusCodes.OK
         }
-        val dbRequest: Future[Seq[LibraryEntryDbDto]] = testDb.run(LibraryTable.library.filter(_.name === "vss").result)
+        val dbRequest: Future[Seq[LibraryEntryDbDto]] = testDb.run(LibraryTable.library.filter(_.title === titleForFilter).result)
         val currentLibrary: Seq[LibraryEntryDbDto] = Await.result(dbRequest, 1 second)
 
         currentLibrary.headOption.isEmpty shouldBe false
         val addedRecord: LibraryEntryDbDto = currentLibrary.head
-        addedRecord.title shouldBe "vss"
-        addedRecord.micheline shouldBe "micheline"
-        addedRecord.michelson shouldBe "michelson"
+        addedRecord.title.toString shouldBe "vss"
+        addedRecord.micheline.toString shouldBe "micheline"
+        addedRecord.michelson.toString shouldBe "michelson"
       }
       "payload with UpperCased Email make lower " in {
-        val properPayload = LibraryEntryRoutesDto("vss", None, Some(EmailS(refineMV[EmailReq]("Aeaaast@service.pl"))), Some("Some thing for some things"), "micheline", "michelson")
+        val titleForFilter  = Title(refineMV[NotEmptyAndNotLong]("vss"))
+        val testDescription = Description(refineMV[NotEmptyAndNotLong]("Some thing for some things")).some
+        val properPayload   = LibraryEntryRoutesDto(titleForFilter, None, Some(EmailS(refineMV[EmailReq]("Aeaaast@service.pl"))), testDescription, properMicheline, properMichelson)
         Post(libraryEndpoint, properPayload) ~> Route.seal(libraryRoute) ~> check {
           status shouldBe StatusCodes.OK
         }
-        val dbRequest: Future[Seq[LibraryEntryDbDto]] = testDb.run(LibraryTable.library.filter(_.name === "vss").result)
+        val dbRequest: Future[Seq[LibraryEntryDbDto]] = testDb.run(LibraryTable.library.filter(_.title === titleForFilter).result)
         val currentLibrary: Seq[LibraryEntryDbDto] = Await.result(dbRequest, 1 second)
 
         currentLibrary.headOption.isEmpty shouldBe false
         val addedRecord: LibraryEntryDbDto = currentLibrary.head
-        addedRecord.title shouldBe "vss"
-        addedRecord.email.get shouldBe "aeaaast@service.pl"
-        addedRecord.description.get shouldBe "Some thing for some things"
-        addedRecord.micheline shouldBe "micheline"
-        addedRecord.michelson shouldBe "michelson"
+        addedRecord.title.toString shouldBe "vss"
+        addedRecord.email.get.toString shouldBe "aeaaast@service.pl"
+        addedRecord.description.get.toString shouldBe "Some thing for some things"
+        addedRecord.micheline.toString shouldBe "micheline"
+        addedRecord.michelson.toString shouldBe "michelson"
       }
     }
     "add emails to queue when new library entry added and status changed" in {
@@ -163,7 +166,13 @@ class LibrarySpec
         _ shouldBe 'empty
       }
       val userEmail = EmailS(refineMV[EmailReq]("name@service.com"))
-      val record = LibraryEntryRoutesDto("name", Some("Author"), Some(userEmail), Some("description"), "micheline", "michelson")
+      val record = LibraryEntryRoutesDto(
+        Title(refineMV[NotEmptyAndNotLong]("name")),
+        Author(refineMV[NotEmptyAndNotLong]("Author")).some,
+        Some(userEmail),
+        Description(refineMV[NotEmptyAndNotLong]("description")).some,
+        properMicheline,
+        properMichelson)
       Post(libraryEndpoint, record) ~> Route.seal(libraryRoute) ~> check {
         status shouldBe StatusCodes.OK
       }
@@ -178,7 +187,13 @@ class LibrarySpec
     }
 
     // it was the only one accepted
-    val expectedRecord2 = LibraryEntryRoutesDto("nameE2", Some("authorE2"), Some(EmailS(refineMV[EmailReq]("name@service.com"))), Some("descriptionE2"), "michelineE2", "michelsonE2")
+    val expectedRecord2 = LibraryEntryRoutesDto(
+      Title(refineMV[NotEmptyAndNotLong]("nameE2")),
+      Author(refineMV[NotEmptyAndNotLong]("authorE2")).some,
+      Some(EmailS(refineMV[EmailReq]("name@service.com"))),
+      Description(refineMV[NotEmptyAndNotLong]("descriptionE2")).some,
+      Micheline(refineMV[NonEmpty]("michelineE2")),
+      Michelson(refineMV[NonEmpty]("michelsonE2")))
 
     whenReady(libraryService.getRecords()) {
       _ should contain theSameElementsAs toInsert
@@ -220,7 +235,13 @@ class LibrarySpec
       _ should contain theSameElementsAs Seq(1, 1, 1)
     }
 
-    val expectedRecord2 = LibraryEntryRoutesDto("nameE2", Some("authorE2"), Some(EmailS(refineMV[EmailReq]("name@service.com"))), Some("descriptionE2"), "michelineE2", "michelsonE2")
+    val expectedRecord2 = LibraryEntryRoutesDto(
+      Title(refineMV[NotEmptyAndNotLong]("nameE2")),
+      Author(refineMV[NotEmptyAndNotLong]("authorE2")).some,
+      Some(EmailS(refineMV[EmailReq]("name@service.com"))),
+      Description(refineMV[NotEmptyAndNotLong]("descriptionE2")).some,
+      Micheline(refineMV[NonEmpty]("michelineE2")),
+      Michelson(refineMV[NonEmpty]("michelsonE2")))
 
     Get(libraryEndpoint) ~> libraryRoute ~> check {
       status shouldBe StatusCodes.OK
@@ -259,7 +280,13 @@ class LibrarySpec
       _ should contain theSameElementsAs expectedNewStatuses
     }
 
-    val expectedRecord1 = LibraryEntryRoutesDto("nameE1", Some("authorE1"), None, Some("descriptionE1"), "michelineE1", "michelsonE1")
+    val expectedRecord1 = LibraryEntryRoutesDto(
+      Title(refineMV[NotEmptyAndNotLong]("nameE1")),
+      Author(refineMV[NotEmptyAndNotLong]("authorE1")).some,
+      None,
+      Description(refineMV[NotEmptyAndNotLong]("descriptionE1")).some,
+      Micheline(refineMV[NonEmpty]("michelineE1")),
+      Michelson(refineMV[NonEmpty]("michelsonE1")))
 
     Get(libraryEndpoint) ~> libraryRoute ~> check {
       status shouldBe StatusCodes.OK
@@ -273,7 +300,13 @@ class LibrarySpec
       _ should contain theSameElementsAs Seq(1, 1, 1)
     }
 
-    val expectedRecord2 = LibraryEntryRoutesDto("nameE2", Some("authorE2"), Some(EmailS(refineMV[EmailReq]("name@service.com"))), Some("descriptionE2"), "michelineE2", "michelsonE2")
+    val expectedRecord2 = LibraryEntryRoutesDto(
+      Title(refineMV[NotEmptyAndNotLong]("nameE2")),
+      Author(refineMV[NotEmptyAndNotLong]("authorE2")).some,
+      Some(EmailS(refineMV[EmailReq]("name@service.com"))),
+      Description(refineMV[NotEmptyAndNotLong]("descriptionE2")).some,
+      Micheline(refineMV[NonEmpty]("michelineE2")),
+      Michelson(refineMV[NonEmpty]("michelsonE2")))
 
     Get(libraryEndpoint) ~> libraryRoute ~> check {
       status shouldBe StatusCodes.OK
@@ -355,9 +388,15 @@ class LibrarySpec
     }
 
     val userEmail = EmailS(refineMV[EmailReq]("name@service.com"))
-    val userDescription = "name@service.com"
-    val userName = "name@service.com"
-    val record = LibraryEntryRoutesDto("name", Some(userName), Some(userEmail), Some(userDescription), "micheline", "michelson")
+    val userDescription = Description(refineMV[NotEmptyAndNotLong]("name@service.com"))
+    val userName = Author(refineMV[NotEmptyAndNotLong]("name@service.com"))
+    val record = LibraryEntryRoutesDto(
+      Title(refineMV[NotEmptyAndNotLong]("name")),
+      Some(userName),
+      Some(userEmail),
+      Some(userDescription),
+      Micheline(refineMV[NonEmpty]("micheline")),
+      Michelson(refineMV[NonEmpty]("michelson")))
 
 
     Post(libraryEndpoint, record) ~> Route.seal(libraryRoute) ~> check {
@@ -420,9 +459,33 @@ class LibrarySpec
 
 
   private trait SampleEntries {
-    val record1 = LibraryEntry(LibraryEntryId(refineMV[Uuid]("d7327913-4957-4417-96d2-e5c1d4311f80")), "nameE1", Some("authorE1"), None, Some("descriptionE1"), "michelineE1", "michelsonE1", PendingApproval)
-    val record2 = LibraryEntry(LibraryEntryId(refineMV[Uuid]("17976f3a-505b-4d66-854a-243a70bb94c0")), "nameE2", Some("authorE2"), Some(EmailAddress.fromString("name@service.com").get), Some("descriptionE2"), "michelineE2", "michelsonE2", Accepted)
-    val record3 = LibraryEntry(LibraryEntryId(refineMV[Uuid]("5d8face2-ab24-49e0-b792-a0b99a031645")), "nameE3", Some("authorE3"), None, Some("descriptionE3"), "michelineE3", "michelsonE3", Declined)
+    val record1 = LibraryEntry(
+      LibraryEntryId(refineMV[Uuid]("d7327913-4957-4417-96d2-e5c1d4311f80")),
+      Title(refineMV[NotEmptyAndNotLong]("nameE1")),
+      Author(refineMV[NotEmptyAndNotLong]("authorE1")).some,
+      None,
+      Description(refineMV[NotEmptyAndNotLong]("descriptionE1")).some,
+      Micheline(refineMV[NonEmpty]("michelineE1")),
+      Michelson(refineMV[NonEmpty]("michelsonE1")),
+      PendingApproval)
+    val record2 = LibraryEntry(
+      LibraryEntryId(refineMV[Uuid]("17976f3a-505b-4d66-854a-243a70bb94c0")),
+      Title(refineMV[NotEmptyAndNotLong]("nameE2")),
+      Author(refineMV[NotEmptyAndNotLong]("authorE2")).some,
+      Some(EmailAddress.fromString("name@service.com").get),
+      Description(refineMV[NotEmptyAndNotLong]("descriptionE2")).some,
+      Micheline(refineMV[NonEmpty]("michelineE2")),
+      Michelson(refineMV[NonEmpty]("michelsonE2")),
+      Accepted)
+    val record3 = LibraryEntry(
+      LibraryEntryId(refineMV[Uuid]("5d8face2-ab24-49e0-b792-a0b99a031645")),
+      Title(refineMV[NotEmptyAndNotLong]("nameE3")),
+      Author(refineMV[NotEmptyAndNotLong]("authorE3")).some,
+      None,
+      Description(refineMV[NotEmptyAndNotLong]("descriptionE3")).some,
+      Micheline(refineMV[NonEmpty]("michelineE3")),
+      Michelson(refineMV[NonEmpty]("michelsonE3")),
+      Declined)
 
     val toInsert = Seq(record1, record2, record3)
 

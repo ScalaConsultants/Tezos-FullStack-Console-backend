@@ -1,6 +1,6 @@
 package io.scalac.tezos.translator.model.types
 
-import eu.timepit.refined.W
+import eu.timepit.refined.{W, refineV}
 import eu.timepit.refined.api.Refined
 import eu.timepit.refined.boolean.{And, Not}
 import eu.timepit.refined.collection.{NonEmpty, Size}
@@ -8,7 +8,10 @@ import eu.timepit.refined.numeric.Greater
 import eu.timepit.refined.string.MatchesRegex
 import io.circe.{Decoder, Encoder}
 import io.estatico.newtype.macros.newtype
+import io.scalac.tezos.translator.model.EmailAddress
 import io.scalac.tezos.translator.model.types.Util._
+import slick.ast.BaseTypedType
+import slick.jdbc.JdbcType
 import sttp.tapir.{Schema, SchemaType}
 
 object ContactData {
@@ -47,5 +50,14 @@ object ContactData {
   implicit val phoneSchema: Schema[Phone] = new Schema[Phone](SchemaType.SString, true)
   implicit val refinedEmailSchema: Schema[EmailS] = new Schema[EmailS](SchemaType.SString, true)
   implicit val contentSchema: Schema[Content] = new Schema[Content](SchemaType.SString, false)
+
+  implicit val emailSMapper: JdbcType[EmailS] with BaseTypedType[EmailS] = buildRefinedStringMapper(EmailS.apply)
+
+  protected def emailRefinedFromMail(email: EmailAddress): Option[EmailS] =
+    refineV[EmailReq](email.toString).map(EmailS.apply).toOption
+
+  implicit class MaybeEmailAddressOps(val maybeAddress: Option[EmailAddress]) extends AnyVal {
+    def toEmailS: Option[EmailS] = maybeAddress.flatMap(emailRefinedFromMail)
+  }
 
 }

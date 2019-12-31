@@ -1,6 +1,7 @@
 package io.scalac.tezos.translator.model
 
 import io.scalac.tezos.translator.model.LibraryEntry.Status
+import io.scalac.tezos.translator.model.types.Library.Title
 import io.scalac.tezos.translator.model.types.UUIDs.SendEmailId
 import io.scalac.tezos.translator.model.types.UUIDs.generateSendEmailId
 import io.scalac.tezos.translator.repository.dto.SendEmailDbDto
@@ -30,7 +31,7 @@ object SendEmail {
     new SendEmail(uid, adminEmail, subject, message) {}
   }
 
-  def statusChange(emailAddress: EmailAddress, title: String, newStatus: Status): SendEmail = {
+  def statusChange(emailAddress: EmailAddress, title: Title, newStatus: Status): SendEmail = {
     val uid = generateSendEmailId
     val subject = "Acceptance status of your Translation has changed"
     val message = TextContent(s"""Acceptance status of your translation: "$title" has changed to: $newStatus""")

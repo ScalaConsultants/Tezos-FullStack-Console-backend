@@ -1,11 +1,13 @@
 package io.scalac.tezos.translator.routes.dto
 
 import cats.data.NonEmptyList
+import cats.syntax.option._
 import eu.timepit.refined.collection.NonEmpty
 import io.scalac.tezos.translator.model.types.ContactData.{Content, EmailReq, EmailS, Name, NameReq, Phone, PhoneReq}
-import io.scalac.tezos.translator.routes.dto.DTOValidation.{DTOValidationError, FieldIsEmpty, FieldIsInvalid}
+import io.scalac.tezos.translator.routes.dto.DTOValidation.{DTOValidationError, FieldIsInvalid}
 import org.scalatest.{Matchers, WordSpec}
 import eu.timepit.refined.refineMV
+import io.scalac.tezos.translator.model.types.Library._
 
 class DTOValidationSpec extends WordSpec with Matchers {
 
@@ -62,12 +64,6 @@ class DTOValidationSpec extends WordSpec with Matchers {
         DTOValidation.validateLibraryEntryRoutesDto(input) shouldBe Right(input)
       }
 
-      "author is an empty string" in {
-        val input = validLibraryEntryRoutesDto(author = Some(""))
-
-        DTOValidation.validateLibraryEntryRoutesDto(input) shouldBe Right(input.copy(author = None))
-      }
-
       "email is not given" in {
         val input = validLibraryEntryRoutesDto(email = None)
 
@@ -112,39 +108,6 @@ class DTOValidationSpec extends WordSpec with Matchers {
 
     }
 
-    "not pass validation" when {
-      "all fields are empty" in {
-        val input = LibraryEntryRoutesDto(
-          title = "",
-          author = None,
-          email = None,
-          description = None,
-          micheline = "",
-          michelson = ""
-        )
-
-        DTOValidation.validateLibraryEntryRoutesDto(input) shouldBe
-          validationError(FieldIsEmpty("title"), FieldIsEmpty("micheline"), FieldIsEmpty("michelson"))
-      }
-
-      "title is empty" in {
-        val input = validLibraryEntryRoutesDto(title = "")
-
-        DTOValidation.validateLibraryEntryRoutesDto(input) shouldBe validationError(FieldIsEmpty("title"))
-      }
-
-      "micheline is empty" in {
-        val input = validLibraryEntryRoutesDto(micheline = "")
-
-        DTOValidation.validateLibraryEntryRoutesDto(input) shouldBe validationError(FieldIsEmpty("micheline"))
-      }
-
-      "michelson is empty" in {
-        val input = validLibraryEntryRoutesDto(michelson = "")
-
-        DTOValidation.validateLibraryEntryRoutesDto(input) shouldBe validationError(FieldIsEmpty("michelson"))
-      }
-    }
   }
 
   private def validationError(errors: DTOValidationError*) = Left(NonEmptyList.fromListUnsafe(errors.toList))
@@ -157,12 +120,12 @@ class DTOValidationSpec extends WordSpec with Matchers {
   ): SendEmailRoutesDto = SendEmailRoutesDto(name, phone, email, content)
 
   private def validLibraryEntryRoutesDto(
-                                          title: String = "title",
-                                          author: Option[String] = Some("author"),
+                                          title: Title = Title(refineMV[NotEmptyAndNotLong]("title")),
+                                          author: Option[Author] = Author(refineMV[NotEmptyAndNotLong]("author")).some,
                                           email: Option[EmailS] = Some(EmailS(refineMV[EmailReq]("email@email.com"))),
-                                          description: Option[String] = Some("description"),
-                                          micheline: String = "micheline",
-                                          michelson: String = "michelson"
+                                          description: Option[Description] = Description(refineMV[NotEmptyAndNotLong]("description")).some,
+                                          micheline: Micheline = Micheline(refineMV[NonEmpty]("micheline")),
+                                          michelson: Michelson = Michelson(refineMV[NonEmpty]("michelson"))
   ): LibraryEntryRoutesDto = LibraryEntryRoutesDto(title, author, email, description, micheline, michelson)
 
 }

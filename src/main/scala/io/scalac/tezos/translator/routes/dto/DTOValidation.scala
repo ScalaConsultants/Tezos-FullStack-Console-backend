@@ -101,20 +101,11 @@ object DTOValidation {
         ().asRight
       }
 
-    val v = checkEmail.map(maybeEmail => SendEmailRoutesDto(dto.name, dto.phone, maybeEmail, dto.content))
+    val v = checkEmail.map(maybeEmail => dto.copy(email = maybeEmail))
 
     (phoneEmailNonEmptyCheck, v).parMapN((_, dto) => dto)
 
   }
-
-  private def checkOptionalString(
-    maybeStr: Option[String],
-    validate: String => ValidationResult[String]
-  ): ValidationResult[Option[String]] =
-    maybeStr match {
-      case Some(v) if v.nonEmpty => validate(v).map(Some(_))
-      case _ => Right(None)
-    }
 
   private def checkEmailIsValid(email: EmailS): ValidationResult[EmailS] =
     EmailAddress
@@ -128,30 +119,13 @@ object DTOValidation {
         }
       )
 
-  private def checkAuthorIsValid(value: String, name: String = "author"): ValidationResult[String] = {
-    checkStringNotEmptyAndLength(value, maxTinyLength, FieldIsEmpty(name), FieldToLong(name, maxTinyLength))
-  }
-  private def checkDescriptionsValid(value: String, name: String= "description"): ValidationResult[String] = {
-    checkStringNotEmptyAndLength(value, maxTinyLength, FieldIsEmpty(name), FieldToLong(name, maxTinyLength))
-  }
-
   implicit val LibraryDTOValidation: DTOValidation[LibraryEntryRoutesDto] = { dto => validateLibraryEntryRoutesDto(dto) }
 
   def validateLibraryEntryRoutesDto: LibraryEntryRoutesDto => ValidationResult[LibraryEntryRoutesDto] = { dto =>
-    val checkTitle =
-      checkStringNotEmptyAndLength(dto.title, maxTinyLength, FieldIsEmpty("title"), FieldToLong("title", maxTinyLength))
-    val checkAuthor =
-      checkOptionalString(dto.author, a => checkAuthorIsValid(a))
     val checkEmail: Either[NonEmptyList[DTOValidationError], Option[EmailS]] =
       dto.email.traverse(checkEmailIsValid)
-    val checkDescription =
-      checkOptionalString(dto.description, d => checkDescriptionsValid(d))
-    val checkMicheline =
-      checkStringNotEmpty(dto.micheline, FieldIsEmpty("micheline"))
-    val checkMichelson =
-      checkStringNotEmpty(dto.michelson, FieldIsEmpty("michelson"))
 
-    (checkTitle, checkAuthor, checkEmail, checkDescription, checkMicheline, checkMichelson).parMapN(LibraryEntryRoutesDto.apply)
+    checkEmail.map(maybeEmail => dto.copy(email = maybeEmail))
   }
 
 }

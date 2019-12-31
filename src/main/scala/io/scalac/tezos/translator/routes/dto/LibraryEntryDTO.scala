@@ -4,11 +4,12 @@ import io.circe.{Decoder, Encoder}
 import io.circe.generic.semiauto.deriveEncoder
 import io.circe.generic.semiauto.deriveDecoder
 import io.scalac.tezos.translator.model.LibraryEntry.PendingApproval
-import io.scalac.tezos.translator.model.types.ContactData.{EmailReq, EmailS}
+import io.scalac.tezos.translator.model.types.ContactData.EmailS
+import io.scalac.tezos.translator.model.types.ContactData.MaybeEmailAddressOps
 import io.scalac.tezos.translator.model.types.UUIDs._
 import io.scalac.tezos.translator.model.{EmailAddress, LibraryEntry}
-import eu.timepit.refined.refineV
 import scala.util.{Success, Try}
+import io.scalac.tezos.translator.model.types.Library._
 
 sealed trait LibraryEntryDTO
 
@@ -25,12 +26,12 @@ object LibraryEntryDTO {
 
 case class LibraryEntryRoutesAdminDto(
                                        uid: LibraryEntryId,
-                                       title: String,
-                                       author: Option[String],
-                                       email: Option[String],
-                                       description: Option[String],
-                                       micheline: String,
-                                       michelson: String,
+                                       title: Title,
+                                       author: Option[Author],
+                                       email: Option[EmailS],
+                                       description: Option[Description],
+                                       micheline: Micheline,
+                                       michelson: Michelson,
                                        status: String,
                                      ) extends LibraryEntryDTO
 
@@ -39,9 +40,9 @@ object LibraryEntryRoutesAdminDto {
     LibraryEntryRoutesAdminDto(
       uid = v.uid,
       title = v.title,
-      author = v.author.map(_.toString),
-      email = v.email.map(_.toString),
-      description = v.description.map(_.toString),
+      author = v.author,
+      email = v.email.toEmailS,
+      description = v.description,
       micheline = v.micheline,
       michelson = v.michelson,
       status = v.status.toString
@@ -57,12 +58,12 @@ object LibraryEntryRoutesAdminDto {
 }
 
 case class LibraryEntryRoutesDto(
-                                  title: String,
-                                  author: Option[String],
+                                  title: Title,
+                                  author: Option[Author],
                                   email: Option[EmailS],
-                                  description: Option[String],
-                                  micheline: String,
-                                  michelson: String
+                                  description: Option[Description],
+                                  micheline: Micheline,
+                                  michelson: Michelson
                                 ) extends LibraryEntryDTO {
   def toDomain: Try[LibraryEntry] = {
 
@@ -92,14 +93,11 @@ object LibraryEntryRoutesDto {
     LibraryEntryRoutesDto(
       title = v.title,
       author = v.author,
-      email = v.email.flatMap(emailRefinedFromMail),
+      email = v.email.toEmailS,
       description = v.description,
       micheline = v.micheline,
       michelson = v.michelson
     )
-
-  private def emailRefinedFromMail(email: EmailAddress): Option[EmailS] =
-    refineV[EmailReq](email.toString).map(EmailS.apply).toOption
 
   implicit val libraryEntryRoutesDtoEncoder: Encoder[LibraryEntryRoutesDto] =
     deriveEncoder[LibraryEntryRoutesDto]

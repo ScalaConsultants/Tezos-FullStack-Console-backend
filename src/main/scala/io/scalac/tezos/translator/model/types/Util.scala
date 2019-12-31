@@ -16,7 +16,8 @@ import scala.util.{Failure, Success, Try}
 
 object Util {
 
-  private[types] def decodeWithPositiveInt[T](s: String, build: Int Refined Positive => T): DecodeResult[T] = Try(s.toInt) match {
+  private[types] def buildDecoderWithPositiveInt[T](s: String,
+                                                    build: Int Refined Positive => T): DecodeResult[T] = Try(s.toInt) match {
     case Success(v) =>
       refineV[Positive](v) match {
         case Left(_)      => DecodeResult.Mismatch("Positive int", s)
@@ -25,9 +26,9 @@ object Util {
     case Failure(f) => DecodeResult.Error(s, f)
   }
 
-  private[types] def decodeFromStringWithRefine[T, Req](s: String,
-                                                        build: Refined[String, Req] => T)
-                                                       (implicit v: Validate[String, Req]): DecodeResult[T] =
+  private[types] def buildDecoderFromStringWithRefine[T, Req](s: String,
+                                                              build: Refined[String, Req] => T)
+                                                             (implicit v: Validate[String, Req]): DecodeResult[T] =
     refineV[Req](s) match {
       case Left(error)  => DecodeResult.Mismatch(error, s)
       case Right(value) => DecodeResult.Value(build(value))
@@ -44,6 +45,10 @@ object Util {
     }
 
   private[types] def buildToStringEncoder[T]: Encoder[T] = (a: T) => a.toString.asJson
+
+  private[types] def buildRefinedStringMapper[T: ClassTag, Req](build: Refined[String, Req] => T)
+                                                               (implicit v: Validate[String, Req]): JdbcType[T] with BaseTypedType[T] =
+    MappedColumnType.base[T, String](s => s.toString, s => build(refineV[Req](s).toOption.get))
 
   private[types] def refinedMapper2String[T: ClassTag, Req](build: Refined[String, Req] => T)
                                                            (implicit v: Validate[String, Req]): JdbcType[T] with BaseTypedType[T] =

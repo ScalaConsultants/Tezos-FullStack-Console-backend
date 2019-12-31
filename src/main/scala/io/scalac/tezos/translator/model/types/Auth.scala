@@ -38,10 +38,10 @@ object Auth {
   @newtype case class Username(v: String Refined UsernameReq)
 
   def decodeAuthHeader(s: String): DecodeResult[AuthBearerHeader] =
-    decodeFromStringWithRefine[AuthBearerHeader, AuthBearerHeaderEntryReq](s, AuthBearerHeader.apply)
+    buildDecoderFromStringWithRefine[AuthBearerHeader, AuthBearerHeaderEntryReq](s, AuthBearerHeader.apply)
 
   def decodeCaptchaHeader(s: String): DecodeResult[Captcha] =
-    decodeFromStringWithRefine[Captcha, NonEmpty](s, Captcha.apply)
+    buildDecoderFromStringWithRefine[Captcha, NonEmpty](s, Captcha.apply)
 
   def decodeTokenCodec(s: String): DecodeResult[UserToken] =
     decodeAuthHeader(s) match {
