@@ -1,9 +1,6 @@
 package io.scalac.tezos.translator.model
 
-import io.circe.{Decoder, Encoder}
-import  io.circe.generic.auto._
 import scala.util.{Failure, Success, Try}
-import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport._
 import io.scalac.tezos.translator.model.types.ContactData.Phone
 sealed trait Contact extends Product with Serializable
 

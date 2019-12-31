@@ -9,7 +9,9 @@ import scala.concurrent.{ExecutionContext, ExecutionContextExecutor}
 
 class EmailSender(service: SendEmailsService)(implicit ec: ExecutionContext) extends Actor {
   override def receive: Receive = {
-    case SendEmails => service.sendEmails
+    case SendEmails =>
+      service.sendEmails
+      ()
   }
 }
 

@@ -1,7 +1,5 @@
 package io.scalac.tezos.translator.routes
 
-import akka.actor.ActorSystem
-import akka.event.LoggingAdapter
 import akka.http.scaladsl.server.Route
 import io.scalac.tezos.translator.model.UserCredentials
 import io.scalac.tezos.translator.model.types.Auth.UserToken
@@ -17,7 +15,7 @@ import sttp.tapir.json.circe._
 import sttp.tapir.server.akkahttp._
 import scala.concurrent.{ExecutionContext, Future}
 
-class LoginRoutes(userService: UserService, log: LoggingAdapter)(implicit as: ActorSystem, ec: ExecutionContext) extends HttpRoutes {
+class LoginRoutes(userService: UserService)(implicit ec: ExecutionContext) extends HttpRoutes {
 
   val loginEndpoint: Endpoint[UserCredentials, ErrorResponse, String, Nothing] =
     Endpoints
@@ -40,7 +38,10 @@ class LoginRoutes(userService: UserService, log: LoggingAdapter)(implicit as: Ac
   }
 
   def logoutLogic(token: UserToken): Future[Either[ErrorResponse, Unit]] =
-    userService.authenticate(token).map(_.map { uData => userService.logout(uData.token) })
+    userService.authenticate(token).map(_.map { uData =>
+      userService.logout(uData.token)
+      ()
+    })
 
   val logoutEndpoint: Endpoint[String, ErrorResponse, Unit, Nothing] =
     Endpoints

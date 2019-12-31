@@ -5,9 +5,7 @@ import io.scalac.tezos.translator.repository.dto.SendEmailDbDto
 import io.scalac.tezos.translator.schema.Emails2SendTable
 import slick.jdbc.PostgresProfile.api._
 
-import scala.concurrent.ExecutionContext
-
-class Emails2SendRepository(implicit ec: ExecutionContext) {
+class Emails2SendRepository() {
 
   protected val emails2Send = Emails2SendTable.emails2Send
 

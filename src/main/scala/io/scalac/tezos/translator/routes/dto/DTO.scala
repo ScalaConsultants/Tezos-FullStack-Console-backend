@@ -1,13 +1,11 @@
 package io.scalac.tezos.translator.routes.dto
 
-import org.joda.time.DateTime
 import io.circe._, io.circe.generic.semiauto._
 
 object DTO {
 
   case class CaptchaVerifyResponse(
                                     success:       Boolean,
-                                    challenge_ts:  Option[DateTime],
                                     hostname:      Option[String],
                                     `error-codes`: Option[List[String]]
                                   )
