@@ -52,7 +52,7 @@ object SendEmail {
         to = adminEmail,
         subject = "Contact request",
         content = ContactFormContent(
-          name = dto.name.v.value,
+          name = dto.name,
           contact = contact,
           content = dto.content.v.value
         )

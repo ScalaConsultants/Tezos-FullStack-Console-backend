@@ -95,9 +95,9 @@ class MessageSpec
 
         val content = sendEmailModel.content.asInstanceOf[ContactFormContent]
 
-        content.name shouldBe "name"
+        content.name.toString shouldBe "name"
         content.contact shouldBe FullContact(Phone(refineMV[PhoneReq]("+77072123434")),  EmailAddress.fromString("email@gmail.com").get)
-        content.content shouldBe "I wanna pizza"
+        content.content.toString shouldBe "I wanna pizza"
       }
     }
 }
