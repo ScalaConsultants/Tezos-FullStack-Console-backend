@@ -6,14 +6,16 @@ object Version {
   val akkaHttpCors            = "0.4.1"
   val akkaStream              = "2.5.26"
   val akkaHttpCirce           = "1.29.1"
-  val circeVersion            = "0.11.1"
+  val circe                   = "0.12.3"
   val cats                    = "2.0.0"
   val courier                 = "2.0.0"
   val greenMail               = "1.5.11"
   val jodaTime                = "2.10.4"
+  val newtype                 = "0.4.3"
   val logback                 = "1.2.3"
   val postgres                = "42.2.8"
   val pureConfig              = "0.12.1"
+  val refined                 = "0.9.10"
   val scalactic               = "3.0.5"
   val scalaTest               = "3.0.5"
   val sl4j                    = "1.7.26"
@@ -38,9 +40,10 @@ object Dependencies {
   )
 
   val circe: Seq[ModuleID] = Seq(
-    "io.circe" %% "circe-core"    % Version.circeVersion,
-    "io.circe" %% "circe-generic" % Version.circeVersion,
-    "io.circe" %% "circe-parser"  % Version.circeVersion
+    "io.circe" %% "circe-core"    % Version.circe,
+    "io.circe" %% "circe-generic" % Version.circe,
+    "io.circe" %% "circe-parser"  % Version.circe,
+    "io.circe" %% "circe-refined" % Version.circe
   )
 
   val akkaHttpCors: Seq[ModuleID] = Seq(
@@ -68,6 +71,10 @@ object Dependencies {
     "joda-time" % "joda-time" % "2.10.4"
   )
 
+  val newType = Seq (
+    "io.estatico" %% "newtype" % Version.newtype
+  )
+
   val logBack: Seq[ModuleID] = Seq(
     "ch.qos.logback" % "logback-classic" % Version.logback
   )
@@ -78,6 +85,10 @@ object Dependencies {
 
   val pureConfig: Seq[ModuleID] = Seq(
     "com.github.pureconfig" %% "pureconfig" % Version.pureConfig
+  )
+
+  val refined: Seq[ModuleID] = Seq(
+    "eu.timepit" %% "refined" % Version.refined
   )
 
   val scalactic: Seq[ModuleID] = Seq(

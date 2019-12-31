@@ -12,6 +12,7 @@ import org.joda.time.format.DateTimeFormat
 import akka.event.LoggingAdapter
 import cats.syntax.either._
 import io.scalac.tezos.translator.config.CaptchaConfig
+import io.scalac.tezos.translator.model.types.Auth.Captcha
 import io.scalac.tezos.translator.routes.Endpoints.ErrorResponse
 import sttp.model.StatusCode
 import scala.concurrent.{ExecutionContext, Future}
@@ -21,13 +22,13 @@ object ReCaptcha {
   import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport._
   import io.circe.generic.auto._
 
-  def withReCaptchaVerify(maybeHeader: Option[String],
+  def withReCaptchaVerify(maybeCaptcha: Option[Captcha],
                           log: LoggingAdapter,
                           reCaptchaConfig: CaptchaConfig)
                          (implicit actorSystem: ActorSystem,
                           ec: ExecutionContext): Future[Either[ErrorResponse, Unit]] =
     if (reCaptchaConfig.checkOn)
-      maybeHeader
+      maybeCaptcha
         .fold {
           captchaHeaderIsMissingAsFuture(reCaptchaConfig.headerName)
         } {
@@ -42,7 +43,7 @@ object ReCaptcha {
         (Error(s"Request is missing required HTTP header '$captchaHeaderName'"), StatusCode.BadRequest).asLeft
       )
 
-  protected def checkCaptcha(userCaptcha: String,
+  protected def checkCaptcha(userCaptcha: Captcha,
                              log: LoggingAdapter,
                              reCaptchaConfig: CaptchaConfig)
                             (implicit actorSystem: ActorSystem,
@@ -59,7 +60,7 @@ object ReCaptcha {
       } yield result
   }
 
-  protected def doRequestToVerifyCaptcha(userCaptcha: String,
+  protected def doRequestToVerifyCaptcha(userCaptcha: Captcha,
                                          log: LoggingAdapter,
                                          reCaptchaConfig: CaptchaConfig)
                                         (implicit actorSystem: ActorSystem,
@@ -67,7 +68,7 @@ object ReCaptcha {
     Http().singleRequest(
       request = HttpRequest(
         HttpMethods.POST,
-        reCaptchaConfig.url + s"?secret=${reCaptchaConfig.secret}&response=$userCaptcha"
+        reCaptchaConfig.url + s"?secret=${reCaptchaConfig.secret}&response=${userCaptcha.v.value}"
       )
     )
       .map(Right(_))

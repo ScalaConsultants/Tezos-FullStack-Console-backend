@@ -1,17 +1,19 @@
 package io.scalac.tezos.translator.model
 
 import io.scalac.tezos.translator.model.LibraryEntry.Status
+import io.scalac.tezos.translator.model.types.Library.{Author, Description, Micheline, Michelson, Title}
+import io.scalac.tezos.translator.model.types.UUIDs.LibraryEntryId
 
 import scala.util.{Failure, Success, Try}
 
 case class LibraryEntry(
-                         uid: Uid,
-                         title: String,
-                         author: Option[String],
+                         uid: LibraryEntryId,
+                         title: Title,
+                         author: Option[Author],
                          email: Option[EmailAddress],
-                         description: Option[String],
-                         micheline: String,
-                         michelson: String,
+                         description: Option[Description],
+                         micheline: Micheline,
+                         michelson: Michelson,
                          status: Status
 )
 

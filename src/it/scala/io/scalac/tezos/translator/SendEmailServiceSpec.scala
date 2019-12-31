@@ -4,8 +4,10 @@ import akka.actor.ActorSystem
 import akka.event.LoggingAdapter
 import akka.testkit.TestKit
 import com.icegreen.greenmail.util.{GreenMail, GreenMailUtil, ServerSetupTest}
+import eu.timepit.refined.collection.NonEmpty
 import io.scalac.tezos.translator.config.{CronConfiguration, EmailConfiguration}
 import io.scalac.tezos.translator.model.LibraryEntry.Accepted
+import io.scalac.tezos.translator.model.types.ContactData.{Content, EmailReq, EmailS, Name, NameReq, Phone, PhoneReq}
 import io.scalac.tezos.translator.model.{EmailAddress, SendEmail}
 import io.scalac.tezos.translator.repository.Emails2SendRepository
 import io.scalac.tezos.translator.routes.dto.{LibraryEntryRoutesDto, SendEmailRoutesDto}
@@ -13,7 +15,9 @@ import io.scalac.tezos.translator.service.{Emails2SendService, SendEmailsService
 import javax.mail.internet.MimeMessage
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, FlatSpecLike, Matchers}
-
+import eu.timepit.refined.refineMV
+import io.scalac.tezos.translator.model.types.Library.{Author, Description, Micheline, Michelson, NotEmptyAndNotLong, Title}
+import cats.syntax.option._
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.concurrent.duration._
@@ -83,7 +87,7 @@ class SendEmailServiceSpec
 
   it should "send an email" in {
     val title = "translation title"
-    val email = SendEmail.statusChange(unsafeEmailAddress("xxx@service.com"), "translation title", Accepted)
+    val email = SendEmail.statusChange(unsafeEmailAddress("xxx@service.com"), Title(refineMV("translation title")), Accepted)
 
     whenReady(emailSenderService.sendSingleMail(email)) { _ shouldBe () }
 
@@ -181,9 +185,22 @@ class SendEmailServiceSpec
   }
 
   private trait SampleEmails {
-    val e1: SendEmail = SendEmail.statusChange(unsafeEmailAddress("xxx@service.com"), "translation title", Accepted)
-    val e2: SendEmail = SendEmail.fromSendEmailRoutesDto(SendEmailRoutesDto("Dude", Some("666666666"), Some("dude@service.com"), "some content"), testAdminEmail).get
-    val e3: SendEmail = SendEmail.approvalRequest(LibraryEntryRoutesDto("contract name", Some("Thanos"), None, Some("Some description"), "micheline", "michelson"), testAdminEmail)
+    val e1: SendEmail = SendEmail.statusChange(unsafeEmailAddress("xxx@service.com"), Title(refineMV("translation title")), Accepted)
+    val e2: SendEmail = SendEmail.fromSendEmailRoutesDto(
+      SendEmailRoutesDto(
+        Name(refineMV[NameReq]("Dude")),
+        Some(Phone(refineMV[PhoneReq]("666666666"))),
+        Some(EmailS(refineMV[EmailReq]("dude@service.com"))),
+        Content(refineMV[NonEmpty]("some content"))),
+      testAdminEmail).get
+    val e3: SendEmail = SendEmail.approvalRequest(
+      LibraryEntryRoutesDto(
+        Title(refineMV[NotEmptyAndNotLong]("contract name")),
+        Author(refineMV[NotEmptyAndNotLong]("Thanos")).some,
+        None,
+        Description(refineMV[NotEmptyAndNotLong]("Some description")).some,
+        Micheline(refineMV[NonEmpty]("micheline")),
+        Michelson(refineMV[NonEmpty]("michelson"))), testAdminEmail)
 
     val toInsert: Seq[SendEmail] = Seq(e1, e2, e3)
 
