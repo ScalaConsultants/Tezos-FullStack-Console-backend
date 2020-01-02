@@ -1,15 +1,21 @@
 package io.scalac.tezos.translator
 
+import java.util.concurrent.TimeUnit
+
 import akka.actor.ActorSystem
 import akka.http.scaladsl.Http
 import akka.stream.ActorMaterializer
+import com.github.benmanes.caffeine.cache.Caffeine
 import com.typesafe.config.ConfigFactory
 import io.scalac.tezos.translator.actor.EmailSender
 import io.scalac.tezos.translator.config.Configuration
 import io.scalac.tezos.translator.model.EmailAddress
+import io.scalac.tezos.translator.model.types.Auth
 import io.scalac.tezos.translator.repository.{Emails2SendRepository, LibraryRepository, UserRepository}
 import io.scalac.tezos.translator.routes.utils.MMTranslator
 import io.scalac.tezos.translator.service.{Emails2SendService, LibraryService, SendEmailsServiceImpl, UserService}
+import scalacache._
+import scalacache.caffeine._
 import slick.jdbc.PostgresProfile
 import slick.jdbc.PostgresProfile.api._
 
@@ -41,7 +47,14 @@ object Boot {
     val emails2SendRepo = new Emails2SendRepository
     val userRepository = new UserRepository
     val email2SendService = new Emails2SendService(emails2SendRepo, db)
-    val userService = new UserService(userRepository, db)
+
+    val underlyingCaffeineCache =
+      Caffeine.newBuilder()
+        .expireAfterWrite(60, TimeUnit.MINUTES)
+        .build[String, Entry[Auth.Username]]
+
+    val tokenToUser: Cache[Auth.Username] = CaffeineCache(underlyingCaffeineCache)
+    val userService = new UserService(userRepository, tokenToUser, db)
 
     val bindingFuture =
       for {

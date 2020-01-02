@@ -13,7 +13,10 @@ import Helper._
 import eu.timepit.refined.collection.NonEmpty
 import io.scalac.tezos.translator.model.UserCredentials
 import eu.timepit.refined.refineMV
+import io.scalac.tezos.translator.model.types.Auth
 import io.scalac.tezos.translator.model.types.Auth.{Password, Username, UsernameReq}
+import scalacache._
+import scalacache.caffeine._
 
 class LoginRoutesSpec
   extends FlatSpec
@@ -30,7 +33,8 @@ class LoginRoutesSpec
     val testDb = DbTestBase.db
     val credentialsWithInvalidPassword: UserCredentials = UserCredentials(adminUsername, Password(refineMV[NonEmpty]("asdf")))
 
-    val loginRoute: Route = new LoginRoutes(new UserService(new UserRepository, testDb)).routes
+    val tokenToUser: Cache[Auth.Username] = CaffeineCache[Auth.Username]
+    val loginRoute: Route = new LoginRoutes(new UserService(new UserRepository, tokenToUser, testDb)).routes
 
     "LoginRoute" should "reject wrong credentials" in {
       Post(loginEndpoint, UserCredentials(adminUsername, Password(refineMV[NonEmpty]("asdf")))) ~> loginRoute ~> check {

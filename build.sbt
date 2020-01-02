@@ -59,7 +59,7 @@ lazy val root = (project in file(".")).settings(
 
   libraryDependencies ++= akkaHttp ++ akkaHttpCors ++ akkaStream ++ cats ++ circe ++ courier ++ greenMail ++
     jodaTime ++ logBack ++ newType ++ postgres ++ pureConfig ++ refined ++ scalactic ++ scalaTest ++ sl4j ++ slick ++
-    tapir ++ tesozFCTM ++ wireMock ++ testContainers ++ bcrypt ++ flyway,
+    tapir ++ tesozFCTM ++ wireMock ++ testContainers ++ bcrypt ++ flyway ++ scalaCache,
   
   Defaults.itSettings,
 
