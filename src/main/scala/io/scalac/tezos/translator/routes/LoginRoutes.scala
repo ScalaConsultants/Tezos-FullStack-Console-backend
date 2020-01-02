@@ -38,10 +38,13 @@ class LoginRoutes(userService: UserService)(implicit ec: ExecutionContext) exten
   }
 
   def logoutLogic(token: UserToken): Future[Either[ErrorResponse, Unit]] =
-    userService.authenticate(token).map(_.map { uData =>
-      userService.logout(uData.token)
-      ()
-    })
+    for {
+      authUserData  <-  userService.authenticate(token)
+      logout        <-  authUserData match {
+                      case Left(v) => Future.successful(Left(v))
+                      case Right(uData) => userService.logout(uData.token).map(Right(_))
+                    }
+    } yield logout
 
   val logoutEndpoint: Endpoint[String, ErrorResponse, Unit, Nothing] =
     Endpoints

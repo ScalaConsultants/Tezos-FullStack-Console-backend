@@ -28,6 +28,7 @@ object Version {
   val testContainersPostgres  = "1.12.1"
   val bCrypt                  = "4.1"
   val flyway                  = "6.1.1"
+  val scalaCache              = "0.28.0"
 
 }
 
@@ -71,7 +72,7 @@ object Dependencies {
     "joda-time" % "joda-time" % "2.10.4"
   )
 
-  val newType = Seq (
+  val newType: Seq[ModuleID] = Seq (
     "io.estatico" %% "newtype" % Version.newtype
   )
 
@@ -108,7 +109,7 @@ object Dependencies {
     "com.typesafe.slick" %% "slick-hikaricp" % Version.slick
   )
 
-  val tapir = Seq(
+  val tapir: Seq[ModuleID] = Seq(
     "com.softwaremill.sttp.tapir" %% "tapir-core" % Version.tapir,
     "com.softwaremill.sttp.tapir" %% "tapir-akka-http-server" % Version.tapir exclude("com.typesafe.akka", "akka-stream_2.12"),
     "com.softwaremill.sttp.tapir" %% "tapir-json-circe" % Version.tapir,
@@ -137,5 +138,10 @@ object Dependencies {
   
   val flyway: Seq[ModuleID] = Seq(
     "org.flywaydb" % "flyway-core" % Version.flyway
+  )
+
+  val scalaCache: Seq[ModuleID] = Seq(
+    "com.github.cb372" %% "scalacache-core" % Version.scalaCache,
+    "com.github.cb372" %% "scalacache-caffeine" % Version.scalaCache
   )
 }

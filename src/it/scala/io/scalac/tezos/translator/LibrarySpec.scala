@@ -4,30 +4,35 @@ import akka.event.LoggingAdapter
 import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.model.headers.{Authorization, OAuth2BearerToken}
 import akka.http.scaladsl.server.Route
-import akka.http.scaladsl.testkit.ScalatestRouteTest
+import akka.http.scaladsl.testkit.{RouteTestTimeout, ScalatestRouteTest}
+import akka.testkit.TestDuration
+import cats.syntax.option._
+import eu.timepit.refined._
+import eu.timepit.refined.collection.NonEmpty
+import eu.timepit.refined.numeric.Positive
+import eu.timepit.refined.string.Uuid
+import io.scalac.tezos.translator.Helper.adminCredentials
 import io.scalac.tezos.translator.config.{CaptchaConfig, DBUtilityConfiguration}
 import io.scalac.tezos.translator.model.LibraryEntry._
 import io.scalac.tezos.translator.model._
+import io.scalac.tezos.translator.model.types.Auth
+import io.scalac.tezos.translator.model.types.ContactData.{EmailReq, EmailS}
+import io.scalac.tezos.translator.model.types.Library._
+import io.scalac.tezos.translator.model.types.Params.Limit
 import io.scalac.tezos.translator.model.types.UUIDs._
 import io.scalac.tezos.translator.repository.dto.LibraryEntryDbDto
 import io.scalac.tezos.translator.repository.{Emails2SendRepository, LibraryRepository, UserRepository}
-import io.scalac.tezos.translator.routes.dto.{LibraryEntryRoutesAdminDto, LibraryEntryRoutesDto}
-import io.scalac.tezos.translator.routes.dto.DTO.Errors
 import io.scalac.tezos.translator.routes.LibraryRoutes
+import io.scalac.tezos.translator.routes.dto.DTO.Errors
+import io.scalac.tezos.translator.routes.dto.{LibraryEntryRoutesAdminDto, LibraryEntryRoutesDto}
 import io.scalac.tezos.translator.schema.LibraryTable
 import io.scalac.tezos.translator.service.{Emails2SendService, LibraryService, UserService}
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.{Assertion, BeforeAndAfterEach, Matchers, WordSpec}
+import scalacache._
+import scalacache.caffeine._
 import slick.jdbc.PostgresProfile.api._
-import eu.timepit.refined._
-import eu.timepit.refined.numeric.Positive
-import eu.timepit.refined.string.Uuid
-import Helper.adminCredentials
-import eu.timepit.refined.collection.NonEmpty
-import io.scalac.tezos.translator.model.types.ContactData.{EmailReq, EmailS}
-import io.scalac.tezos.translator.model.types.Library._
-import io.scalac.tezos.translator.model.types.Params.Limit
-import cats.syntax.option._
+
 import scala.collection.immutable
 import scala.concurrent.duration._
 import scala.concurrent.{Await, Future}
@@ -40,6 +45,9 @@ class LibrarySpec
     with ScalatestRouteTest
     with ScalaFutures
     with BeforeAndAfterEach {
+
+  override implicit val patienceConfig: PatienceConfig = PatienceConfig(5 seconds)
+  implicit val timeout = RouteTestTimeout(5.seconds.dilated)
 
   import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport._
 
@@ -59,7 +67,8 @@ class LibrarySpec
   val properMicheline   = Micheline(refineMV[NonEmpty]("micheline"))
   val properMichelson   = Michelson(refineMV[NonEmpty]("michelson"))
 
-  val userService = new UserService(new UserRepository, testDb)
+  val tokenToUser: Cache[Auth.Username] = CaffeineCache[Auth.Username]
+  val userService = new UserService(new UserRepository, tokenToUser, testDb)
   val emails2SendRepo = new Emails2SendRepository
   val email2SendService = new Emails2SendService(emails2SendRepo, testDb)
   val libraryRepo = new LibraryRepository(dbUtilityConfig, testDb)
