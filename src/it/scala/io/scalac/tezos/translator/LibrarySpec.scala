@@ -39,7 +39,7 @@ class LibrarySpec
   val libraryEndpoint = "/v1/library"
   val testDb = DbTestBase.db
 
-  val reCaptchaConfig = CaptchaConfig(checkOn = false, "", "", "")
+  val reCaptchaConfig = CaptchaConfig()
   val dbUtilityConfig = DBUtilityConfiguration()
   val log: LoggingAdapter = system.log
 

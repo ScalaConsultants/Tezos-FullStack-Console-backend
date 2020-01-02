@@ -4,22 +4,25 @@ import akka.actor.ActorSystem
 import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.server.{Directives, Route}
 import akka.http.scaladsl.testkit.{RouteTestTimeout, ScalatestRouteTest}
+import cats.syntax.either._
 import com.github.tomakehurst.wiremock.WireMockServer
 import com.github.tomakehurst.wiremock.client.WireMock
 import com.github.tomakehurst.wiremock.client.WireMock.{post => expectedPost, _}
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration._
 import io.scalac.tezos.translator.config.CaptchaConfig
-import io.scalac.tezos.translator.routes.utils.ReCaptcha
-import org.scalatest.{BeforeAndAfterAll, Matchers, WordSpec}
-import cats.syntax.either._
 import io.scalac.tezos.translator.routes.Endpoints
 import io.scalac.tezos.translator.routes.Endpoints.ErrorResponse
+import io.scalac.tezos.translator.routes.dto.DTO
 import io.scalac.tezos.translator.routes.dto.DTO.Error
-import scala.concurrent.Future
-import scala.concurrent.duration._
+import io.scalac.tezos.translator.routes.utils.ReCaptcha
+import org.scalatest.{BeforeAndAfterAll, Matchers, WordSpec}
+import sttp.model.StatusCode
 import sttp.tapir._
 import sttp.tapir.json.circe._
 import sttp.tapir.server.akkahttp._
+
+import scala.concurrent.Future
+import scala.concurrent.duration._
 
 class CaptchaDirectiveSpec extends WordSpec with Matchers with ScalatestRouteTest with BeforeAndAfterAll with Directives {
   import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport._
@@ -52,6 +55,7 @@ class CaptchaDirectiveSpec extends WordSpec with Matchers with ScalatestRouteTes
     checkOn    = true,
     url        = "http://" + testCaptchaHostName + checkCaptchaUri,
     secret     = secret,
+    score      = 0.0f,
     headerName = headerName
   )
 
@@ -67,14 +71,23 @@ class CaptchaDirectiveSpec extends WordSpec with Matchers with ScalatestRouteTes
 
   "ReCaptcha directive" should {
 
-    "check captcha header" in {
+      "check captcha header" in {
+      val configWithScore= captchaTestConfig.copy(score=0.9F)
+        val captchaTestEndpoint: Endpoint[Option[String], (DTO.ErrorDTO, StatusCode), String, Nothing] = Endpoints
+          .captchaEndpoint(configWithScore).in("test")
+          .get
+          .out(jsonBody[String])
+
+      val captchaTestRoute: Route = captchaTestEndpoint
+        .toRoute((ReCaptcha.withReCaptchaVerify(_, sy.log, configWithScore)).andThenFirstE(emptyOk))
+
       Get(testEndpoint) ~> Route.seal(captchaTestRoute) ~> check {
         status shouldBe StatusCodes.BadRequest
         responseAs[Error].error shouldBe s"Request is missing required HTTP header '$headerName'"
       }
 
       val testResponse = "testResponse"
-      stubForCaptchaCheck(testResponse)
+      stubForCaptchaCheck(testResponse,1.0F)
 
       Get(testEndpoint) ~> addHeader(headerName, testResponse) ~> Route.seal(captchaTestRoute) ~> check {
         status shouldBe StatusCodes.OK
@@ -82,6 +95,18 @@ class CaptchaDirectiveSpec extends WordSpec with Matchers with ScalatestRouteTes
       }
     }
 
+    "return Bot detected message when score is to low " in {
+
+      val testResponse = "testResponse"
+
+      stubForCaptchaCheck(testResponse,0.1F)
+
+      Get(testEndpoint) ~> addHeader(headerName, testResponse) ~> Route.seal(captchaTestRoute) ~> check {
+        status shouldBe StatusCodes.Unauthorized
+        responseAs[Error].error shouldBe "You are bot"
+      }
+
+    }
     "return 401 status code if captcha is invalid" in {
 
       val invalidResponse = "invalid"
@@ -109,18 +134,18 @@ class CaptchaDirectiveSpec extends WordSpec with Matchers with ScalatestRouteTes
         responseAs[String] shouldBe "get ok"
       }
     }
-
   }
 
-  def stubForCaptchaCheck(expectedUserResponse: String): Unit =
+  def stubForCaptchaCheck(expectedUserResponse: String,score:Float=0.0F): Unit =
     wireMockServer.stubFor(
       expectedPost(urlEqualTo(checkCaptchaUri + s"?secret=$secret&response=$expectedUserResponse"))
         .willReturn(
           aResponse()
             .withHeader("Content-Type", "application/json")
             .withBody(
-              """{
-                |"success": true
+              s"""{
+                |"success": true,
+                |"score": ${score}
                 |}""".stripMargin
             ).withStatus(StatusCodes.OK.intValue)
         )

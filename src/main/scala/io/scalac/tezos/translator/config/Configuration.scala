@@ -19,6 +19,7 @@ case class CaptchaConfig(
   checkOn: Boolean = false,
   url: String = "https://www.google.com/recaptcha/api/siteverify",
   secret: String = "??",
+  score: Float = 0.0f,
   headerName: String = "CAPTCHA"
 )
 
