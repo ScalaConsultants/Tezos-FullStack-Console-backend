@@ -1,14 +1,11 @@
 package io.scalac.tezos.translator.repository
 
+import io.scalac.tezos.translator.model.types.UUIDs.SendEmailId
 import io.scalac.tezos.translator.repository.dto.SendEmailDbDto
 import io.scalac.tezos.translator.schema.Emails2SendTable
-import slick.dbio.Effect
 import slick.jdbc.PostgresProfile.api._
-import slick.sql.FixedSqlAction
 
-import scala.concurrent.ExecutionContext
-
-class Emails2SendRepository(implicit ec: ExecutionContext) {
+class Emails2SendRepository() {
 
   protected val emails2Send = Emails2SendTable.emails2Send
 
@@ -20,7 +17,7 @@ class Emails2SendRepository(implicit ec: ExecutionContext) {
       .take(batchSize)
       .result
 
-  def removeEmail2Send(uid: String): DBIO[Int] =
+  def removeEmail2Send(uid: SendEmailId): DBIO[Int] =
     emails2Send
       .filter(_.uid === uid)
       .delete

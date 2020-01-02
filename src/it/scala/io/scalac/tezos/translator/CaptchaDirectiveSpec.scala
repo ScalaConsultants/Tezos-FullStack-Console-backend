@@ -59,7 +59,7 @@ class CaptchaDirectiveSpec extends WordSpec with Matchers with ScalatestRouteTes
     headerName = headerName
   )
 
-  def emptyOk(x: Unit): Future[Either[ErrorResponse, String]] =
+  def emptyOk(): Future[Either[ErrorResponse, String]] =
     Future.successful("get ok".asRight)
 
   val captchaTestRoute: Route = Endpoints
@@ -67,7 +67,7 @@ class CaptchaDirectiveSpec extends WordSpec with Matchers with ScalatestRouteTes
     .in("test")
     .get
     .out(jsonBody[String])
-    .toRoute((ReCaptcha.withReCaptchaVerify(_, sy.log, captchaTestConfig)).andThenFirstE(emptyOk))
+    .toRoute((ReCaptcha.withReCaptchaVerify(_, sy.log, captchaTestConfig)).andThenFirstE{ _: Unit => emptyOk() })
 
   "ReCaptcha directive" should {
 
@@ -127,7 +127,7 @@ class CaptchaDirectiveSpec extends WordSpec with Matchers with ScalatestRouteTes
         .in("test")
         .get
         .out(jsonBody[String])
-        .toRoute((ReCaptcha.withReCaptchaVerify(_, sy.log, configWithFalseFlag)).andThenFirstE(emptyOk))
+        .toRoute((ReCaptcha.withReCaptchaVerify(_, sy.log, configWithFalseFlag)).andThenFirstE{ _: Unit => emptyOk() })
 
       Get(testEndpoint) ~> captchaNotCheckRoute ~> check {
         status shouldBe StatusCodes.OK

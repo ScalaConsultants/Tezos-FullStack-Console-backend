@@ -5,7 +5,6 @@ import pureconfig.error.ConfigReaderFailures
 import pureconfig.generic.auto._ // Required, don't let idea optimize imports here, otherwise it will delete that import
 
 import scala.concurrent.duration._
-import scala.language.postfixOps
 
 case class Configuration(
   reCaptcha: CaptchaConfig = CaptchaConfig(),

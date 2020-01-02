@@ -11,9 +11,6 @@ object DTO {
                                     hostname:      Option[String],  // the hostname of the site where the reCAPTCHA was solved
                                     `error-codes`: Option[List[String]]
                                   )
-
-
-
   sealed trait ErrorDTO
 
   case class Error(error: String) extends ErrorDTO

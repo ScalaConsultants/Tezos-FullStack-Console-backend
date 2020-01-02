@@ -3,8 +3,7 @@ package io.scalac.tezos.translator.model
 import io.circe.{Decoder, DecodingFailure, Encoder, HCursor}
 import javax.mail.internet.InternetAddress
 
-import scala.util.{Success, Try}
-import io.circe._, io.circe.generic.semiauto._
+import scala.util.Try
 sealed abstract case class EmailAddress(value: InternetAddress) {
   override def toString: String = value.getAddress
 }
