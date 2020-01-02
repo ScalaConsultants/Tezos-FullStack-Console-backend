@@ -1,6 +1,5 @@
 package io.scalac.tezos.translator.routes.dto
 
-import org.joda.time.DateTime
 import io.circe._, io.circe.generic.semiauto._
 
 object DTO {

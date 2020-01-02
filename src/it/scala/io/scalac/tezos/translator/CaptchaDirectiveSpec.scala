@@ -10,6 +10,7 @@ import com.github.tomakehurst.wiremock.client.WireMock
 import com.github.tomakehurst.wiremock.client.WireMock.{post => expectedPost, _}
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration._
 import io.scalac.tezos.translator.config.CaptchaConfig
+import io.scalac.tezos.translator.model.types.Auth
 import io.scalac.tezos.translator.routes.Endpoints
 import io.scalac.tezos.translator.routes.Endpoints.ErrorResponse
 import io.scalac.tezos.translator.routes.dto.DTO
@@ -73,13 +74,14 @@ class CaptchaDirectiveSpec extends WordSpec with Matchers with ScalatestRouteTes
 
       "check captcha header" in {
       val configWithScore= captchaTestConfig.copy(score=0.9F)
-        val captchaTestEndpoint: Endpoint[Option[String], (DTO.ErrorDTO, StatusCode), String, Nothing] = Endpoints
-          .captchaEndpoint(configWithScore).in("test")
+        val captchaTestEndpoint: Endpoint[Option[Auth.Captcha], (DTO.ErrorDTO, StatusCode), String, Nothing] = Endpoints
+          .captchaEndpoint(configWithScore)
+          .in("test")
           .get
           .out(jsonBody[String])
 
       val captchaTestRoute: Route = captchaTestEndpoint
-        .toRoute((ReCaptcha.withReCaptchaVerify(_, sy.log, configWithScore)).andThenFirstE(emptyOk))
+        .toRoute((ReCaptcha.withReCaptchaVerify(_, sy.log, captchaTestConfig)).andThenFirstE{ _: Unit => emptyOk() })
 
       Get(testEndpoint) ~> Route.seal(captchaTestRoute) ~> check {
         status shouldBe StatusCodes.BadRequest
