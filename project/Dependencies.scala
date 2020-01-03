@@ -124,7 +124,7 @@ object Dependencies {
   )
 
   val wireMock: Seq[ModuleID] = Seq(
-    "com.github.tomakehurst" % "wiremock" % Version.wireMock % Test
+    "com.github.tomakehurst" % "wiremock" % Version.wireMock % "it,test"
   )
   
   val testContainers: Seq[ModuleID] = Seq(

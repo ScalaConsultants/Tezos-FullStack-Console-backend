@@ -36,7 +36,7 @@ class MessageSpec
     val messageEndpoint = "/v1/message"
     val testDb          = DbTestBase.db
 
-    val reCaptchaConfig = CaptchaConfig(checkOn = false, "", "", "")
+    val reCaptchaConfig = CaptchaConfig()
     val emails2SendRepo = new Emails2SendRepository
 
     val email2SendService = new Emails2SendService(emails2SendRepo, testDb)
