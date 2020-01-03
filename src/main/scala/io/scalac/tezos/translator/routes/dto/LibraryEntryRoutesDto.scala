@@ -7,12 +7,12 @@ import io.scalac.tezos.translator.model.{EmailAddress, LibraryEntry, Uid}
 import scala.util.{Success, Try}
 
 case class LibraryEntryRoutesDto(
-  title: String,
-  author: Option[String],
-  email: Option[String],
-  description: Option[String],
-  micheline: String,
-  michelson: String) {
+   title: String,
+   author: Option[String],
+   email: Option[String],
+   description: Option[String],
+   micheline: String,
+   michelson: String) {
 
   def toDomain: Try[LibraryEntry] = {
 
@@ -23,14 +23,14 @@ case class LibraryEntryRoutesDto(
 
     emailAdress.map(email => {
 
-      LibraryEntry(uid = Uid(),
-                   title = title,
-                   author = author,
-                   email = email,
+      LibraryEntry(uid         = Uid(),
+                   title       = title,
+                   author      = author,
+                   email       = email,
                    description = description,
-                   micheline = micheline,
-                   michelson = michelson,
-                   status = PendingApproval)
+                   micheline   = micheline,
+                   michelson   = michelson,
+                   status      = PendingApproval)
     })
   }
 
@@ -39,11 +39,11 @@ case class LibraryEntryRoutesDto(
 object LibraryEntryRoutesDto {
 
   def fromDomain(v: LibraryEntry): LibraryEntryRoutesDto =
-    LibraryEntryRoutesDto(title = v.title,
-                          author = v.author,
-                          email = v.email.map(_.toString),
+    LibraryEntryRoutesDto(title       = v.title,
+                          author      = v.author,
+                          email       = v.email.map(_.toString),
                           description = v.description,
-                          micheline = v.micheline,
-                          michelson = v.michelson)
+                          micheline   = v.micheline,
+                          michelson   = v.michelson)
 
 }

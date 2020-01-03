@@ -10,11 +10,7 @@ import io.scalac.tezos.translator.service.UserService
 
 import scala.util.{Failure, Success}
 
-class LoginRoutes(
-  userService: UserService,
-  log: LoggingAdapter
-)(implicit as: ActorSystem)
-    extends HttpRoutes {
+class LoginRoutes(userService: UserService, log: LoggingAdapter)(implicit as: ActorSystem) extends HttpRoutes {
   import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport._
   import io.circe.generic.auto._
 

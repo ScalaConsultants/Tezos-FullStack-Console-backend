@@ -15,11 +15,7 @@ class EmailSender(service: SendEmailsService)(implicit ec: ExecutionContext) ext
 
 object EmailSender {
 
-  def apply(
-    service: SendEmailsService,
-    cronConfig: CronConfiguration
-  )(implicit ac: ActorSystem
-  ): Cancellable = {
+  def apply(service: SendEmailsService, cronConfig: CronConfiguration)(implicit ac: ActorSystem): Cancellable = {
     implicit val ec: ExecutionContextExecutor = ac.dispatcher
     val actor = ac
       .actorOf(Props(new EmailSender(service)(ac.dispatchers.lookup("blocking-dispatcher")))

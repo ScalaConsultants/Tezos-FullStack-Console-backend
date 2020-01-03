@@ -11,10 +11,7 @@ import scala.annotation.tailrec
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Random
 
-class UserService(
-  repository: UserRepository,
-  db: Database
-)(implicit ec: ExecutionContext) {
+class UserService(repository: UserRepository, db: Database)(implicit ec: ExecutionContext) {
 
   private val tokenToUser = new scala.collection.concurrent.TrieMap[String, String]
 
@@ -27,16 +24,10 @@ class UserService(
     }
   }
 
-  private def checkPassword(
-    user: UserModel,
-    password: String
-  ): Boolean =
+  private def checkPassword(user: UserModel, password: String): Boolean =
     password.isBcrypted(user.passwordHash)
 
-  def authenticateAndCreateToken(
-    username: String,
-    password: String
-  ): Future[Option[String]] =
+  def authenticateAndCreateToken(username: String, password: String): Future[Option[String]] =
     db.run(repository.getByUsername(username)).map { userOption =>
       val isAuthenticated = userOption.exists(user => checkPassword(user, password))
       if (isAuthenticated) Some(createToken(username)) else None

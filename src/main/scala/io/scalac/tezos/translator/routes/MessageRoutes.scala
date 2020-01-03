@@ -14,12 +14,12 @@ import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success}
 
 class MessageRoutes(
-  service: Emails2SendService,
-  log: LoggingAdapter,
-  reCaptchaConfig: CaptchaConfig,
-  adminEmail: EmailAddress
-)(implicit ec: ExecutionContext,
-  actorSystem: ActorSystem)
+   service: Emails2SendService,
+   log: LoggingAdapter,
+   reCaptchaConfig: CaptchaConfig,
+   adminEmail: EmailAddress
+ )(implicit ec: ExecutionContext,
+   actorSystem: ActorSystem)
     extends HttpRoutes {
   import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport._
   import io.circe.generic.auto._
@@ -29,7 +29,7 @@ class MessageRoutes(
       & withSendMessageValidation & post) { sendEmail =>
       val operationPerformed = for {
         sendEmail <- Future.fromTry(SendEmail.fromSendEmailRoutesDto(sendEmail, adminEmail))
-        newEmail <- service.addNewEmail2Send(sendEmail)
+        newEmail  <- service.addNewEmail2Send(sendEmail)
       } yield newEmail
 
       onComplete(operationPerformed) {

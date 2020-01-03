@@ -11,17 +11,11 @@ case class ContactPhone(number: String) extends Contact
 
 case class ContactEmail(email: EmailAddress) extends Contact
 
-case class FullContact(
-  phone: String,
-  email: EmailAddress)
-    extends Contact
+case class FullContact(phone: String, email: EmailAddress) extends Contact
 
 object Contact {
 
-  def create(
-    phone: Option[String],
-    email: Option[EmailAddress]
-  ): Try[Contact] =
+  def create(phone: Option[String], email: Option[EmailAddress]): Try[Contact] =
     (phone, email) match {
       case (Some(phone), Some(email)) => Success(FullContact(phone, email))
       case (Some(phone), None)        => Success(ContactPhone(phone))

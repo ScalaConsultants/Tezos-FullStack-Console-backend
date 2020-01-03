@@ -5,14 +5,14 @@ import io.scalac.tezos.translator.model.LibraryEntry.Status
 import scala.util.{Failure, Success, Try}
 
 case class LibraryEntry(
-  uid: Uid,
-  title: String,
-  author: Option[String],
-  email: Option[EmailAddress],
-  description: Option[String],
-  micheline: String,
-  michelson: String,
-  status: Status)
+   uid: Uid,
+   title: String,
+   author: Option[String],
+   email: Option[EmailAddress],
+   description: Option[String],
+   micheline: String,
+   michelson: String,
+   status: Status)
 
 object LibraryEntry {
 

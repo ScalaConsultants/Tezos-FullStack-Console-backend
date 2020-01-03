@@ -13,9 +13,9 @@ import org.scalatest.{MustMatchers, WordSpec}
 
 class TranslationTest extends WordSpec with MustMatchers with ScalaFutures with ScalatestRouteTest {
 
-  val log: LoggingAdapter = system.log
+  val log: LoggingAdapter   = system.log
   val config: CaptchaConfig = CaptchaConfig()
-  val routes: Route = new TranslatorRoutes(FakeMMTranslator, log, config).routes
+  val routes: Route         = new TranslatorRoutes(FakeMMTranslator, log, config).routes
 
   "A Routes" can {
     "translate michelson to micheline" when {

@@ -16,14 +16,14 @@ import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success}
 
 class LibraryRoutes(
-  service: LibraryService,
-  userService: UserService,
-  emails2SendService: Emails2SendService,
-  log: LoggingAdapter,
-  captchaConfig: CaptchaConfig,
-  adminEmail: EmailAddress
-)(implicit as: ActorSystem,
-  ec: ExecutionContext)
+   service: LibraryService,
+   userService: UserService,
+   emails2SendService: Emails2SendService,
+   log: LoggingAdapter,
+   captchaConfig: CaptchaConfig,
+   adminEmail: EmailAddress
+ )(implicit as: ActorSystem,
+   ec: ExecutionContext)
     extends HttpRoutes {
   import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport._
   import io.circe.generic.auto._
@@ -42,9 +42,9 @@ class LibraryRoutes(
         }
 
         val operationPerformed = for {
-          entry <- Future.fromTry(libraryDto.toDomain)
+          entry     <- Future.fromTry(libraryDto.toDomain)
           addResult <- service.addNew(entry)
-          _ <- sendEmailF
+          _         <- sendEmailF
         } yield addResult
 
         onComplete(operationPerformed) {
@@ -88,7 +88,7 @@ class LibraryRoutes(
                     Failure(new IllegalArgumentException("Cannot change status to 'pending_approval' !"))
                   case other => other
                 }
-                s <- Future.fromTry(parsedStatus)
+                s            <- Future.fromTry(parsedStatus)
                 updatedEntry <- service.changeStatus(u, s)
                 _ <- updatedEntry.email match {
                       case Some(email) =>

@@ -8,11 +8,7 @@ import io.scalac.tezos.translator.config.CaptchaConfig
 import io.scalac.tezos.translator.routes.directives.ReCaptchaDirective._
 import io.scalac.tezos.translator.routes.util.Translator
 
-class TranslatorRoutes(
-  translator: Translator,
-  log: LoggingAdapter,
-  reCaptchaConfig: CaptchaConfig
-)(implicit as: ActorSystem)
+class TranslatorRoutes(translator: Translator, log: LoggingAdapter, reCaptchaConfig: CaptchaConfig)(implicit as: ActorSystem)
     extends HttpRoutes {
 
   override def routes: Route =
@@ -21,8 +17,7 @@ class TranslatorRoutes(
         translator
           .michelson2micheline(body)
           .fold(error => complete(StatusCodes.BadRequest, error.toString),
-                parsed =>
-                  complete(HttpResponse(entity = HttpEntity(ContentType(MediaTypes.`application/json`), parsed))))
+                parsed => complete(HttpResponse(entity = HttpEntity(ContentType(MediaTypes.`application/json`), parsed))))
       } ~ (path("from" / "micheline" / "to" / "michelson") & post & entity(as[String])) { body =>
         translator
           .micheline2michelson(body)

@@ -9,19 +9,12 @@ import slick.jdbc.PostgresProfile.api._
 
 import scala.concurrent.{ExecutionContext, Future}
 
-class LibraryRepository(
-  config: DBUtilityConfiguration,
-  db: Database
-)(implicit ec: ExecutionContext) {
+class LibraryRepository(config: DBUtilityConfiguration, db: Database)(implicit ec: ExecutionContext) {
 
   def add(translation: LibraryEntryDbDto): Future[Int] =
     db.run(LibraryTable.library += translation)
 
-  def list(
-    status: Option[Status],
-    offset: Option[Int],
-    limit: Option[Int]
-  ): Future[Seq[LibraryEntryDbDto]] =
+  def list(status: Option[Status], offset: Option[Int], limit: Option[Int]): Future[Seq[LibraryEntryDbDto]] =
     db.run {
       LibraryTable.library
         .filterOpt(status) { case (row, s) => row.status === s.value }
@@ -39,10 +32,7 @@ class LibraryRepository(
       .headOption
   }
 
-  def update(
-    uid: Uid,
-    libraryEntry: LibraryEntryDbDto
-  ): Future[Option[LibraryEntryDbDto]] =
+  def update(uid: Uid, libraryEntry: LibraryEntryDbDto): Future[Option[LibraryEntryDbDto]] =
     db.run {
       LibraryTable.library
         .filter(_.uid === uid.value)

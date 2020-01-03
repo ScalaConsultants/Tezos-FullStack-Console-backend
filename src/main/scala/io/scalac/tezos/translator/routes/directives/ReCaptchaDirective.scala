@@ -20,11 +20,7 @@ object ReCaptchaDirective extends Directives {
   import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport._
   import io.circe.generic.auto._
 
-  def withReCaptchaVerify(
-    log: LoggingAdapter,
-    reCaptchaConfig: CaptchaConfig
-  )(implicit actorSystem: ActorSystem
-  ): Directive[Unit] =
+  def withReCaptchaVerify(log: LoggingAdapter, reCaptchaConfig: CaptchaConfig)(implicit actorSystem: ActorSystem): Directive[Unit] =
     if (reCaptchaConfig.checkOn)
       headerValueByName(reCaptchaConfig.headerName)
         .flatMap(userCaptcha => captchaCheckDirective(userCaptcha, log, reCaptchaConfig))
@@ -32,13 +28,13 @@ object ReCaptchaDirective extends Directives {
       Directive[Unit](inner => ctx => inner()(ctx))
 
   protected def captchaCheckDirective(
-    userCaptcha: String,
-    log: LoggingAdapter,
-    reCaptchaConfig: CaptchaConfig
-  )(implicit actorSystem: ActorSystem
-  ): Directive[Unit] = Directive[Unit] { inner => ctx =>
+     userCaptcha: String,
+     log: LoggingAdapter,
+     reCaptchaConfig: CaptchaConfig
+   )(implicit actorSystem: ActorSystem
+   ): Directive[Unit] = Directive[Unit] { inner => ctx =>
     implicit val materializer: ActorMaterializer = ActorMaterializer()
-    implicit val ec: ExecutionContextExecutor = ctx.executionContext
+    implicit val ec: ExecutionContextExecutor    = ctx.executionContext
 
     for {
       verifyResponse <- doRequestToVerifyCaptcha(userCaptcha, log, reCaptchaConfig)
@@ -52,16 +48,15 @@ object ReCaptchaDirective extends Directives {
   }
 
   protected def doRequestToVerifyCaptcha(
-    userCaptcha: String,
-    log: LoggingAdapter,
-    reCaptchaConfig: CaptchaConfig
-  )(implicit actorSystem: ActorSystem,
-    ec: ExecutionContext
-  ): Future[Either[StandardRoute, HttpResponse]] =
+     userCaptcha: String,
+     log: LoggingAdapter,
+     reCaptchaConfig: CaptchaConfig
+   )(implicit actorSystem: ActorSystem,
+     ec: ExecutionContext
+   ): Future[Either[StandardRoute, HttpResponse]] =
     Http()
       .singleRequest(
-          request = HttpRequest(HttpMethods.POST,
-                                reCaptchaConfig.url + s"?secret=${reCaptchaConfig.secret}&response=$userCaptcha")
+         request = HttpRequest(HttpMethods.POST, reCaptchaConfig.url + s"?secret=${reCaptchaConfig.secret}&response=$userCaptcha")
       )
       .map(Right(_))
       .recover {
@@ -71,12 +66,12 @@ object ReCaptchaDirective extends Directives {
       }
 
   protected def checkVerifyResponse(
-    response: HttpResponse,
-    log: LoggingAdapter,
-    inner: Unit => Route
-  )(implicit am: ActorMaterializer,
-    ec: ExecutionContext
-  ): Future[Route] = {
+     response: HttpResponse,
+     log: LoggingAdapter,
+     inner: Unit => Route
+   )(implicit am: ActorMaterializer,
+     ec: ExecutionContext
+   ): Future[Route] = {
 
     val dateFormatter = DateTimeFormat.forPattern("yyyyMMdd")
     implicit val decodeDateTime: Decoder[DateTime] = Decoder.decodeString.emap { s =>

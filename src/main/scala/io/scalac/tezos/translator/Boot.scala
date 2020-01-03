@@ -54,14 +54,8 @@ object Boot {
         sendEmailsService <- Future.fromTry(SendEmailsServiceImpl(email2SendService, log, cfg.email, cfg.cron))
         cronEmailSender   = EmailSender(sendEmailsService, cfg.cron)
         adminEmail        <- Future.fromTry(EmailAddress.fromString(cfg.email.receiver))
-        routes = new Routes(email2SendService,
-                            libraryService,
-                            userService,
-                            MMTranslator,
-                            log,
-                            cfg.reCaptcha,
-                            adminEmail)
-        binding <- Http().bindAndHandle(routes.allRoutes, host, port)
+        routes            = new Routes(email2SendService, libraryService, userService, MMTranslator, log, cfg.reCaptcha, adminEmail)
+        binding           <- Http().bindAndHandle(routes.allRoutes, host, port)
       } yield (cronEmailSender, binding)
 
     log.info(s"Server online at http://$host:$port\nPress RETURN to stop...")
