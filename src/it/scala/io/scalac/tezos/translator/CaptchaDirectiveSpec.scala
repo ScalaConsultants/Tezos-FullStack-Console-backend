@@ -72,8 +72,8 @@ class CaptchaDirectiveSpec extends WordSpec with Matchers with ScalatestRouteTes
 
   "ReCaptcha directive" should {
 
-      "check captcha header" in {
-      val configWithScore= captchaTestConfig.copy(score=0.9F)
+    "check captcha header" in {
+        val configWithScore= captchaTestConfig.copy(score=0.9F)
         val captchaTestEndpoint: Endpoint[Option[Auth.Captcha], (DTO.ErrorDTO, StatusCode), String, Nothing] = Endpoints
           .captchaEndpoint(configWithScore)
           .in("test")
@@ -89,7 +89,7 @@ class CaptchaDirectiveSpec extends WordSpec with Matchers with ScalatestRouteTes
       }
 
       val testResponse = "testResponse"
-      stubForCaptchaCheck(testResponse,1.0F)
+      stubForCaptchaCheck(testResponse, 1.0F)
 
       Get(testEndpoint) ~> addHeader(headerName, testResponse) ~> Route.seal(captchaTestRoute) ~> check {
         status shouldBe StatusCodes.OK
@@ -101,7 +101,7 @@ class CaptchaDirectiveSpec extends WordSpec with Matchers with ScalatestRouteTes
 
       val testResponse = "testResponse"
 
-      stubForCaptchaCheck(testResponse,0.1F)
+      stubForCaptchaCheck(testResponse, 0.1F)
 
       Get(testEndpoint) ~> addHeader(headerName, testResponse) ~> Route.seal(captchaTestRoute) ~> check {
         status shouldBe StatusCodes.Unauthorized
@@ -138,7 +138,7 @@ class CaptchaDirectiveSpec extends WordSpec with Matchers with ScalatestRouteTes
     }
   }
 
-  def stubForCaptchaCheck(expectedUserResponse: String,score:Float=0.0F): Unit =
+  def stubForCaptchaCheck(expectedUserResponse: String, score:Float=0.0F): Unit =
     wireMockServer.stubFor(
       expectedPost(urlEqualTo(checkCaptchaUri + s"?secret=$secret&response=$expectedUserResponse"))
         .willReturn(

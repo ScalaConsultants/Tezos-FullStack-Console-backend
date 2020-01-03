@@ -6,7 +6,7 @@ object DTO {
 
   case class CaptchaVerifyResponse(
                                     success:       Boolean, // whether this request was a valid reCAPTCHA token for your site
-                                    score: Option[Float],   // the score for this request (0.0 - 1.0)
+                                    score:         Option[Float],   // the score for this request (0.0 - 1.0)
                                     hostname:      Option[String],  // the hostname of the site where the reCAPTCHA was solved
                                     `error-codes`: Option[List[String]]
                                   )

@@ -76,11 +76,11 @@ object ReCaptcha {
   }
   protected def checkScore(score:Option[Float]): Either[ErrorResponse, Unit] = {
     score match {
-      case (Some(number)) =>
-    if (number > 0.35)
-    ().asRight
-    else
-    (Error ("You are bot"), StatusCode.Unauthorized).asLeft
+      case Some(number) =>
+       if (number > 0.35)
+         ().asRight
+       else
+         (Error ("You are bot"), StatusCode.Unauthorized).asLeft
       case _ => (Error ("Empty Score"), StatusCode.Unauthorized).asLeft
     }
   }
