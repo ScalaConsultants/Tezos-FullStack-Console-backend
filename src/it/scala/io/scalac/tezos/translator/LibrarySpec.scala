@@ -397,7 +397,7 @@ class LibrarySpec
     }
 
     val userEmail = EmailS(refineMV[EmailReq]("name@service.com"))
-    val userDescription = Description(refineMV[NotEmptyAndNotLong]("name@service.com"))
+    val userDescription = Description(refineMV[NotEmptyAndNotLong]("description"))
     val userName = Author(refineMV[NotEmptyAndNotLong]("name@service.com"))
     val record = LibraryEntryRoutesDto(
       Title(refineMV[NotEmptyAndNotLong]("name")),
@@ -419,12 +419,11 @@ class LibrarySpec
 
       approvalRequest.to shouldBe adminEmail
       approvalRequest.subject shouldBe "Library approval request"
-      EmailContent.toPrettyString(approvalRequest.content) should contain
-      """
-        |Please add my translation to your library:
-        |Title: name
-        |Description: description
-          """.stripMargin
+      Helper.testFormat(EmailContent.toPrettyString(approvalRequest.content)) should startWith
+        Helper.testFormat(s"""
+          |Please add my translation to your library:
+          |Title: name
+          |Description: description""".stripMargin)
 
       email2SendService.removeSentMessage(approvalRequest.uid)
     }
