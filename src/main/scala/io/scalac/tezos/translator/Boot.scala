@@ -20,15 +20,15 @@ import scala.util.{Failure, Success}
 object Boot {
 
   def main(args: Array[String]): Unit = {
-    implicit val system: ActorSystem = ActorSystem("tezos-translator")
-    implicit val materializer: ActorMaterializer = ActorMaterializer()
+    implicit val system: ActorSystem                        = ActorSystem("tezos-translator")
+    implicit val materializer: ActorMaterializer            = ActorMaterializer()
     implicit val executionContext: ExecutionContextExecutor = system.dispatcher
 
-    val log = system.log
-    val config = ConfigFactory.load().getConfig("console")
+    val log        = system.log
+    val config     = ConfigFactory.load().getConfig("console")
     val httpConfig = config.getConfig("http")
-    val host = httpConfig.getString("host")
-    val port = httpConfig.getInt("port")
+    val host       = httpConfig.getString("host")
+    val port       = httpConfig.getInt("port")
     val maybeConfiguration =
       Configuration.getConfig match {
         case Right(v) => Success(v)
@@ -39,21 +39,21 @@ object Boot {
       }
 
     implicit val db: PostgresProfile.backend.Database = Database.forConfig("tezos-db")
-    val emails2SendRepo = new Emails2SendRepository
-    val userRepository = new UserRepository
-    val email2SendService = new Emails2SendService(emails2SendRepo, db)
-    val userService = new UserService(userRepository, db)
+    val emails2SendRepo                               = new Emails2SendRepository
+    val userRepository                                = new UserRepository
+    val email2SendService                             = new Emails2SendService(emails2SendRepo, db)
+    val userService                                   = new UserService(userRepository, db)
 
     val bindingFuture =
       for {
-        cfg <- Future.fromTry(maybeConfiguration)
-        dbEvolution = SqlDbEvolution(cfg.dbEvolutionConfig)
-        _ <- if (cfg.dbEvolutionConfig.enabled) dbEvolution.runEvolutions() else Future.successful(0)
-        libraryRepo = new LibraryRepository(cfg.dbUtility, db)
-        libraryService = new LibraryService(libraryRepo, log)
+        cfg               <- Future.fromTry(maybeConfiguration)
+        dbEvolution       = SqlDbEvolution(cfg.dbEvolutionConfig)
+        _                 <- if (cfg.dbEvolutionConfig.enabled) dbEvolution.runEvolutions() else Future.successful(0)
+        libraryRepo       = new LibraryRepository(cfg.dbUtility, db)
+        libraryService    = new LibraryService(libraryRepo, log)
         sendEmailsService <- Future.fromTry(SendEmailsServiceImpl(email2SendService, log, cfg.email, cfg.cron))
-        cronEmailSender = EmailSender(sendEmailsService, cfg.cron)
-        adminEmail <- Future.fromTry(EmailAddress.fromString(cfg.email.receiver))
+        cronEmailSender   = EmailSender(sendEmailsService, cfg.cron)
+        adminEmail        <- Future.fromTry(EmailAddress.fromString(cfg.email.receiver))
         routes = new Routes(email2SendService,
                             libraryService,
                             userService,
