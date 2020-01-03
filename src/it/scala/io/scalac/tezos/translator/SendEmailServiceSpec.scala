@@ -174,12 +174,11 @@ class SendEmailServiceSpec
 
     val body3 = GreenMailUtil.getBody(e3SendResult).replaceAll("\r", "")
 
-    body3 should contain
-      s"""
+    Helper.testFormat(body3) should startWith
+      Helper.testFormat(s"""
          |Please add my translation to your library:
          |Title: contract name
-         |Description: Some description
-      """.stripMargin
+         |Description: Some description""".stripMargin)
 
   }
 
