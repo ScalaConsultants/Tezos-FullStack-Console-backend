@@ -3,13 +3,13 @@ package io.scalac.tezos.translator
 import io.scalac.tezos.translator.config.DbEvolutionConfig
 import org.flywaydb.core.Flyway
 
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.{ ExecutionContext, Future }
 
 class SqlDbEvolution(flyway: Flyway) {
 
   /**
-    * @return Migrations count
-    */
+   * @return Migrations count
+   */
   def runEvolutions()(implicit ec: ExecutionContext): Future[Int] = Future(flyway.migrate())
 
 }

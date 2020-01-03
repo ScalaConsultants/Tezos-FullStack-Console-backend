@@ -3,9 +3,9 @@ package io.scalac.tezos.translator.routes.dto
 import cats.data.NonEmptyList
 import cats.syntax.option._
 import eu.timepit.refined.collection.NonEmpty
-import io.scalac.tezos.translator.model.types.ContactData.{Content, EmailReq, EmailS, Name, NameReq, Phone, PhoneReq}
-import io.scalac.tezos.translator.routes.dto.DTOValidation.{DTOValidationError, FieldIsInvalid}
-import org.scalatest.{Matchers, WordSpec}
+import io.scalac.tezos.translator.model.types.ContactData.{ Content, EmailReq, EmailS, Name, NameReq, Phone, PhoneReq }
+import io.scalac.tezos.translator.routes.dto.DTOValidation.{ DTOValidationError, FieldIsInvalid }
+import org.scalatest.{ Matchers, WordSpec }
 import eu.timepit.refined.refineMV
 import io.scalac.tezos.translator.model.types.Library._
 

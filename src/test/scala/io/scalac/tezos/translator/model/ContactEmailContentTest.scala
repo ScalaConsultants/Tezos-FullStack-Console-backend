@@ -2,7 +2,7 @@ package io.scalac.tezos.translator.model
 
 import eu.timepit.refined.collection.NonEmpty
 import io.scalac.tezos.translator.model.types.ContactData._
-import org.scalatest.{Matchers, WordSpec}
+import org.scalatest.{ Matchers, WordSpec }
 import eu.timepit.refined.refineMV
 
 class ContactEmailContentTest extends WordSpec with Matchers {

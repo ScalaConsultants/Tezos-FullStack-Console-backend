@@ -1,6 +1,6 @@
 package io.scalac.tezos.translator.model
 
-import scala.util.{Failure, Success, Try}
+import scala.util.{ Failure, Success, Try }
 import io.scalac.tezos.translator.model.types.ContactData.Phone
 sealed trait Contact extends Product with Serializable
 

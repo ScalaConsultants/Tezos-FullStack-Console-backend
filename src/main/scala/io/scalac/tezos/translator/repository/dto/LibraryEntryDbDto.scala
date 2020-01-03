@@ -8,9 +8,9 @@ import io.scalac.tezos.translator.model.types.ContactData.EmailS
 import io.scalac.tezos.translator.model.types.ContactData.MaybeEmailAddressOps
 import io.scalac.tezos.translator.model.types.Library._
 import io.scalac.tezos.translator.model.types.UUIDs.LibraryEntryId
-import io.scalac.tezos.translator.model.{EmailAddress, LibraryEntry}
+import io.scalac.tezos.translator.model.{ EmailAddress, LibraryEntry }
 
-import scala.util.{Success, Try}
+import scala.util.{ Success, Try }
 
 case class LibraryEntryDbDto(
    uid: LibraryEntryId,
@@ -30,15 +30,14 @@ case class LibraryEntryDbDto(
                       case Some(e) => EmailAddress.fromString(e.v.value).map(Some(_))
                       case None    => Success(None)
                     }
-    } yield
-      LibraryEntry(uid         = uid,
-                   title       = title,
-                   author      = author,
-                   email       = emailAdress,
-                   description = description,
-                   micheline   = micheline,
-                   michelson   = michelson,
-                   status      = status)
+    } yield LibraryEntry(uid         = uid,
+                         title       = title,
+                         author      = author,
+                         email       = emailAdress,
+                         description = description,
+                         micheline   = micheline,
+                         michelson   = michelson,
+                         status      = status)
 }
 
 object LibraryEntryDbDto {

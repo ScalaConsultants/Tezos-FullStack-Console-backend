@@ -1,14 +1,14 @@
 package io.scalac.tezos.translator.routes.dto
 
-import io.circe.{Decoder, Encoder}
+import io.circe.{ Decoder, Encoder }
 import io.circe.generic.semiauto.deriveEncoder
 import io.circe.generic.semiauto.deriveDecoder
 import io.scalac.tezos.translator.model.LibraryEntry.PendingApproval
 import io.scalac.tezos.translator.model.types.ContactData.EmailS
 import io.scalac.tezos.translator.model.types.ContactData.MaybeEmailAddressOps
 import io.scalac.tezos.translator.model.types.UUIDs._
-import io.scalac.tezos.translator.model.{EmailAddress, LibraryEntry}
-import scala.util.{Success, Try}
+import io.scalac.tezos.translator.model.{ EmailAddress, LibraryEntry }
+import scala.util.{ Success, Try }
 import io.scalac.tezos.translator.model.types.Library._
 
 sealed trait LibraryEntryDTO
@@ -32,8 +32,8 @@ case class LibraryEntryRoutesAdminDto(
    description: Option[Description],
    micheline: Micheline,
    michelson: Michelson,
-   status: String
-) extends LibraryEntryDTO
+   status: String)
+    extends LibraryEntryDTO
 
 object LibraryEntryRoutesAdminDto {
 

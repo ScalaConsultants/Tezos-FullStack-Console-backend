@@ -2,17 +2,17 @@ package io.scalac.tezos.translator.routes.utils
 
 import akka.actor.ActorSystem
 import akka.http.scaladsl.Http
-import akka.http.scaladsl.model.{HttpMethods, HttpRequest, HttpResponse}
+import akka.http.scaladsl.model.{ HttpMethods, HttpRequest, HttpResponse }
 import akka.http.scaladsl.unmarshalling.Unmarshal
 import akka.stream.ActorMaterializer
-import io.scalac.tezos.translator.routes.dto.DTO.{CaptchaVerifyResponse, Error}
+import io.scalac.tezos.translator.routes.dto.DTO.{ CaptchaVerifyResponse, Error }
 import akka.event.LoggingAdapter
 import cats.syntax.either._
 import io.scalac.tezos.translator.config.CaptchaConfig
 import io.scalac.tezos.translator.model.types.Auth.Captcha
 import io.scalac.tezos.translator.routes.Endpoints.ErrorResponse
 import sttp.model.StatusCode
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.{ ExecutionContext, Future }
 
 object ReCaptcha {
   import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport._
@@ -26,12 +26,11 @@ object ReCaptcha {
      ec: ExecutionContext
    ): Future[Either[ErrorResponse, Unit]] =
     if (reCaptchaConfig.checkOn)
-      maybeCaptcha
-        .fold {
-          captchaHeaderIsMissingAsFuture(reCaptchaConfig.headerName)
-        } { header =>
-          checkCaptcha(header, log, reCaptchaConfig)
-        } else
+      maybeCaptcha.fold {
+        captchaHeaderIsMissingAsFuture(reCaptchaConfig.headerName)
+      } { header =>
+        checkCaptcha(header, log, reCaptchaConfig)
+      } else
       Future.successful(().asRight[ErrorResponse])
 
   protected def captchaHeaderIsMissingAsFuture(captchaHeaderName: String): Future[Either[ErrorResponse, Unit]] =
@@ -74,17 +73,7 @@ object ReCaptcha {
           log.error(s"Can't do request to verify captcha - $userCaptcha, err - $err")
           Left(Error("Can't do request to verify captcha"))
       }
-  protected def checkScore(score: Option[Float]): Either[ErrorResponse, Unit] =
-    score match {
-      case Some(number) =>
-        if (number > 0.35)
-          ().asRight
-        else
-          (Error("You are bot"), StatusCode.Unauthorized).asLeft
-      case _ =>
-        (Error(s"""Google response was successful but "score" field is empty. You probably did not use reCAPTCHA V3"""),
-         StatusCode.Unauthorized).asLeft
-    }
+
   protected def checkVerifyResponse(
      response: HttpResponse,
      log: LoggingAdapter
@@ -107,5 +96,17 @@ object ReCaptcha {
       }
 
   }
+
+  protected def checkScore(score: Option[Float]): Either[ErrorResponse, Unit] =
+    score match {
+      case Some(number) =>
+        if (number > 0.35)
+          ().asRight
+        else
+          (Error("You are bot"), StatusCode.Unauthorized).asLeft
+      case _ =>
+        (Error(s"""Google response was successful but "score" field is empty. You probably did not use reCAPTCHA V3"""),
+         StatusCode.Unauthorized).asLeft
+    }
 
 }

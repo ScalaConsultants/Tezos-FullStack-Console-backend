@@ -9,7 +9,7 @@ import io.scalac.tezos.translator.config.CaptchaConfig
 import io.scalac.tezos.translator.fakes.FakeMMTranslator
 import io.scalac.tezos.translator.routes.TranslatorRoutes
 import org.scalatest.concurrent.ScalaFutures
-import org.scalatest.{MustMatchers, WordSpec}
+import org.scalatest.{ MustMatchers, WordSpec }
 
 class TranslationTest extends WordSpec with MustMatchers with ScalaFutures with ScalatestRouteTest {
 

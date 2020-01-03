@@ -3,13 +3,13 @@ package io.scalac.tezos.translator.service
 import akka.event.LoggingAdapter
 import io.scalac.tezos.translator.model.LibraryEntry._
 import io.scalac.tezos.translator.model.LibraryEntry
-import io.scalac.tezos.translator.model.types.Params.{Limit, Offset}
+import io.scalac.tezos.translator.model.types.Params.{ Limit, Offset }
 import io.scalac.tezos.translator.model.types.UUIDs.LibraryEntryId
 import io.scalac.tezos.translator.repository.LibraryRepository
 import io.scalac.tezos.translator.repository.dto.LibraryEntryDbDto
 
-import scala.concurrent.{ExecutionContext, Future}
-import scala.util.{Failure, Success}
+import scala.concurrent.{ ExecutionContext, Future }
+import scala.util.{ Failure, Success }
 
 class LibraryService(repository: LibraryRepository, log: LoggingAdapter)(implicit ec: ExecutionContext) {
 
@@ -28,7 +28,8 @@ class LibraryService(repository: LibraryRepository, log: LoggingAdapter)(implici
     } yield entries
 
   def changeStatus(id: LibraryEntryId, newStatus: Status): Future[LibraryEntry] = {
-    val uidNotExistsException = Future.failed(new IllegalArgumentException(s"Library Entry does not exist for uid: $id"))
+    val uidNotExistsException =
+      Future.failed(new IllegalArgumentException(s"Library Entry does not exist for uid: $id"))
 
     for {
       entry <- repository.get(id).flatMap {

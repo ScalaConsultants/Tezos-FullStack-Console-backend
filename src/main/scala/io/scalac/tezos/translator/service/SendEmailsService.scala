@@ -1,12 +1,12 @@
 package io.scalac.tezos.translator.service
 
 import akka.event.LoggingAdapter
-import courier.{Envelope, Mailer, Text}
-import io.scalac.tezos.translator.config.{CronConfiguration, EmailConfiguration}
+import courier.{ Envelope, Mailer, Text }
+import io.scalac.tezos.translator.config.{ CronConfiguration, EmailConfiguration }
 import io.scalac.tezos.translator.model._
 
-import scala.concurrent.{ExecutionContext, Future}
-import scala.util.{Failure, Success, Try}
+import scala.concurrent.{ ExecutionContext, Future }
+import scala.util.{ Failure, Success, Try }
 
 trait SendEmailsService {
   def getEmailsToSend: Future[Seq[SendEmail]]

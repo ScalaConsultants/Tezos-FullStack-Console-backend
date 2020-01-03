@@ -4,12 +4,13 @@ import io.circe._, io.circe.generic.semiauto._
 
 object DTO {
 
+  sealed trait ErrorDTO
+
   case class CaptchaVerifyResponse(
      success: Boolean, // whether this request was a valid reCAPTCHA token for your site
      score: Option[Float], // the score for this request (0.0 - 1.0)
      hostname: Option[String], // the hostname of the site where the reCAPTCHA was solved
      `error-codes`: Option[List[String]])
-  sealed trait ErrorDTO
 
   case class Error(error: String) extends ErrorDTO
   case class Errors(errors: List[String]) extends ErrorDTO

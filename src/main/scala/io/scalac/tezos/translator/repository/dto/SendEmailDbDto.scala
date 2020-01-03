@@ -4,7 +4,7 @@ import java.sql.Timestamp
 import java.time.Instant
 
 import io.scalac.tezos.translator.model.types.UUIDs.SendEmailId
-import io.scalac.tezos.translator.model.{EmailContent, SendEmail}
+import io.scalac.tezos.translator.model.{ EmailContent, SendEmail }
 
 case class SendEmailDbDto(
    uid: SendEmailId,

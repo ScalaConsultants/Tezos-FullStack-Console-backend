@@ -1,7 +1,7 @@
 package io.scalac.tezos.translator.routes.dto
 
-import io.circe.{Decoder, Encoder}
-import io.circe.generic.semiauto.{deriveDecoder, deriveEncoder}
+import io.circe.{ Decoder, Encoder }
+import io.circe.generic.semiauto.{ deriveDecoder, deriveEncoder }
 import io.scalac.tezos.translator.model.types.ContactData._
 
 case class SendEmailRoutesDto(

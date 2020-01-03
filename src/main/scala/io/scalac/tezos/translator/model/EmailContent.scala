@@ -3,7 +3,7 @@ package io.scalac.tezos.translator.model
 import io.circe.generic.auto._
 import io.circe.parser.decode
 import io.circe.syntax._
-import io.scalac.tezos.translator.model.types.ContactData.{Content, Name}
+import io.scalac.tezos.translator.model.types.ContactData.{ Content, Name }
 
 import scala.util.Try
 

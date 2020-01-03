@@ -7,11 +7,11 @@
         </encoder>
     </appender>
 
-    <logger name="akka" level="WARN" />
-<!--    <logger name="slick.jdbc.JdbcBackend.statement" level="DEBUG" />-->
+    <logger name="akka" level="WARN"/>
+    <!--    <logger name="slick.jdbc.JdbcBackend.statement" level="DEBUG" />-->
 
     <root level="INFO">
-        <appender-ref ref="STDOUT" />
+        <appender-ref ref="STDOUT"/>
     </root>
 
 </configuration>

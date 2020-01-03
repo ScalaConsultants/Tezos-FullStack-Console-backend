@@ -4,25 +4,25 @@ import akka.actor.ActorSystem
 import akka.event.LoggingAdapter
 import akka.http.scaladsl.server.Route
 import io.scalac.tezos.translator.config.CaptchaConfig
-import io.scalac.tezos.translator.model.LibraryEntry.{Accepted, PendingApproval, Status}
-import io.scalac.tezos.translator.model.{AuthUserData, EmailAddress, SendEmail}
+import io.scalac.tezos.translator.model.LibraryEntry.{ Accepted, PendingApproval, Status }
+import io.scalac.tezos.translator.model.{ AuthUserData, EmailAddress, SendEmail }
 import io.scalac.tezos.translator.routes.dto.DTOValidation
 import io.scalac.tezos.translator.routes.dto.DTO.Error
 import io.scalac.tezos.translator.routes.utils.ReCaptcha._
-import io.scalac.tezos.translator.routes.dto.{LibraryEntryDTO, LibraryEntryRoutesAdminDto, LibraryEntryRoutesDto}
+import io.scalac.tezos.translator.routes.dto.{ LibraryEntryDTO, LibraryEntryRoutesAdminDto, LibraryEntryRoutesDto }
 import io.scalac.tezos.translator.routes.dto.LibraryEntryDTO._
-import io.scalac.tezos.translator.model.types.UUIDs.{LibraryEntryId, UUIDString}
-import io.scalac.tezos.translator.service.{Emails2SendService, LibraryService, UserService}
+import io.scalac.tezos.translator.model.types.UUIDs.{ LibraryEntryId, UUIDString }
+import io.scalac.tezos.translator.service.{ Emails2SendService, LibraryService, UserService }
 import sttp.model.StatusCode
 import sttp.tapir._
 import sttp.tapir.json.circe._
 import sttp.tapir.server.akkahttp._
 import cats.syntax.either._
 import io.scalac.tezos.translator.routes.Endpoints._
-import io.scalac.tezos.translator.model.types.Auth.{Captcha, UserToken}
+import io.scalac.tezos.translator.model.types.Auth.{ Captcha, UserToken }
 import io.scalac.tezos.translator.model.types.Params._
-import scala.concurrent.{ExecutionContext, Future}
-import scala.util.{Failure, Success}
+import scala.concurrent.{ ExecutionContext, Future }
+import scala.util.{ Failure, Success }
 
 class LibraryRoutes(
    service: LibraryService,
@@ -74,6 +74,8 @@ class LibraryRoutes(
       .delete
       .description("Will delete an entry with passed uid")
 
+  override def routes: Route = addNewEntryRoute ~ getDTORoute ~ putEntryRoute ~ deleteEntryRoute
+
   private def addNewEntryRoute(): Route =
     libraryAddEndpoint.toRoute {
       (withReCaptchaVerify(_, log, captchaConfig))
@@ -81,29 +83,6 @@ class LibraryRoutes(
           DTOValidation.validateDto(t._2)
         }
         .andThenFirstE(addNewEntry)
-    }
-
-  private def getDTORoute: Route =
-    getDtoEndpoint.toRoute {
-      (getDto _).tupled
-    }
-
-  private def putEntryRoute: Route =
-    putEntryEndpoint.toRoute {
-      (bearer2TokenF _)
-        .andThenFirstE(userService.authenticate)
-        .andThenFirstE { args: (AuthUserData, UUIDString, String) =>
-          putDto(args._2, args._3)
-        }
-    }
-
-  private def deleteEntryRoute: Route =
-    deleteEntryEndpoint.toRoute {
-      (bearer2TokenF _)
-        .andThenFirstE(userService.authenticate)
-        .andThenFirstE { args: (AuthUserData, UUIDString) =>
-          deleteDto(args._2)
-        }
     }
 
   private def addNewEntry(libraryDTO: LibraryEntryRoutesDto): Future[Either[ErrorResponse, StatusCode]] = {
@@ -133,15 +112,10 @@ class LibraryRoutes(
     }
   }
 
-  private def getAdminsDto(maybeOffset: Option[Offset], maybeLimit: Option[Limit]): Future[Either[ErrorResponse, Seq[LibraryEntryDTO]]] =
-    service
-      .getRecords(maybeOffset, maybeLimit)
-      .map(_.map(LibraryEntryRoutesAdminDto.fromDomain).asRight)
-      .recover {
-        case e =>
-          log.error(s"Can't show accepted library models, error - $e")
-          (Error("Can't get records"), StatusCode.InternalServerError).asLeft
-      }
+  private def getDTORoute: Route =
+    getDtoEndpoint.toRoute {
+      (getDto _).tupled
+    }
 
   private def getDto(
      maybeToken: Option[UserToken],
@@ -152,6 +126,16 @@ class LibraryRoutes(
       .withMaybeAuth(userService)(getAdminsDto(maybeOffset, maybeLimit))(getJustDto(maybeOffset, maybeLimit))
       .value
 
+  private def getAdminsDto(maybeOffset: Option[Offset], maybeLimit: Option[Limit]): Future[Either[ErrorResponse, Seq[LibraryEntryDTO]]] =
+    service
+      .getRecords(maybeOffset, maybeLimit)
+      .map(_.map(LibraryEntryRoutesAdminDto.fromDomain).asRight)
+      .recover {
+        case e =>
+          log.error(s"Can't show accepted library models, error - $e")
+          (Error("Can't get records"), StatusCode.InternalServerError).asLeft
+      }
+
   private def getJustDto(maybeOffset: Option[Offset], maybeLimit: Option[Limit]): Future[Either[ErrorResponse, Seq[LibraryEntryDTO]]] =
     service
       .getRecords(maybeOffset, maybeLimit, Some(Accepted))
@@ -161,6 +145,15 @@ class LibraryRoutes(
           log.error(s"Can't show accepted library models, limit - $maybeLimit error - $e")
           (Error("Can't get records"), StatusCode.InternalServerError).asLeft
       }
+
+  private def putEntryRoute: Route =
+    putEntryEndpoint.toRoute {
+      (bearer2TokenF _)
+        .andThenFirstE(userService.authenticate)
+        .andThenFirstE { args: (AuthUserData, UUIDString, String) =>
+          putDto(args._2, args._3)
+        }
+    }
 
   private def putDto(uid: UUIDString, status: String): Future[Either[ErrorResponse, StatusCode]] = {
     val statusChangeWithEmail =
@@ -188,6 +181,21 @@ class LibraryRoutes(
     }
   }
 
+  private def handleError(t: Throwable): ErrorResponse =
+    t match {
+      case _: IllegalArgumentException => (Error(t.getMessage), StatusCode.NotFound)
+      case _                           => (Error("Can't update"), StatusCode.InternalServerError)
+    }
+
+  private def deleteEntryRoute: Route =
+    deleteEntryEndpoint.toRoute {
+      (bearer2TokenF _)
+        .andThenFirstE(userService.authenticate)
+        .andThenFirstE { args: (AuthUserData, UUIDString) =>
+          deleteDto(args._2)
+        }
+    }
+
   private def deleteDto(uid: UUIDString): Future[Either[ErrorResponse, StatusCode]] =
     service
       .delete(LibraryEntryId(uid))
@@ -197,14 +205,6 @@ class LibraryRoutes(
           log.error(s"Can't delete library entry, uid: $uid, error - $e")
           handleError(e).asLeft
       }
-
-  private def handleError(t: Throwable): ErrorResponse =
-    t match {
-      case _: IllegalArgumentException => (Error(t.getMessage), StatusCode.NotFound)
-      case _                           => (Error("Can't update"), StatusCode.InternalServerError)
-    }
-
-  override def routes: Route = addNewEntryRoute ~ getDTORoute ~ putEntryRoute ~ deleteEntryRoute
 
   override def docs: List[Endpoint[_, _, _, _]] =
     List(libraryAddEndpoint, getDtoEndpoint, putEntryEndpoint, deleteEntryEndpoint)

@@ -11,17 +11,17 @@ import io.scalac.tezos.translator.actor.EmailSender
 import io.scalac.tezos.translator.config.Configuration
 import io.scalac.tezos.translator.model.EmailAddress
 import io.scalac.tezos.translator.model.types.Auth
-import io.scalac.tezos.translator.repository.{Emails2SendRepository, LibraryRepository, UserRepository}
+import io.scalac.tezos.translator.repository.{ Emails2SendRepository, LibraryRepository, UserRepository }
 import io.scalac.tezos.translator.routes.utils.MMTranslator
-import io.scalac.tezos.translator.service.{Emails2SendService, LibraryService, SendEmailsServiceImpl, UserService}
+import io.scalac.tezos.translator.service.{ Emails2SendService, LibraryService, SendEmailsServiceImpl, UserService }
 import scalacache._
 import scalacache.caffeine._
 import slick.jdbc.PostgresProfile
 import slick.jdbc.PostgresProfile.api._
 
-import scala.concurrent.{ExecutionContextExecutor, Future}
+import scala.concurrent.{ ExecutionContextExecutor, Future }
 import scala.io.StdIn
-import scala.util.{Failure, Success}
+import scala.util.{ Failure, Success }
 
 object Boot {
 

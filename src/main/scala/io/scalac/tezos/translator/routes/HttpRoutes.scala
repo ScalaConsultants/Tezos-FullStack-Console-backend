@@ -1,6 +1,6 @@
 package io.scalac.tezos.translator.routes
 
-import akka.http.scaladsl.server.{Directives, Route}
+import akka.http.scaladsl.server.{ Directives, Route }
 import sttp.tapir.Endpoint
 
 trait HttpRoutes extends Directives {

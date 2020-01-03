@@ -2,11 +2,11 @@ package io.scalac.tezos.translator.model.types
 
 import java.util.UUID
 import io.estatico.newtype.macros.newtype
-import io.circe.{Decoder, DecodingFailure, Encoder, HCursor}
+import io.circe.{ Decoder, DecodingFailure, Encoder, HCursor }
 import slick.ast.BaseTypedType
 import slick.jdbc.JdbcType
 import slick.jdbc.PostgresProfile.api._
-import sttp.tapir.{Codec, DecodeResult, Schema, SchemaType}
+import sttp.tapir.{ Codec, DecodeResult, Schema, SchemaType }
 import cats.syntax.either._
 import cats.syntax.option._
 import scala.reflect.ClassTag
@@ -20,10 +20,6 @@ import sttp.tapir.CodecFormat.TextPlain
 object UUIDs {
 
   type UUIDString = String Refined Uuid
-
-  @newtype case class LibraryEntryId(v: UUIDString)
-
-  @newtype case class SendEmailId(v: UUIDString)
 
   def buildUUIDTypeMapper[T: ClassTag](build: UUIDString => T): JdbcType[T] with BaseTypedType[T] =
     MappedColumnType.base[T, String](s => s.toString, s => build(refineV[Uuid](s).toOption.get))
@@ -46,6 +42,10 @@ object UUIDs {
   def generateSendEmailId: SendEmailId = generateUUID(SendEmailId.apply)
 
   def decodeUuid(s: String): DecodeResult[UUIDString] = buildDecoderFromStringWithRefine[UUIDString, Uuid](s, identity)
+
+  @newtype case class LibraryEntryId(v: UUIDString)
+
+  @newtype case class SendEmailId(v: UUIDString)
 
   implicit val libraryEntryId: Schema[LibraryEntryId] =
     new Schema[LibraryEntryId](SchemaType.SString, false, "UUID of library entry".some)

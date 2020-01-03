@@ -2,13 +2,13 @@ package io.scalac.tezos.translator.repository
 
 import io.scalac.tezos.translator.config.DBUtilityConfiguration
 import io.scalac.tezos.translator.model.LibraryEntry.Status
-import io.scalac.tezos.translator.model.types.Params.{Limit, Offset}
+import io.scalac.tezos.translator.model.types.Params.{ Limit, Offset }
 import io.scalac.tezos.translator.model.types.UUIDs.LibraryEntryId
 import io.scalac.tezos.translator.repository.dto.LibraryEntryDbDto
 import io.scalac.tezos.translator.schema.LibraryTable
 import slick.jdbc.PostgresProfile.api._
 
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.{ ExecutionContext, Future }
 
 class LibraryRepository(config: DBUtilityConfiguration, db: Database)(implicit ec: ExecutionContext) {
 

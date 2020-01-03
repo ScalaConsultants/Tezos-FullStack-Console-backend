@@ -8,7 +8,7 @@ import sttp.model.StatusCode
 import sttp.tapir._
 import sttp.tapir.json.circe._
 import sttp.tapir.server.akkahttp._
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.{ ExecutionContext, Future }
 
 class TranslatorRoutes(translator: Translator)(implicit ec: ExecutionContext) extends HttpRoutes {
 
@@ -34,6 +34,7 @@ class TranslatorRoutes(translator: Translator)(implicit ec: ExecutionContext) ex
 }
 
 object TranslatorRoutes {
+
   private val translationEndpoint: Endpoint[String, (StatusCode, String), String, Nothing] =
     Endpoints.baseEndpoint.post
       .in("translate")

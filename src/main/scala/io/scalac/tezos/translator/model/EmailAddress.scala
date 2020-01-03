@@ -1,9 +1,10 @@
 package io.scalac.tezos.translator.model
 
-import io.circe.{Decoder, DecodingFailure, Encoder, HCursor}
+import io.circe.{ Decoder, DecodingFailure, Encoder, HCursor }
 import javax.mail.internet.InternetAddress
 
 import scala.util.Try
+
 sealed abstract case class EmailAddress(value: InternetAddress) {
   override def toString: String = value.getAddress
 }
@@ -17,6 +18,7 @@ object EmailAddress {
   implicit val emailAddressEncoder: Encoder[EmailAddress] = Encoder.forProduct1("value")(_.toString)
 
   implicit val emailAddressDecoder: Decoder[EmailAddress] = new Decoder[EmailAddress] {
+
     final def apply(c: HCursor): Decoder.Result[EmailAddress] =
       for {
         value <- c.downField("value").as[String]
