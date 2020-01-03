@@ -16,8 +16,8 @@ object DbTestBase {
     Database.forURL(container.jdbcUrl, container.username, container.password, executor = AsyncExecutor("exec", 10, 10, 1000, 10))
   val postgresVersion     = "postgres:9.6-alpine"
   val dbTimeout: Duration = 5.seconds
+  val container           = new PostgreSQLContainer(Some(postgresVersion))
   container.start()
-  val container    = new PostgreSQLContainer(Some(postgresVersion))
   val evolutionCfg = DbEvolutionConfig(container.jdbcUrl, container.username, container.password, "flyway", enabled = true)
   val dbEvolutions = SqlDbEvolution(evolutionCfg)
 
