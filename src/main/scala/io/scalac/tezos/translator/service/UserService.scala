@@ -28,29 +28,27 @@ class UserService(repository: UserRepository, tokenToUser: Cache[Username], db: 
   private def generateRandomToken: UserToken = {
     val maybeNewTokenEntry = refineV[UserTokenReq](Random.alphanumeric.take(30).mkString)
     maybeNewTokenEntry match {
-      case Left(_) => generateRandomToken
+      case Left(_)      => generateRandomToken
       case Right(value) => UserToken(value)
     }
   }
 
-  private def checkPassword(user: UserModel, password: Password): Boolean = {
+  private def checkPassword(user: UserModel, password: Password): Boolean =
     password.v.value.isBcrypted(user.passwordHash.v.value)
-  }
 
-  def authenticateAndCreateToken(username: Username, password: Password): Future[Option[UserToken]] = {
+  def authenticateAndCreateToken(username: Username, password: Password): Future[Option[UserToken]] =
     for {
-      maybeUser <- db.run(repository.getByUsername(username))
+      maybeUser       <- db.run(repository.getByUsername(username))
       isAuthenticated = maybeUser.exists(user => checkPassword(user, password))
-      token <- if (isAuthenticated) createToken(username).map(Some(_)) else Future.successful(None)
+      token           <- if (isAuthenticated) createToken(username).map(Some(_)) else Future.successful(None)
     } yield token
-  }
 
   def authenticate(token: UserToken): Future[Either[ErrorResponse, AuthUserData]] =
     tokenToUser.get(token.v.value).map {
       _.fold {
         (Error("Token not found"), StatusCode.Unauthorized).asLeft[AuthUserData]
-      } {
-        username => AuthUserData(username, token).asRight
+      } { username =>
+        AuthUserData(username, token).asRight
       }
     }
 

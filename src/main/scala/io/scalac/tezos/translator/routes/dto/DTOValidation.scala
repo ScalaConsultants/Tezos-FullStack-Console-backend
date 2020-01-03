@@ -23,7 +23,7 @@ trait DTOValidation[T] {
 
 object DTOValidation {
 
-  val maxTinyLength = 255
+  val maxTinyLength     = 255
   val maxUsernameLength = 30
 
   type ValidationResult[A] = Either[NonEmptyList[DTOValidationError], A]
@@ -31,7 +31,7 @@ object DTOValidation {
   def apply[T](value: T)(implicit validator: DTOValidation[T]): ValidationResult[T] =
     validator.validate(value)
 
-  def validateDto[T : DTOValidation](value: T)(implicit ec: ExecutionContext): Future[Either[(ErrorDTO, StatusCode), T]] =
+  def validateDto[T: DTOValidation](value: T)(implicit ec: ExecutionContext): Future[Either[(ErrorDTO, StatusCode), T]] =
     Future {
       DTOValidation(value) match {
         case Right(value) => value.asRight
@@ -55,41 +55,36 @@ object DTOValidation {
 
   final case class FieldIsInvalid(fieldName: String, field: String) extends DTOValidationError
 
-  def checkStringNotEmpty(string: String,
-                          onEmpty: => DTOValidationError): ValidationResult[String] = {
+  def checkStringNotEmpty(string: String, onEmpty: => DTOValidationError): ValidationResult[String] =
     if (string.trim.isEmpty)
       NonEmptyList.one(onEmpty).asLeft
     else
       string.asRight
-  }
 
-  def checkStringNotEmptyAndLength(string: String,
-                                   maxLength: Int,
-                                   onEmpty: => DTOValidationError,
-                                   whenMaxLengthExceeds: => DTOValidationError): ValidationResult[String] = {
+  def checkStringNotEmptyAndLength(
+     string: String,
+     maxLength: Int,
+     onEmpty: => DTOValidationError,
+     whenMaxLengthExceeds: => DTOValidationError
+   ): ValidationResult[String] =
     checkStringNotEmpty(string, onEmpty)
       .flatMap(checkStringLength(_, maxLength, whenMaxLengthExceeds))
-  }
 
-  def checkStringMatchRegExp(string: String,
-                             regExp: String,
-                             onNonMatch: => DTOValidationError): ValidationResult[String] = {
+  def checkStringMatchRegExp(string: String, regExp: String, onNonMatch: => DTOValidationError): ValidationResult[String] =
     if (string.matches(regExp))
       string.asRight
     else
       NonEmptyList.one(onNonMatch).asLeft
-  }
 
-  def checkStringLength(string: String,
-                        maxLength: Int,
-                        whenMaxLengthExceeds: => DTOValidationError): ValidationResult[String] = {
+  def checkStringLength(string: String, maxLength: Int, whenMaxLengthExceeds: => DTOValidationError): ValidationResult[String] =
     if (string.length > maxLength)
       NonEmptyList.one(whenMaxLengthExceeds).asLeft
     else
       string.asRight
-  }
 
-  implicit val SendEmailDTOValidation: DTOValidation[SendEmailRoutesDto] = { dto => validateSendEmailDTO(dto) }
+  implicit val SendEmailDTOValidation: DTOValidation[SendEmailRoutesDto] = { dto =>
+    validateSendEmailDTO(dto)
+  }
 
   def validateSendEmailDTO: SendEmailRoutesDto => ValidationResult[SendEmailRoutesDto] = { dto =>
     val checkEmail: ValidationResult[Option[EmailS]] = dto.email.traverse(checkEmailIsValid)
@@ -113,13 +108,16 @@ object DTOValidation {
       .toEither
       .leftMap(_ => NonEmptyList.one(FieldIsInvalid("email", email.v.value)))
       .flatMap(
-        a => refineV[EmailReq](a.toString.toLowerCase) match {
-          case Left(_)      => NonEmptyList.one(FieldIsInvalid("email", email.v.value)).asLeft
-          case Right(value) => EmailS(value).asRight
-        }
+         a =>
+           refineV[EmailReq](a.toString.toLowerCase) match {
+             case Left(_)      => NonEmptyList.one(FieldIsInvalid("email", email.v.value)).asLeft
+             case Right(value) => EmailS(value).asRight
+           }
       )
 
-  implicit val LibraryDTOValidation: DTOValidation[LibraryEntryRoutesDto] = { dto => validateLibraryEntryRoutesDto(dto) }
+  implicit val LibraryDTOValidation: DTOValidation[LibraryEntryRoutesDto] = { dto =>
+    validateLibraryEntryRoutesDto(dto)
+  }
 
   def validateLibraryEntryRoutesDto: LibraryEntryRoutesDto => ValidationResult[LibraryEntryRoutesDto] = { dto =>
     val checkEmail: Either[NonEmptyList[DTOValidationError], Option[EmailS]] =

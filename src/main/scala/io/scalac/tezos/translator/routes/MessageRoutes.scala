@@ -19,11 +19,13 @@ import sttp.tapir.server.akkahttp._
 import scala.concurrent.{ExecutionContext, Future}
 
 class MessageRoutes(
-  service: Emails2SendService,
-  log: LoggingAdapter,
-  reCaptchaConfig: CaptchaConfig,
-  adminEmail: EmailAddress
-)(implicit actorSystem: ActorSystem, ec: ExecutionContext) extends HttpRoutes {
+   service: Emails2SendService,
+   log: LoggingAdapter,
+   reCaptchaConfig: CaptchaConfig,
+   adminEmail: EmailAddress
+ )(implicit actorSystem: ActorSystem,
+   ec: ExecutionContext)
+    extends HttpRoutes {
 
   private val messageEndpoint: Endpoint[(Option[Captcha], SendEmailRoutesDto), ErrorResponse, StatusCode, Nothing] =
     Endpoints
@@ -35,9 +37,9 @@ class MessageRoutes(
 
   private def addNewEmail(dto: SendEmailRoutesDto): Future[Either[ErrorResponse, StatusCode]] = {
     val operationPerformed = for {
-        sendEmail <-  Future.fromTry(SendEmail.fromSendEmailRoutesDto(dto, adminEmail))
-        newEmail  <-  service.addNewEmail2Send(sendEmail)
-      } yield newEmail
+      sendEmail <- Future.fromTry(SendEmail.fromSendEmailRoutesDto(dto, adminEmail))
+      newEmail  <- service.addNewEmail2Send(sendEmail)
+    } yield newEmail
 
     operationPerformed.map(_ => StatusCode.Ok.asRight).recover {
       case e =>
@@ -49,8 +51,11 @@ class MessageRoutes(
   def buildRoute(log: LoggingAdapter, reCaptchaConfig: CaptchaConfig)(implicit ec: ExecutionContext): Route =
     messageEndpoint
       .toRoute {
-        (ReCaptcha.withReCaptchaVerify(_, log, reCaptchaConfig))
-          .andThenFirstE{ t: (Unit, SendEmailRoutesDto) => DTOValidation.validateDto(t._2) }
+        (ReCaptcha
+          .withReCaptchaVerify(_, log, reCaptchaConfig))
+          .andThenFirstE { t: (Unit, SendEmailRoutesDto) =>
+            DTOValidation.validateDto(t._2)
+          }
           .andThenFirstE(addNewEmail)
       }
 

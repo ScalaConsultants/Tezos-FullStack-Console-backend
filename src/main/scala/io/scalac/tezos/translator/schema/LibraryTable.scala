@@ -36,5 +36,6 @@ class LibraryTable(tag: Tag) extends Table[LibraryEntryDbDto](tag, "library") {
 
   def status: Rep[Int] = column[Int]("status", NotNull, O.SqlType("SMALLINT"))
 
-  override def * : ProvenShape[LibraryEntryDbDto] = (uid, title, author, email, description, micheline, michelson, createdAt, status) <> ((LibraryEntryDbDto.apply _).tupled, LibraryEntryDbDto.unapply)
+  override def * : ProvenShape[LibraryEntryDbDto] =
+    (uid, title, author, email, description, micheline, michelson, createdAt, status) <> ((LibraryEntryDbDto.apply _).tupled, LibraryEntryDbDto.unapply)
 }

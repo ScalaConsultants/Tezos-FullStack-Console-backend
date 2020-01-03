@@ -7,6 +7,6 @@ trait HttpRoutes extends Directives {
 
   def routes: Route
 
-  def docs: List[Endpoint[_, _ ,_ ,_]]
+  def docs: List[Endpoint[_, _, _, _]]
 
 }

@@ -46,10 +46,10 @@ object ContactData {
   implicit val contentDecoder: Decoder[Content] =
     buildStringRefinedDecoder[Content, NonEmpty]("Can't decode content", Content.apply)
 
-  implicit val nameSchema: Schema[Name] = new Schema[Name](SchemaType.SString, false)
-  implicit val phoneSchema: Schema[Phone] = new Schema[Phone](SchemaType.SString, true)
+  implicit val nameSchema: Schema[Name]           = new Schema[Name](SchemaType.SString, false)
+  implicit val phoneSchema: Schema[Phone]         = new Schema[Phone](SchemaType.SString, true)
   implicit val refinedEmailSchema: Schema[EmailS] = new Schema[EmailS](SchemaType.SString, true)
-  implicit val contentSchema: Schema[Content] = new Schema[Content](SchemaType.SString, false)
+  implicit val contentSchema: Schema[Content]     = new Schema[Content](SchemaType.SString, false)
 
   implicit val emailSMapper: JdbcType[EmailS] with BaseTypedType[EmailS] = buildRefinedStringMapper(EmailS.apply)
 

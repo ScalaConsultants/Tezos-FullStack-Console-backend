@@ -18,19 +18,16 @@ import scala.concurrent.{ExecutionContext, Future}
 class LoginRoutes(userService: UserService)(implicit ec: ExecutionContext) extends HttpRoutes {
 
   val loginEndpoint: Endpoint[UserCredentials, ErrorResponse, String, Nothing] =
-    Endpoints
-      .baseEndpoint
-      .post
+    Endpoints.baseEndpoint.post
       .in("login")
       .in(jsonBody[UserCredentials])
       .errorOut(jsonBody[ErrorDTO].and(statusCode))
       .out(jsonBody[String])
 
-
   def loginLogic(credentials: UserCredentials): Future[Either[ErrorResponse, String]] =
     userService.authenticateAndCreateToken(credentials.username, credentials.password).map {
       case Some(token) => Right(token.v.value)
-      case None => (Error("Wrong credentials !"), StatusCode.Forbidden).asLeft
+      case None        => (Error("Wrong credentials !"), StatusCode.Forbidden).asLeft
     }
 
   val loginRoute: Route = loginEndpoint.toRoute {
@@ -39,17 +36,15 @@ class LoginRoutes(userService: UserService)(implicit ec: ExecutionContext) exten
 
   def logoutLogic(token: UserToken): Future[Either[ErrorResponse, Unit]] =
     for {
-      authUserData  <-  userService.authenticate(token)
-      logout        <-  authUserData match {
-                      case Left(v) => Future.successful(Left(v))
-                      case Right(uData) => userService.logout(uData.token).map(Right(_))
-                    }
+      authUserData <- userService.authenticate(token)
+      logout <- authUserData match {
+                 case Left(v)      => Future.successful(Left(v))
+                 case Right(uData) => userService.logout(uData.token).map(Right(_))
+               }
     } yield logout
 
   val logoutEndpoint: Endpoint[String, ErrorResponse, Unit, Nothing] =
-    Endpoints
-      .baseEndpoint
-      .post
+    Endpoints.baseEndpoint.post
       .in("logout")
       .in(auth.bearer)
       .errorOut(jsonBody[ErrorDTO].and(statusCode))

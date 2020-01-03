@@ -13,48 +13,44 @@ import io.scalac.tezos.translator.model.{EmailAddress, LibraryEntry}
 import scala.util.{Success, Try}
 
 case class LibraryEntryDbDto(
-                              uid: LibraryEntryId,
-                              title: Title,
-                              author: Option[Author],
-                              email: Option[EmailS],
-                              description: Option[Description],
-                              micheline: Micheline,
-                              michelson: Michelson,
-                              createdAt: Timestamp,
-                              status: Int = 1
-                            ) {
+   uid: LibraryEntryId,
+   title: Title,
+   author: Option[Author],
+   email: Option[EmailS],
+   description: Option[Description],
+   micheline: Micheline,
+   michelson: Michelson,
+   createdAt: Timestamp,
+   status: Int = 1) {
 
   def toDomain: Try[LibraryEntry] =
     for {
       status <- Status.fromInt(status)
       emailAdress <- email match {
-        case Some(e) => EmailAddress.fromString(e.v.value).map(Some(_))
-        case None => Success(None)
-      }
+                      case Some(e) => EmailAddress.fromString(e.v.value).map(Some(_))
+                      case None    => Success(None)
+                    }
     } yield
-      LibraryEntry(
-        uid = uid,
-        title = title,
-        author = author,
-        email = emailAdress,
-        description = description,
-        micheline = micheline,
-        michelson = michelson,
-        status = status
-      )
+      LibraryEntry(uid         = uid,
+                   title       = title,
+                   author      = author,
+                   email       = emailAdress,
+                   description = description,
+                   micheline   = micheline,
+                   michelson   = michelson,
+                   status      = status)
 }
 
 object LibraryEntryDbDto {
+
   def fromDomain(v: LibraryEntry) =
-    LibraryEntryDbDto(
-      uid = v.uid,
-      title = v.title,
-      author = v.author,
-      email = v.email.toEmailS,
-      description = v.description,
-      micheline = v.micheline,
-      michelson = v.michelson,
-      createdAt = Timestamp.from(Instant.now),
-      status = v.status.value
-    )
+    LibraryEntryDbDto(uid         = v.uid,
+                      title       = v.title,
+                      author      = v.author,
+                      email       = v.email.toEmailS,
+                      description = v.description,
+                      micheline   = v.micheline,
+                      michelson   = v.michelson,
+                      createdAt   = Timestamp.from(Instant.now),
+                      status      = v.status.value)
 }

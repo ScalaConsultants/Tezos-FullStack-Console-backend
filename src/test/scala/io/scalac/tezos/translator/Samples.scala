@@ -89,7 +89,6 @@ object Samples {
        |       NIL operation ;
        |       PAIR }""".stripMargin
 
-
   val incorrectMichelson1 =
     """parameter key_hash;
       |storage (pair key_hash timestamp);

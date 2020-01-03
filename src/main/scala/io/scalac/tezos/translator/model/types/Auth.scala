@@ -45,10 +45,11 @@ object Auth {
 
   def decodeTokenCodec(s: String): DecodeResult[UserToken] =
     decodeAuthHeader(s) match {
-      case Value(v) => refineV[UserTokenReq](v.v.value.drop(7)) match {
-        case Left(error)  => DecodeResult.Mismatch(error, s)
-        case Right(value) => Value(UserToken(value))
-      }
+      case Value(v) =>
+        refineV[UserTokenReq](v.v.value.drop(7)) match {
+          case Left(error)  => DecodeResult.Mismatch(error, s)
+          case Right(value) => Value(UserToken(value))
+        }
       case failure: DecodeFailure => failure
     }
 

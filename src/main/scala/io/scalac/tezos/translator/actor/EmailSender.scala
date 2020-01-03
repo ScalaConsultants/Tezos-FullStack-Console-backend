@@ -16,15 +16,13 @@ class EmailSender(service: SendEmailsService)(implicit ec: ExecutionContext) ext
 }
 
 object EmailSender {
+
   def apply(service: SendEmailsService, cronConfig: CronConfiguration)(implicit ac: ActorSystem): Cancellable = {
     implicit val ec: ExecutionContextExecutor = ac.dispatcher
     val actor = ac
-      .actorOf(
-        Props(
-          new EmailSender(service)
-          (ac.dispatchers.lookup("blocking-dispatcher"))
-        )
-          .withDispatcher("blocking-dispatcher"), "email-sender")
+      .actorOf(Props(new EmailSender(service)(ac.dispatchers.lookup("blocking-dispatcher")))
+                 .withDispatcher("blocking-dispatcher"),
+               "email-sender")
     ac.scheduler.schedule(cronConfig.startDelay, cronConfig.cronTaskInterval, actor, SendEmails)
   }
 

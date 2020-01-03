@@ -10,25 +10,23 @@ import sttp.tapir.json.circe._
 import sttp.tapir.server.akkahttp._
 import scala.concurrent.{ExecutionContext, Future}
 
-class TranslatorRoutes(
-  translator: Translator
-)(implicit ec: ExecutionContext) extends HttpRoutes {
+class TranslatorRoutes(translator: Translator)(implicit ec: ExecutionContext) extends HttpRoutes {
 
   override def routes: Route =
     fromMichelsonEndpoint.toRoute(
-      body =>
-        Future(
-          translator
-            .michelson2micheline(body)
-            .leftMap(_ => (StatusCode.BadRequest, "invalid syntax"))
-        )
+       body =>
+         Future(
+            translator
+              .michelson2micheline(body)
+              .leftMap(_ => (StatusCode.BadRequest, "invalid syntax"))
+         )
     ) ~ fromMichelineEndpoint.toRoute(
-      body =>
-        Future(
-          translator
-            .micheline2michelson(body)
-            .leftMap(_ => (StatusCode.BadRequest, "input json cannot be parsed"))
-        )
+       body =>
+         Future(
+            translator
+              .micheline2michelson(body)
+              .leftMap(_ => (StatusCode.BadRequest, "input json cannot be parsed"))
+         )
     )
 
   override def docs: List[Endpoint[_, _, _, _]] = List(fromMichelsonEndpoint, fromMichelineEndpoint)
@@ -37,9 +35,7 @@ class TranslatorRoutes(
 
 object TranslatorRoutes {
   private val translationEndpoint: Endpoint[String, (StatusCode, String), String, Nothing] =
-    Endpoints
-      .baseEndpoint
-      .post
+    Endpoints.baseEndpoint.post
       .in("translate")
       .errorOut(statusCode.and(jsonBody[String]))
       .in(stringBody)

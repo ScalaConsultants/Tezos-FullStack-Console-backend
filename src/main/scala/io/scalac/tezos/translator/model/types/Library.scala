@@ -61,12 +61,10 @@ object Library {
   implicit val titleDecoder: Decoder[Title] =
     buildStringRefinedDecoder("Can't parse title", Title.apply)
 
-  implicit val authorSchema: Schema[Author] = new Schema[Author](SchemaType.SString, false)
+  implicit val authorSchema: Schema[Author]           = new Schema[Author](SchemaType.SString, false)
   implicit val descriptionSchema: Schema[Description] = new Schema[Description](SchemaType.SString, false)
-  implicit val michelineSchema: Schema[Micheline] = new Schema[Micheline](SchemaType.SString, false)
-  implicit val michelsonSchema: Schema[Michelson] = new Schema[Michelson](SchemaType.SString, false)
-  implicit val titleSchema: Schema[Title] = new Schema[Title](SchemaType.SString, false)
-
-
+  implicit val michelineSchema: Schema[Micheline]     = new Schema[Micheline](SchemaType.SString, false)
+  implicit val michelsonSchema: Schema[Michelson]     = new Schema[Michelson](SchemaType.SString, false)
+  implicit val titleSchema: Schema[Title]             = new Schema[Title](SchemaType.SString, false)
 
 }

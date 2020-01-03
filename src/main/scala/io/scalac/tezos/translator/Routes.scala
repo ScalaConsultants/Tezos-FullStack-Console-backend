@@ -14,22 +14,21 @@ import io.scalac.tezos.translator.service.{Emails2SendService, LibraryService, U
 import scala.concurrent.ExecutionContext
 
 class Routes(
-  emails2SendService: Emails2SendService,
-  libraryService: LibraryService,
-  userService: UserService,
-  translator: Translator,
-  log: LoggingAdapter,
-  captchaConfig: CaptchaConfig,
-  adminEmail: EmailAddress
-)(implicit as: ActorSystem, ec: ExecutionContext) {
+   emails2SendService: Emails2SendService,
+   libraryService: LibraryService,
+   userService: UserService,
+   translator: Translator,
+   log: LoggingAdapter,
+   captchaConfig: CaptchaConfig,
+   adminEmail: EmailAddress
+ )(implicit as: ActorSystem,
+   ec: ExecutionContext) {
 
   private val apis: List[HttpRoutes] =
-    List(
-      new TranslatorRoutes(translator),
-      new MessageRoutes(emails2SendService, log, captchaConfig, adminEmail),
-      new LibraryRoutes(libraryService, userService, emails2SendService, log, captchaConfig, adminEmail),
-      new LoginRoutes(userService)
-    )
+    List(new TranslatorRoutes(translator),
+         new MessageRoutes(emails2SendService, log, captchaConfig, adminEmail),
+         new LibraryRoutes(libraryService, userService, emails2SendService, log, captchaConfig, adminEmail),
+         new LoginRoutes(userService))
 
   lazy val allRoutes: Route =
     cors() {

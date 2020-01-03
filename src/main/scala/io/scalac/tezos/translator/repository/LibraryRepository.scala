@@ -17,7 +17,8 @@ class LibraryRepository(config: DBUtilityConfiguration, db: Database)(implicit e
 
   def list(status: Option[Status], offset: Option[Offset], limit: Option[Limit]): Future[Seq[LibraryEntryDbDto]] =
     db.run {
-      LibraryTable.library.filterOpt(status){ case (row, s) =>  row.status === s.value}
+      LibraryTable.library
+        .filterOpt(status) { case (row, s) => row.status === s.value }
         .sortBy(_.createdAt.desc)
         .drop(offset.fold(0)(_.v.value))
         .take(limit.fold(config.defaultLimit)(_.v.value))

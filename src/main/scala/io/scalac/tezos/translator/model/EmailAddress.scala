@@ -20,10 +20,11 @@ object EmailAddress {
     final def apply(c: HCursor): Decoder.Result[EmailAddress] =
       for {
         value <- c.downField("value").as[String]
-        email <- EmailAddress.fromString(value)
-          .toEither
-          .left
-          .map(ex => DecodingFailure.fromThrowable(ex, c.history))
+        email <- EmailAddress
+                  .fromString(value)
+                  .toEither
+                  .left
+                  .map(ex => DecodingFailure.fromThrowable(ex, c.history))
       } yield email
   }
 }

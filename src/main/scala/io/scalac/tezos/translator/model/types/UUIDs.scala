@@ -28,13 +28,15 @@ object UUIDs {
   def buildUUIDTypeMapper[T: ClassTag](build: UUIDString => T): JdbcType[T] with BaseTypedType[T] =
     MappedColumnType.base[T, String](s => s.toString, s => build(refineV[Uuid](s).toOption.get))
 
-  def buildUUIDDecoder[T](build: UUIDString => T): Decoder[T] = (c: HCursor) => c.as[String Refined Uuid] match {
-    case Left(_)      => DecodingFailure("Can't parse uuid", c.history).asLeft
-    case Right(value) => build(value).asRight
-  }
+  def buildUUIDDecoder[T](build: UUIDString => T): Decoder[T] =
+    (c: HCursor) =>
+      c.as[String Refined Uuid] match {
+        case Left(_)      => DecodingFailure("Can't parse uuid", c.history).asLeft
+        case Right(value) => build(value).asRight
+      }
 
   @scala.annotation.tailrec
-  def generateUUID[T](build: UUIDString=> T): T = refineV[Uuid](UUID.randomUUID().toString) match {
+  def generateUUID[T](build: UUIDString => T): T = refineV[Uuid](UUID.randomUUID().toString) match {
     case Left(_)      => generateUUID(build)
     case Right(value) => build(value)
   }
