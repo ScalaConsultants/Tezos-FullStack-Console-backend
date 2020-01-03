@@ -81,7 +81,7 @@ object ReCaptcha {
          ().asRight
        else
          (Error ("You are bot"), StatusCode.Unauthorized).asLeft
-      case _ => (Error ("Empty Score"), StatusCode.Unauthorized).asLeft
+      case _ => (Error (s"""Google response was succes but doesn't have "Score", Probably you don't used reCAPTCHA V3"""), StatusCode.Unauthorized).asLeft
     }
   }
   protected def checkVerifyResponse(response: HttpResponse,
