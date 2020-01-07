@@ -9,7 +9,7 @@ import io.scalac.tezos.translator.config.CaptchaConfig
 import io.scalac.tezos.translator.model.EmailAddress
 import io.scalac.tezos.translator.routes._
 import io.scalac.tezos.translator.routes.utils.Translator
-import io.scalac.tezos.translator.service.{Emails2SendService, LibraryService, UserService}
+import io.scalac.tezos.translator.service.{ Emails2SendService, LibraryService, UserService }
 
 import scala.concurrent.ExecutionContext
 
