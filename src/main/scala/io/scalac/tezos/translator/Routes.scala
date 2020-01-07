@@ -5,7 +5,6 @@ import akka.event.LoggingAdapter
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
 import ch.megard.akka.http.cors.scaladsl.CorsDirectives._
-import ch.megard.akka.http.cors.scaladsl.settings.CorsSettings
 import io.scalac.tezos.translator.config.CaptchaConfig
 import io.scalac.tezos.translator.model.EmailAddress
 import io.scalac.tezos.translator.routes._
