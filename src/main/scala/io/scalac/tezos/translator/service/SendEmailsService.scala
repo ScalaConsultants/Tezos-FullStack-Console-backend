@@ -1,47 +1,47 @@
 package io.scalac.tezos.translator.service
 
 import akka.event.LoggingAdapter
-import courier.{Envelope, Mailer, Text}
-import io.scalac.tezos.translator.config.{CronConfiguration, EmailConfiguration}
+import courier.{ Envelope, Mailer, Text }
+import io.scalac.tezos.translator.config.{ CronConfiguration, EmailConfiguration }
 import io.scalac.tezos.translator.model._
 
-import scala.concurrent.{ExecutionContext, Future}
-import scala.util.{Failure, Success, Try}
+import scala.concurrent.{ ExecutionContext, Future }
+import scala.util.{ Failure, Success, Try }
 
 trait SendEmailsService {
   def getEmailsToSend: Future[Seq[SendEmail]]
 
   def sendEmails(implicit ec: ExecutionContext): Future[Unit] =
     for {
-      emailsToSend  <-  getEmailsToSend
-      emailsToSendF =   emailsToSend.map(sendSingleMail)
-      _             <-  Future.sequence(emailsToSendF)
+      emailsToSend  <- getEmailsToSend
+      emailsToSendF = emailsToSend.map(sendSingleMail)
+      _             <- Future.sequence(emailsToSendF)
     } yield ()
 
   def sendSingleMail(sendEmailModel: SendEmail): Future[Unit]
 }
 
 class SendEmailsServiceImpl(
-  service: Emails2SendService,
-  batchSize: Int,
-  mailer: Mailer,
-  log: LoggingAdapter,
-  serviceEmail: EmailAddress
-)(implicit ec: ExecutionContext) extends SendEmailsService {
+   service: Emails2SendService,
+   batchSize: Int,
+   mailer: Mailer,
+   log: LoggingAdapter,
+   serviceEmail: EmailAddress
+ )(implicit ec: ExecutionContext)
+    extends SendEmailsService {
   override def getEmailsToSend: Future[Seq[SendEmail]] = service.getEmails2Send(batchSize)
 
   override def sendSingleMail(sendEmailModel: SendEmail): Future[Unit] = {
-    val emailUid = sendEmailModel.uid
+    val emailUid  = sendEmailModel.uid
     val addressTo = sendEmailModel.to.value
-
 
     val send =
       mailer(
-        Envelope
-          .from(serviceEmail.value)
-          .to(addressTo)
-          .subject(sendEmailModel.subject)
-          .content(Text(EmailContent.toPrettyString(sendEmailModel.content)))
+         Envelope
+           .from(serviceEmail.value)
+           .to(addressTo)
+           .subject(sendEmailModel.subject)
+           .content(Text(EmailContent.toPrettyString(sendEmailModel.content)))
       ).transform {
         case Success(v) =>
           log.debug(s"Message sent - $sendEmailModel")
@@ -69,18 +69,20 @@ class SendEmailsServiceImpl(
             Failure(ex)
         }
 
-    send.flatMap(_ => delete).recover { case _ => ()}
+    send.flatMap(_ => delete).recover { case _ => () }
   }
 
 }
 
 object SendEmailsServiceImpl {
+
   def apply(
-    service: Emails2SendService,
-    log: LoggingAdapter,
-    emailConfig: EmailConfiguration,
-    cronConfig: CronConfiguration
-  )(implicit ec: ExecutionContext): Try[SendEmailsServiceImpl] = {
+     service: Emails2SendService,
+     log: LoggingAdapter,
+     emailConfig: EmailConfiguration,
+     cronConfig: CronConfiguration
+   )(implicit ec: ExecutionContext
+   ): Try[SendEmailsServiceImpl] =
     EmailAddress.fromString(emailConfig.user).map { serviceEmail =>
       val mailer: Mailer = Mailer(emailConfig.host, emailConfig.port)
         .auth(emailConfig.auth)
@@ -89,5 +91,4 @@ object SendEmailsServiceImpl {
 
       new SendEmailsServiceImpl(service, cronConfig.cronBatchSize, mailer, log, serviceEmail)
     }
-  }
 }

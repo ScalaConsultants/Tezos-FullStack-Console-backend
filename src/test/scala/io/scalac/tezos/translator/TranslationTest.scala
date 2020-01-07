@@ -9,13 +9,13 @@ import io.scalac.tezos.translator.config.CaptchaConfig
 import io.scalac.tezos.translator.fakes.FakeMMTranslator
 import io.scalac.tezos.translator.routes.TranslatorRoutes
 import org.scalatest.concurrent.ScalaFutures
-import org.scalatest.{MustMatchers, WordSpec}
+import org.scalatest.{ MustMatchers, WordSpec }
 
 class TranslationTest extends WordSpec with MustMatchers with ScalaFutures with ScalatestRouteTest {
 
-  val log: LoggingAdapter = system.log
+  val log: LoggingAdapter   = system.log
   val config: CaptchaConfig = CaptchaConfig()
-  val routes: Route = new TranslatorRoutes(FakeMMTranslator).routes
+  val routes: Route         = new TranslatorRoutes(FakeMMTranslator).routes
 
   "A Routes" can {
     "translate michelson to micheline" when {

@@ -7,47 +7,41 @@ import pureconfig.generic.auto._ // Required, don't let idea optimize imports he
 import scala.concurrent.duration._
 
 case class Configuration(
-  reCaptcha: CaptchaConfig = CaptchaConfig(),
-  email: EmailConfiguration = EmailConfiguration(),
-  cron: CronConfiguration = CronConfiguration(),
-  dbUtility: DBUtilityConfiguration = DBUtilityConfiguration(),
-  dbEvolutionConfig: DbEvolutionConfig
-)
+   reCaptcha: CaptchaConfig          = CaptchaConfig(),
+   email: EmailConfiguration         = EmailConfiguration(),
+   cron: CronConfiguration           = CronConfiguration(),
+   dbUtility: DBUtilityConfiguration = DBUtilityConfiguration(),
+   dbEvolutionConfig: DbEvolutionConfig)
 
 case class CaptchaConfig(
-  checkOn: Boolean = false,
-  url: String = "https://www.google.com/recaptcha/api/siteverify",
-  secret: String = "??",
-  score: Float = 0.0f,
-  headerName: String = "CAPTCHA"
-)
+   checkOn: Boolean   = false,
+   url: String        = "https://www.google.com/recaptcha/api/siteverify",
+   secret: String     = "??",
+   score: Float       = 0.0f,
+   headerName: String = "CAPTCHA")
 
 case class EmailConfiguration(
-  host: String = "smtp.gmail.com",
-  port: Int = 587,
-  auth: Boolean = true,
-  user: String = "you@gmail.com",
-  pass: String = "p@$$w3rd",
-  startTls: Boolean = true,
-  receiver: String = "enterYours@gmail.com"
-)
-
+   host: String      = "smtp.gmail.com",
+   port: Int         = 587,
+   auth: Boolean     = true,
+   user: String      = "you@gmail.com",
+   pass: String      = "p@$$w3rd",
+   startTls: Boolean = true,
+   receiver: String  = "enterYours@gmail.com")
 
 case class CronConfiguration(
-  cronBatchSize: Int = 10,
-  startDelay: FiniteDuration = 0 milliseconds,
-  cronTaskInterval: FiniteDuration = 30 seconds
-)
+   cronBatchSize: Int               = 10,
+   startDelay: FiniteDuration       = 0 milliseconds,
+   cronTaskInterval: FiniteDuration = 30 seconds)
 
 case class DBUtilityConfiguration(defaultLimit: Int = 10)
 
 case class DbEvolutionConfig(
-  url: String,
-  user: String,
-  password: String,
-  migrationScriptsPackage: String,
-  enabled: Boolean
-)
+   url: String,
+   user: String,
+   password: String,
+   migrationScriptsPackage: String,
+   enabled: Boolean)
 
 object Configuration {
 
