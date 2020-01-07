@@ -70,16 +70,18 @@ object Boot {
         adminEmail        <- Future.fromTry(EmailAddress.fromString(cfg.email.receiver))
         routes            = new Routes(email2SendService, libraryService, userService, MMTranslator, log, cfg.reCaptcha, adminEmail)
         binding           <- Http().bindAndHandle(routes.allRoutes, host, port)
+        _                 <- Future.successful(StdIn.readLine())
       } yield (cronEmailSender, binding)
 
     log.info(s"Server online at http://$host:$port\nPress RETURN to stop...")
 
-    StdIn.readLine()
     bindingFuture
-      .flatMap {
-        case (cronEmailSender, binding) =>
+      .transformWith {
+        case Success((cronEmailSender, binding)) =>
           cronEmailSender.cancel()
           binding.unbind()
+        case Failure(ex) =>
+          Future(log.error(ex, s"An error was occurred !"))
       }
       .onComplete(_ => system.terminate())
   }
