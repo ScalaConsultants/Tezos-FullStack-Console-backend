@@ -5,11 +5,12 @@ import akka.event.LoggingAdapter
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
 import ch.megard.akka.http.cors.scaladsl.CorsDirectives._
+import ch.megard.akka.http.cors.scaladsl.settings.CorsSettings
 import io.scalac.tezos.translator.config.CaptchaConfig
 import io.scalac.tezos.translator.model.EmailAddress
 import io.scalac.tezos.translator.routes._
 import io.scalac.tezos.translator.routes.utils.Translator
-import io.scalac.tezos.translator.service.{ Emails2SendService, LibraryService, UserService }
+import io.scalac.tezos.translator.service.{Emails2SendService, LibraryService, UserService}
 
 import scala.concurrent.ExecutionContext
 
@@ -23,6 +24,9 @@ class Routes(
    adminEmail: EmailAddress
  )(implicit as: ActorSystem,
    ec: ExecutionContext) {
+
+  println(s">>> origins: ${CorsSettings.defaultSettings.allowedOrigins}")
+  println(s">>> methods: ${CorsSettings.defaultSettings.allowedMethods}")
 
   lazy val allRoutes: Route =
     cors() {
