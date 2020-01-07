@@ -2,12 +2,12 @@ package io.scalac.tezos.translator
 
 import akka.actor.ActorSystem
 import akka.http.scaladsl.model.StatusCodes
-import akka.http.scaladsl.server.{Directives, Route}
-import akka.http.scaladsl.testkit.{RouteTestTimeout, ScalatestRouteTest}
+import akka.http.scaladsl.server.{ Directives, Route }
+import akka.http.scaladsl.testkit.{ RouteTestTimeout, ScalatestRouteTest }
 import cats.syntax.either._
 import com.github.tomakehurst.wiremock.WireMockServer
 import com.github.tomakehurst.wiremock.client.WireMock
-import com.github.tomakehurst.wiremock.client.WireMock.{post => expectedPost, _}
+import com.github.tomakehurst.wiremock.client.WireMock.{ post => expectedPost, _ }
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration._
 import io.scalac.tezos.translator.config.CaptchaConfig
 import io.scalac.tezos.translator.model.types.Auth
@@ -16,7 +16,7 @@ import io.scalac.tezos.translator.routes.Endpoints.ErrorResponse
 import io.scalac.tezos.translator.routes.dto.DTO
 import io.scalac.tezos.translator.routes.dto.DTO.Error
 import io.scalac.tezos.translator.routes.utils.ReCaptcha
-import org.scalatest.{BeforeAndAfterAll, Matchers, WordSpec}
+import org.scalatest.{ BeforeAndAfterAll, Matchers, WordSpec }
 import sttp.model.StatusCode
 import sttp.tapir._
 import sttp.tapir.json.circe._
@@ -28,6 +28,7 @@ import scala.concurrent.duration._
 class CaptchaDirectiveSpec extends WordSpec with Matchers with ScalatestRouteTest with BeforeAndAfterAll with Directives {
   import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport._
 
+  lazy val wireMockServer = new WireMockServer(wireMockConfig().port(testCaptchaPort))
   val checkCaptchaUri     = "/check"
   val testCaptchaHost     = "localhost"
   val testCaptchaPort     = 3030
@@ -36,11 +37,24 @@ class CaptchaDirectiveSpec extends WordSpec with Matchers with ScalatestRouteTes
   val headerName          = "CAPTCHA"
   val testEndpoint        = "/v1/test"
 
-  lazy val wireMockServer = new WireMockServer(wireMockConfig().port(testCaptchaPort))
-
-  implicit val sy: ActorSystem      = system
+  implicit val sy: ActorSystem = system
 
   implicit def default: RouteTestTimeout = RouteTestTimeout(5.seconds)
+
+  val captchaTestConfig: CaptchaConfig = CaptchaConfig(checkOn = true,
+                                                       url        = "http://" + testCaptchaHostName + checkCaptchaUri,
+                                                       secret     = secret,
+                                                       score      = 0.0f,
+                                                       headerName = headerName)
+
+  val captchaTestRoute: Route = Endpoints
+    .captchaEndpoint(captchaTestConfig)
+    .in("test")
+    .get
+    .out(jsonBody[String])
+    .toRoute((ReCaptcha.withReCaptchaVerify(_, sy.log, captchaTestConfig)).andThenFirstE { _: Unit =>
+      emptyOk()
+    })
 
   override def beforeAll: Unit = {
     wireMockServer.start()
@@ -52,36 +66,23 @@ class CaptchaDirectiveSpec extends WordSpec with Matchers with ScalatestRouteTes
     wireMockServer.stop()
   }
 
-  val captchaTestConfig: CaptchaConfig = CaptchaConfig(
-    checkOn    = true,
-    url        = "http://" + testCaptchaHostName + checkCaptchaUri,
-    secret     = secret,
-    score      = 0.0f,
-    headerName = headerName
-  )
-
   def emptyOk(): Future[Either[ErrorResponse, String]] =
     Future.successful("get ok".asRight)
-
-  val captchaTestRoute: Route = Endpoints
-    .captchaEndpoint(captchaTestConfig)
-    .in("test")
-    .get
-    .out(jsonBody[String])
-    .toRoute((ReCaptcha.withReCaptchaVerify(_, sy.log, captchaTestConfig)).andThenFirstE{ _: Unit => emptyOk() })
 
   "ReCaptcha directive" should {
 
     "check captcha header" in {
-        val configWithScore= captchaTestConfig.copy(score=0.9F)
-        val captchaTestEndpoint: Endpoint[Option[Auth.Captcha], (DTO.ErrorDTO, StatusCode), String, Nothing] = Endpoints
-          .captchaEndpoint(configWithScore)
-          .in("test")
-          .get
-          .out(jsonBody[String])
+      val configWithScore = captchaTestConfig.copy(score = 0.9f)
+      val captchaTestEndpoint: Endpoint[Option[Auth.Captcha], (DTO.ErrorDTO, StatusCode), String, Nothing] = Endpoints
+        .captchaEndpoint(configWithScore)
+        .in("test")
+        .get
+        .out(jsonBody[String])
 
       val captchaTestRoute: Route = captchaTestEndpoint
-        .toRoute((ReCaptcha.withReCaptchaVerify(_, sy.log, captchaTestConfig)).andThenFirstE{ _: Unit => emptyOk() })
+        .toRoute((ReCaptcha.withReCaptchaVerify(_, sy.log, captchaTestConfig)).andThenFirstE { _: Unit =>
+          emptyOk()
+        })
 
       Get(testEndpoint) ~> Route.seal(captchaTestRoute) ~> check {
         status shouldBe StatusCodes.BadRequest
@@ -89,7 +90,7 @@ class CaptchaDirectiveSpec extends WordSpec with Matchers with ScalatestRouteTes
       }
 
       val testResponse = "testResponse"
-      stubForCaptchaCheck(testResponse, 1.0F)
+      stubForCaptchaCheck(testResponse, 1.0f)
 
       Get(testEndpoint) ~> addHeader(headerName, testResponse) ~> Route.seal(captchaTestRoute) ~> check {
         status shouldBe StatusCodes.OK
@@ -101,7 +102,7 @@ class CaptchaDirectiveSpec extends WordSpec with Matchers with ScalatestRouteTes
 
       val testResponse = "testResponse"
 
-      stubForCaptchaCheck(testResponse, 0.1F)
+      stubForCaptchaCheck(testResponse, 0.1f)
 
       Get(testEndpoint) ~> addHeader(headerName, testResponse) ~> Route.seal(captchaTestRoute) ~> check {
         status shouldBe StatusCodes.Unauthorized
@@ -129,7 +130,9 @@ class CaptchaDirectiveSpec extends WordSpec with Matchers with ScalatestRouteTes
         .in("test")
         .get
         .out(jsonBody[String])
-        .toRoute((ReCaptcha.withReCaptchaVerify(_, sy.log, configWithFalseFlag)).andThenFirstE{ _: Unit => emptyOk() })
+        .toRoute((ReCaptcha.withReCaptchaVerify(_, sy.log, configWithFalseFlag)).andThenFirstE { _: Unit =>
+          emptyOk()
+        })
 
       Get(testEndpoint) ~> captchaNotCheckRoute ~> check {
         status shouldBe StatusCodes.OK
@@ -138,35 +141,34 @@ class CaptchaDirectiveSpec extends WordSpec with Matchers with ScalatestRouteTes
     }
   }
 
-  def stubForCaptchaCheck(expectedUserResponse: String, score:Float=0.0F): Unit =
+  def stubForCaptchaCheck(expectedUserResponse: String, score: Float = 0.0f): Unit =
     wireMockServer.stubFor(
-      expectedPost(urlEqualTo(checkCaptchaUri + s"?secret=$secret&response=$expectedUserResponse"))
-        .willReturn(
-          aResponse()
-            .withHeader("Content-Type", "application/json")
-            .withBody(
-              s"""{
-                |"success": true,
-                |"score": ${score}
-                |}""".stripMargin
-            ).withStatus(StatusCodes.OK.intValue)
-        )
+       expectedPost(urlEqualTo(checkCaptchaUri + s"?secret=$secret&response=$expectedUserResponse"))
+         .willReturn(
+            aResponse()
+              .withHeader("Content-Type", "application/json")
+              .withBody(s"""{
+                           |"success": true,
+                           |"score": $score
+                           |}""".stripMargin)
+              .withStatus(StatusCodes.OK.intValue)
+         )
     )
 
   def stubForInvalidCaptcha(expectedUserResponse: String): Unit =
     wireMockServer.stubFor(
-      expectedPost(urlEqualTo(checkCaptchaUri + s"?secret=$secret&response=$expectedUserResponse"))
-        .willReturn(
-          aResponse()
-            .withHeader("Content-Type", "application/json")
-            .withBody(
-              """{
-                |"success": false,
-                |"error-codes": [
-                |"invalid-input-response"
-                |]
-                |}""".stripMargin
-            ).withStatus(StatusCodes.OK.intValue))
+       expectedPost(urlEqualTo(checkCaptchaUri + s"?secret=$secret&response=$expectedUserResponse"))
+         .willReturn(
+            aResponse()
+              .withHeader("Content-Type", "application/json")
+              .withBody("""{
+                          |"success": false,
+                          |"error-codes": [
+                          |"invalid-input-response"
+                          |]
+                          |}""".stripMargin)
+              .withStatus(StatusCodes.OK.intValue)
+         )
     )
 
 }

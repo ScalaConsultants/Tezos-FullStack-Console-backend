@@ -60,12 +60,12 @@ class LibrarySpec
   val dbUtilityConfig = DBUtilityConfiguration()
   val log: LoggingAdapter = system.log
 
-  val properTitle  = Title(refineMV[NotEmptyAndNotLong]("name"))
+  val properTitle = Title(refineMV[NotEmptyAndNotLong]("name"))
   val properAuthor = Author(refineMV[NotEmptyAndNotLong]("ThomasTheTest")).some
-  val properEmail  = EmailAddress.fromString("name@service.com").toOption
+  val properEmail = EmailAddress.fromString("name@service.com").toOption
   val properDescription = Description(refineMV[NotEmptyAndNotLong]("Testing thing")).some
-  val properMicheline   = Micheline(refineMV[NonEmpty]("micheline"))
-  val properMichelson   = Michelson(refineMV[NonEmpty]("michelson"))
+  val properMicheline = Micheline(refineMV[NonEmpty]("micheline"))
+  val properMichelson = Michelson(refineMV[NonEmpty]("michelson"))
 
   val tokenToUser: Cache[Auth.Username] = CaffeineCache[Auth.Username]
   val userService = new UserService(new UserRepository, tokenToUser, testDb)
@@ -116,8 +116,8 @@ class LibrarySpec
 
     "store proper payload" should {
       "full filed payload " in {
-        val titleForFilter  = Title(refineMV[NotEmptyAndNotLong]("vss"))
-        val testAuthor      = Author(refineMV[NotEmptyAndNotLong]("Mike")).some
+        val titleForFilter = Title(refineMV[NotEmptyAndNotLong]("vss"))
+        val testAuthor = Author(refineMV[NotEmptyAndNotLong]("Mike")).some
         val testDescription = Description(refineMV[NotEmptyAndNotLong]("Some thing for some things")).some
 
         val properPayload = LibraryEntryRoutesDto(titleForFilter, testAuthor, None, testDescription, properMicheline, properMichelson) // with all of some as none return 500
@@ -138,7 +138,7 @@ class LibrarySpec
       }
       "payload without options" in {
         val titleForFilter = Title(refineMV[NotEmptyAndNotLong]("vss"))
-        val properPayload  = LibraryEntryRoutesDto(titleForFilter, None, None, None, properMicheline, properMichelson)
+        val properPayload = LibraryEntryRoutesDto(titleForFilter, None, None, None, properMicheline, properMichelson)
         Post(libraryEndpoint, properPayload) ~> Route.seal(libraryRoute) ~> check {
           status shouldBe StatusCodes.OK
         }
@@ -152,9 +152,9 @@ class LibrarySpec
         addedRecord.michelson.toString shouldBe "michelson"
       }
       "payload with UpperCased Email make lower " in {
-        val titleForFilter  = Title(refineMV[NotEmptyAndNotLong]("vss"))
+        val titleForFilter = Title(refineMV[NotEmptyAndNotLong]("vss"))
         val testDescription = Description(refineMV[NotEmptyAndNotLong]("Some thing for some things")).some
-        val properPayload   = LibraryEntryRoutesDto(titleForFilter, None, Some(EmailS(refineMV[EmailReq]("Aeaaast@service.pl"))), testDescription, properMicheline, properMichelson)
+        val properPayload = LibraryEntryRoutesDto(titleForFilter, None, Some(EmailS(refineMV[EmailReq]("Aeaaast@service.pl"))), testDescription, properMicheline, properMichelson)
         Post(libraryEndpoint, properPayload) ~> Route.seal(libraryRoute) ~> check {
           status shouldBe StatusCodes.OK
         }
@@ -420,10 +420,11 @@ class LibrarySpec
       approvalRequest.to shouldBe adminEmail
       approvalRequest.subject shouldBe "Library approval request"
       Helper.testFormat(EmailContent.toPrettyString(approvalRequest.content)) should startWith
-        Helper.testFormat(s"""
-          |Please add my translation to your library:
-          |Title: name
-          |Description: description""".stripMargin)
+      Helper.testFormat(
+        s"""
+           |Please add my translation to your library:
+           |Title: name
+           |Description: description""".stripMargin)
 
       email2SendService.removeSentMessage(approvalRequest.uid)
     }
@@ -463,7 +464,6 @@ class LibrarySpec
       email2SendService.removeSentMessage(approvalRequest.uid)
     }
   }
-
 
 
   private trait SampleEntries {

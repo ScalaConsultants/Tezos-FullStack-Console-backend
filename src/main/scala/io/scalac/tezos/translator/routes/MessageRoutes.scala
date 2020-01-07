@@ -1,6 +1,6 @@
 package io.scalac.tezos.translator.routes
 import akka.actor.ActorSystem
-import io.scalac.tezos.translator.model.{EmailAddress, SendEmail}
+import io.scalac.tezos.translator.model.{ EmailAddress, SendEmail }
 import io.scalac.tezos.translator.routes.utils.ReCaptcha
 import io.scalac.tezos.translator.routes.dto.DTO.Error
 import io.scalac.tezos.translator.routes.dto.DTOValidation
@@ -16,14 +16,16 @@ import sttp.model.StatusCode
 import sttp.tapir._
 import sttp.tapir.json.circe._
 import sttp.tapir.server.akkahttp._
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.{ ExecutionContext, Future }
 
 class MessageRoutes(
-  service: Emails2SendService,
-  log: LoggingAdapter,
-  reCaptchaConfig: CaptchaConfig,
-  adminEmail: EmailAddress
-)(implicit actorSystem: ActorSystem, ec: ExecutionContext) extends HttpRoutes {
+   service: Emails2SendService,
+   log: LoggingAdapter,
+   reCaptchaConfig: CaptchaConfig,
+   adminEmail: EmailAddress
+ )(implicit actorSystem: ActorSystem,
+   ec: ExecutionContext)
+    extends HttpRoutes {
 
   private val messageEndpoint: Endpoint[(Option[Captcha], SendEmailRoutesDto), ErrorResponse, StatusCode, Nothing] =
     Endpoints
@@ -33,11 +35,23 @@ class MessageRoutes(
       .in(jsonBody[SendEmailRoutesDto])
       .out(statusCode)
 
+  override def routes: Route = buildRoute(log, reCaptchaConfig)
+
+  def buildRoute(log: LoggingAdapter, reCaptchaConfig: CaptchaConfig)(implicit ec: ExecutionContext): Route =
+    messageEndpoint.toRoute {
+      (ReCaptcha
+        .withReCaptchaVerify(_, log, reCaptchaConfig))
+        .andThenFirstE { t: (Unit, SendEmailRoutesDto) =>
+          DTOValidation.validateDto(t._2)
+        }
+        .andThenFirstE(addNewEmail)
+    }
+
   private def addNewEmail(dto: SendEmailRoutesDto): Future[Either[ErrorResponse, StatusCode]] = {
     val operationPerformed = for {
-        sendEmail <-  Future.fromTry(SendEmail.fromSendEmailRoutesDto(dto, adminEmail))
-        newEmail  <-  service.addNewEmail2Send(sendEmail)
-      } yield newEmail
+      sendEmail <- Future.fromTry(SendEmail.fromSendEmailRoutesDto(dto, adminEmail))
+      newEmail  <- service.addNewEmail2Send(sendEmail)
+    } yield newEmail
 
     operationPerformed.map(_ => StatusCode.Ok.asRight).recover {
       case e =>
@@ -45,16 +59,6 @@ class MessageRoutes(
         (Error("Can't save payload"), StatusCode.InternalServerError).asLeft
     }
   }
-
-  def buildRoute(log: LoggingAdapter, reCaptchaConfig: CaptchaConfig)(implicit ec: ExecutionContext): Route =
-    messageEndpoint
-      .toRoute {
-        (ReCaptcha.withReCaptchaVerify(_, log, reCaptchaConfig))
-          .andThenFirstE{ t: (Unit, SendEmailRoutesDto) => DTOValidation.validateDto(t._2) }
-          .andThenFirstE(addNewEmail)
-      }
-
-  override def routes: Route = buildRoute(log, reCaptchaConfig)
 
   override def docs: List[Endpoint[_, _, _, _]] = List(messageEndpoint)
 

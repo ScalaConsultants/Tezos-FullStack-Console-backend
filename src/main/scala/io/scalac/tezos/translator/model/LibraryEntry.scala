@@ -1,52 +1,52 @@
 package io.scalac.tezos.translator.model
 
 import io.scalac.tezos.translator.model.LibraryEntry.Status
-import io.scalac.tezos.translator.model.types.Library.{Author, Description, Micheline, Michelson, Title}
+import io.scalac.tezos.translator.model.types.Library.{ Author, Description, Micheline, Michelson, Title }
 import io.scalac.tezos.translator.model.types.UUIDs.LibraryEntryId
 
-import scala.util.{Failure, Success, Try}
+import scala.util.{ Failure, Success, Try }
 
 case class LibraryEntry(
-                         uid: LibraryEntryId,
-                         title: Title,
-                         author: Option[Author],
-                         email: Option[EmailAddress],
-                         description: Option[Description],
-                         micheline: Micheline,
-                         michelson: Michelson,
-                         status: Status
-)
+   uid: LibraryEntryId,
+   title: Title,
+   author: Option[Author],
+   email: Option[EmailAddress],
+   description: Option[Description],
+   micheline: Micheline,
+   michelson: Michelson,
+   status: Status)
 
 object LibraryEntry {
 
-
   sealed trait Status extends Product with Serializable {
+
     def value: Int = this match {
-      case PendingApproval  =>  0
-      case Accepted         =>  1
-      case Declined         =>  2
+      case PendingApproval => 0
+      case Accepted        => 1
+      case Declined        => 2
     }
 
     override def toString: String = this match {
-      case PendingApproval  =>  "pending_approval"
-      case Accepted         =>  "accepted"
-      case Declined         =>  "declined"
+      case PendingApproval => "pending_approval"
+      case Accepted        => "accepted"
+      case Declined        => "declined"
     }
   }
 
   object Status {
+
     def fromInt(i: Int): Try[Status] = i match {
-      case 0  =>  Success(PendingApproval)
-      case 1  =>  Success(Accepted)
-      case 2  =>  Success(Declined)
-      case _  =>  Failure(new IllegalArgumentException(s"Given Int is not a valid Status. Got: $i"))
+      case 0 => Success(PendingApproval)
+      case 1 => Success(Accepted)
+      case 2 => Success(Declined)
+      case _ => Failure(new IllegalArgumentException(s"Given Int is not a valid Status. Got: $i"))
     }
 
     def fromString(s: String): Try[Status] = s match {
-      case "pending_approval" =>  Success(PendingApproval)
-      case "accepted"         =>  Success(Accepted)
-      case "declined"         =>  Success(Declined)
-      case _                  =>  Failure(new IllegalArgumentException(s"Given String is not a valid Status. Got: $s"))
+      case "pending_approval" => Success(PendingApproval)
+      case "accepted"         => Success(Accepted)
+      case "declined"         => Success(Declined)
+      case _                  => Failure(new IllegalArgumentException(s"Given String is not a valid Status. Got: $s"))
     }
   }
 

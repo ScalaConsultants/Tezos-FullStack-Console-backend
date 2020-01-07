@@ -82,13 +82,12 @@ object Samples {
 
   val michelson =
     """parameter int;
-       |storage int;
-       |code { CAR ;
-       |       PUSH int 1 ;
-       |       ADD ;
-       |       NIL operation ;
-       |       PAIR }""".stripMargin
-
+      |storage int;
+      |code { CAR ;
+      |       PUSH int 1 ;
+      |       ADD ;
+      |       NIL operation ;
+      |       PAIR }""".stripMargin
 
   val incorrectMichelson1 =
     """parameter key_hash;

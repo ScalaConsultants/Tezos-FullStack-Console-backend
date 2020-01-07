@@ -27,11 +27,11 @@ import scala.language.postfixOps
 //noinspection TypeAnnotation
 class SendEmailServiceSpec
   extends TestKit(ActorSystem("MySpec"))
-  with FlatSpecLike
-  with Matchers
-  with ScalaFutures
+    with FlatSpecLike
+    with Matchers
+    with ScalaFutures
     with BeforeAndAfterAll
-  with BeforeAndAfterEach {
+    with BeforeAndAfterEach {
   override implicit val patienceConfig: PatienceConfig = PatienceConfig(30 seconds)
 
   val greenMail = new GreenMail(ServerSetupTest.SMTP)
@@ -70,11 +70,15 @@ class SendEmailServiceSpec
   behavior of "SendEmailsService.getEmailsToSend"
 
   it should "get empty list when no emails2send in db" in {
-    whenReady(emailSenderService.getEmailsToSend) { _ shouldBe 'empty }
+    whenReady(emailSenderService.getEmailsToSend) {
+      _ shouldBe 'empty
+    }
   }
 
   it should "get all emails list" in new SampleEmails {
-    whenReady(insert(email2SendService)) { _ shouldBe Seq(1, 1, 1) }
+    whenReady(insert(email2SendService)) {
+      _ shouldBe Seq(1, 1, 1)
+    }
 
     val expected: Seq[SendEmail] = toInsert
 
@@ -88,7 +92,9 @@ class SendEmailServiceSpec
   it should "send an email" in {
     val email = SendEmail.statusChange(unsafeEmailAddress("xxx@service.com"), Title(refineMV("translation title")), Accepted)
 
-    whenReady(emailSenderService.sendSingleMail(email)) { _ shouldBe(()) }
+    whenReady(emailSenderService.sendSingleMail(email)) {
+      _ shouldBe (())
+    }
 
     val received = greenMail.getReceivedMessages
     received.length shouldBe 1
@@ -112,9 +118,13 @@ class SendEmailServiceSpec
   behavior of "SendEmailsService.sendEmails"
 
   it should "send all emails from a queue" in new SampleEmails {
-    whenReady(insert(email2SendService)) { _ shouldBe Seq(1, 1, 1) }
+    whenReady(insert(email2SendService)) {
+      _ shouldBe Seq(1, 1, 1)
+    }
 
-    whenReady(emailSenderService.sendEmails) { _ shouldBe(()) }
+    whenReady(emailSenderService.sendEmails) {
+      _ shouldBe (())
+    }
 
     val received: Map[String, MimeMessage] =
       greenMail.getReceivedMessages
@@ -155,11 +165,12 @@ class SendEmailServiceSpec
     val body2 = GreenMailUtil.getBody(e2SendResult)
 
     Helper.testFormat(body2) shouldBe
-      Helper.testFormat( s"""
-         |name: Dude
-         |phone: 666666666
-         |email: dude@service.com
-         |content: some content""".stripMargin)
+      Helper.testFormat(
+        s"""
+           |name: Dude
+           |phone: 666666666
+           |email: dude@service.com
+           |content: some content""".stripMargin)
 
 
     received.get(e3.subject) shouldBe defined
@@ -175,7 +186,8 @@ class SendEmailServiceSpec
     val body3 = GreenMailUtil.getBody(e3SendResult).replaceAll("\r", "")
 
     Helper.testFormat(body3) should startWith
-      Helper.testFormat(s"""
+    Helper.testFormat(
+      s"""
          |Please add my translation to your library:
          |Title: contract name
          |Description: Some description""".stripMargin)
