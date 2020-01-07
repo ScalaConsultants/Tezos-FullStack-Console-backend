@@ -24,7 +24,7 @@ object SendEmail {
       s"""
          |Please add my translation to your library:
          |Title: ${libraryDto.title}
-         |Description: ${libraryDto.description}
+         |Description: ${libraryDto.description.getOrElse("-")}
          |Uid: $uid
       """.stripMargin
     }
