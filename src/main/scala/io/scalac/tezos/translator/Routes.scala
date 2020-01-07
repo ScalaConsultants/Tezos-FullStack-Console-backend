@@ -25,9 +25,6 @@ class Routes(
  )(implicit as: ActorSystem,
    ec: ExecutionContext) {
 
-  println(s">>> origins: ${CorsSettings.defaultSettings.allowedOrigins}")
-  println(s">>> methods: ${CorsSettings.defaultSettings.allowedMethods}")
-
   lazy val allRoutes: Route =
     cors() {
       apis.map(_.routes).reduce(_ ~ _)
