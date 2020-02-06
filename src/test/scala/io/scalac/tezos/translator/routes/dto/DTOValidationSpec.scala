@@ -8,6 +8,8 @@ import io.scalac.tezos.translator.routes.dto.DTOValidation.{ DTOValidationError,
 import org.scalatest.{ Matchers, WordSpec }
 import eu.timepit.refined.refineMV
 import io.scalac.tezos.translator.model.types.Library._
+import io.scalac.tezos.translator.model.types.UUIDs
+import io.scalac.tezos.translator.model.types.UUIDs.LibraryEntryId
 
 class DTOValidationSpec extends WordSpec with Matchers {
 
@@ -121,12 +123,13 @@ class DTOValidationSpec extends WordSpec with Matchers {
    ): SendEmailRoutesDto = SendEmailRoutesDto(name, phone, email, content)
 
   private def validLibraryEntryRoutesDto(
+     uid: LibraryEntryId              = UUIDs.generateLibraryEntryId,
      title: Title                     = Title(refineMV[NotEmptyAndNotLong]("title")),
      author: Option[Author]           = Author(refineMV[NotEmptyAndNotLong]("author")).some,
      email: Option[EmailS]            = Some(EmailS(refineMV[EmailReq]("email@email.com"))),
      description: Option[Description] = Description(refineMV[NotEmptyAndNotLong]("description")).some,
      micheline: Micheline             = Micheline(refineMV[NonEmpty]("micheline")),
      michelson: Michelson             = Michelson(refineMV[NonEmpty]("michelson"))
-   ): LibraryEntryRoutesDto = LibraryEntryRoutesDto(title, author, email, description, micheline, michelson)
+   ): LibraryEntryRoutesDto = LibraryEntryRoutesDto(uid, title, author, email, description, micheline, michelson)
 
 }

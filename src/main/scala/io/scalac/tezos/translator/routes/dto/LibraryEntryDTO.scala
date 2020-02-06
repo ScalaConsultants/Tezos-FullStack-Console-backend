@@ -1,6 +1,6 @@
 package io.scalac.tezos.translator.routes.dto
 
-import io.circe.{ Decoder, Encoder }
+import io.circe.{ Decoder, Encoder, HCursor }
 import io.circe.generic.semiauto.deriveEncoder
 import io.circe.generic.semiauto.deriveDecoder
 import io.scalac.tezos.translator.model.LibraryEntry.PendingApproval
@@ -21,7 +21,6 @@ object LibraryEntryDTO {
     case v: LibraryEntryRoutesDto =>
       LibraryEntryRoutesDto.libraryEntryRoutesDtoEncoder(v)
   }
-
 }
 
 case class LibraryEntryRoutesAdminDto(
@@ -56,6 +55,7 @@ object LibraryEntryRoutesAdminDto {
 }
 
 case class LibraryEntryRoutesDto(
+   uid: LibraryEntryId,
    title: Title,
    author: Option[Author],
    email: Option[EmailS],
@@ -72,7 +72,6 @@ case class LibraryEntryRoutesDto(
     }
 
     emailAdress.map(email => {
-
       LibraryEntry(uid         = generateLibraryEntryId,
                    title       = title,
                    author      = author,
@@ -83,13 +82,13 @@ case class LibraryEntryRoutesDto(
                    status      = PendingApproval)
     })
   }
-
 }
 
 object LibraryEntryRoutesDto {
 
   def fromDomain(v: LibraryEntry): LibraryEntryRoutesDto =
-    LibraryEntryRoutesDto(title       = v.title,
+    LibraryEntryRoutesDto(uid         = v.uid,
+                          title       = v.title,
                           author      = v.author,
                           email       = v.email.toEmailS,
                           description = v.description,
@@ -99,7 +98,16 @@ object LibraryEntryRoutesDto {
   implicit val libraryEntryRoutesDtoEncoder: Encoder[LibraryEntryRoutesDto] =
     deriveEncoder[LibraryEntryRoutesDto]
 
-  implicit val libraryEntryRoutesDtoDecoder: Decoder[LibraryEntryRoutesDto] =
-    deriveDecoder[LibraryEntryRoutesDto]
+  implicit val libraryEntryRoutesDtoDecoder: Decoder[LibraryEntryRoutesDto] = (c: HCursor) =>
+    for {
+      title       <- c.downField("title").as[Title]
+      author      <- c.downField("author").as[Option[Author]]
+      email       <- c.downField("email").as[Option[EmailS]]
+      description <- c.downField("description").as[Option[Description]]
+      micheline   <- c.downField("micheline").as[Micheline]
+      michelson   <- c.downField("michelson").as[Michelson]
+    } yield {
+      new LibraryEntryRoutesDto(generateLibraryEntryId, title, author, email, description, micheline, michelson)
+    }
 
 }

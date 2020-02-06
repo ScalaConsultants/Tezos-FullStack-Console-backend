@@ -49,6 +49,24 @@ class LibraryService(repository: LibraryRepository, log: LoggingAdapter)(implici
     } yield updated
   }
 
+  def getRecord(id: LibraryEntryId): Future[LibraryEntry] = {
+    val uidNotExistsException =
+      Future.failed(new IllegalArgumentException(s"Library Entry does not exist for uid: $id"))
+
+    for {
+      entry <- repository.get(id).flatMap {
+                case Some(v) => Future.successful(v)
+                case None    => uidNotExistsException
+              }
+      entryToShow <- entry.toDomain match {
+                      case Success(e) => Future.successful(e)
+                      case Failure(ex) =>
+                        log.error(s"Invalid library entry data in DB for uid: id ! ${ex.getMessage}")
+                        Future.failed(new IllegalStateException(s"Library entry for id has a wrong format in DB ! ${ex.getMessage}"))
+                    }
+    } yield entryToShow
+  }
+
   def delete(id: LibraryEntryId): Future[Unit] =
     repository.delete(id).flatMap {
       case 0 => Future.failed(new IllegalArgumentException(s"There is no Library Entry for uid: $id"))

@@ -18,7 +18,7 @@ import sttp.tapir._
 import sttp.tapir.json.circe._
 import sttp.tapir.server.akkahttp._
 import cats.syntax.either._
-import io.scalac.tezos.translator.routes.Endpoints._
+import io.scalac.tezos.translator.routes.Endpoints.{ uidQuery, _ }
 import io.scalac.tezos.translator.model.types.Auth.{ Captcha, UserToken }
 import io.scalac.tezos.translator.model.types.Params._
 import scala.concurrent.{ ExecutionContext, Future }
@@ -38,7 +38,8 @@ class LibraryRoutes(
 
   private val libraryCaptchaEndpoint: Endpoint[Option[Captcha], ErrorResponse, Unit, Nothing] =
     Endpoints.captchaEndpoint(captchaConfig).in("library")
-  private val libraryEndpoint: Endpoint[Unit, Unit, Unit, Nothing] = Endpoints.baseEndpoint.in("library")
+  private val libraryEndpoint: Endpoint[Unit, Unit, Unit, Nothing]      = Endpoints.baseEndpoint.in("library")
+  private val libraryEntryEndpoint: Endpoint[Unit, Unit, Unit, Nothing] = Endpoints.baseEndpoint.in("library").in("entry")
 
   private val libraryAddEndpoint: Endpoint[(Option[Captcha], LibraryEntryRoutesDto), ErrorResponse, StatusCode, Nothing] =
     libraryCaptchaEndpoint
@@ -74,7 +75,16 @@ class LibraryRoutes(
       .delete
       .description("Will delete an entry with passed uid")
 
-  override def routes: Route = addNewEntryRoute ~ getDTORoute ~ putEntryRoute ~ deleteEntryRoute
+  private val getEntryEndpoint: Endpoint[(Option[UserToken], UUIDString), ErrorResponse, LibraryEntryDTO, Nothing] =
+    libraryEntryEndpoint
+      .in(maybeAuthHeader)
+      .in(uidQuery)
+      .errorOut(errorResponse)
+      .out(jsonBody[LibraryEntryDTO])
+      .get
+      .description("Will return single LibraryEntryRoutesDto or LibraryEntryRoutesAdminDto if auth header provided")
+
+  override def routes: Route = addNewEntryRoute ~ getDTORoute ~ getEntryRoute ~ putEntryRoute ~ deleteEntryRoute
 
   private def addNewEntryRoute(): Route =
     libraryAddEndpoint.toRoute {
@@ -195,6 +205,36 @@ class LibraryRoutes(
           deleteDto(args._2)
         }
     }
+
+  private def getEntryDto(maybeToken: Option[UserToken], uid: UUIDString): Future[Either[ErrorResponse, LibraryEntryDTO]] =
+    maybeToken
+      .withMaybeAuth(userService)(getAdminsEntryDTO(uid))(getJustEntryDTO(uid))
+      .value
+
+  private def getEntryRoute: Route =
+    getEntryEndpoint.toRoute {
+      (getEntryDto _).tupled
+    }
+
+  private def getJustEntryDTO(uid: UUIDString): Future[Either[ErrorResponse, LibraryEntryDTO]] =
+    service
+      .getRecord(LibraryEntryId(uid))
+      .map(LibraryEntryRoutesDto.fromDomain(_).asRight)
+      .recover {
+        case e =>
+          log.error(s"Can't delete library entry, uid: $uid, error - $e")
+          handleError(e).asLeft
+      }
+
+  private def getAdminsEntryDTO(uid: UUIDString): Future[Either[ErrorResponse, LibraryEntryDTO]] =
+    service
+      .getRecord(LibraryEntryId(uid))
+      .map(LibraryEntryRoutesAdminDto.fromDomain(_).asRight)
+      .recover {
+        case e =>
+          log.error(s"Can't delete library entry, uid: $uid, error - $e")
+          handleError(e).asLeft
+      }
 
   private def deleteDto(uid: UUIDString): Future[Either[ErrorResponse, StatusCode]] =
     service
