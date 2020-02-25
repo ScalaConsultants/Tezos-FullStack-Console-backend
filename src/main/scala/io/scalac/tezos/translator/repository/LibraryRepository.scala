@@ -25,6 +25,15 @@ class LibraryRepository(config: DBUtilityConfiguration, db: Database)(implicit e
         .result
     }
 
+  def getFromAccepted(uid: LibraryEntryId): Future[Option[LibraryEntryDbDto]] = db.run {
+    LibraryTable.library
+      .filter(_.uid === uid)
+      .filter(_.status == Status.fromInt(1).get) //TODO: Make this more functional pure
+      .take(1)
+      .result
+      .headOption
+  }
+
   def get(uid: LibraryEntryId): Future[Option[LibraryEntryDbDto]] = db.run {
     LibraryTable.library
       .filter(_.uid === uid)

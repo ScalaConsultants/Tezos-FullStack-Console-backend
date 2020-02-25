@@ -54,7 +54,7 @@ class LibraryService(repository: LibraryRepository, log: LoggingAdapter)(implici
       Future.failed(new IllegalArgumentException(s"Library Entry does not exist for uid: $id"))
 
     for {
-      entry <- repository.get(id).flatMap {
+      entry <- repository.getFromAccepted(id).flatMap {
                 case Some(v) => Future.successful(v)
                 case None    => uidNotExistsException
               }

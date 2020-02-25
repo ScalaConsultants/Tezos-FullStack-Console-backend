@@ -428,22 +428,20 @@ class LibrarySpec extends WordSpec with Matchers with ScalatestRouteTest with Sc
         status shouldBe StatusCodes.OK
 
         val actualPaginatedRecords = responseAs[List[LibraryEntryRoutesDto]]
-
-        actualPaginatedRecords.map(_.copy(uid = libraryEntryId)) should // using copy is a hack
-          contain theSameElementsAs // but it's required because of random generation id
-          actualAllRecords.slice(0, 2).map(_.copy(uid = libraryEntryId)) // on decoding json as LibraryEntryRoutesDto.
+//test if the same data gated from database is the same after two requests
+        actualPaginatedRecords should
+          contain theSameElementsAs
+          actualAllRecords.slice(0, 2)
       }
 
       Get(s"$libraryEndpoint?limit=2&offset=2").withHeaders(Authorization(OAuth2BearerToken(bearerToken))) ~> libraryRoute ~> check {
         status shouldBe StatusCodes.OK
 
-        println(response)
-        print(response.toString())
         val actualPaginatedRecords = responseAs[List[LibraryEntryRoutesDto]]
-        actualPaginatedRecords.map(_.copy(uid = libraryEntryId)) should contain theSameElementsAs
+        actualPaginatedRecords should contain theSameElementsAs
           actualAllRecords
             .slice(2, 4)
-            .map(_.copy(uid = libraryEntryId))
+
       }
     }
   }

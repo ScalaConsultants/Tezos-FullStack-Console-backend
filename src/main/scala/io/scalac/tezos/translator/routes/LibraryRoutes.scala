@@ -6,10 +6,15 @@ import akka.http.scaladsl.server.Route
 import io.scalac.tezos.translator.config.CaptchaConfig
 import io.scalac.tezos.translator.model.LibraryEntry.{ Accepted, PendingApproval, Status }
 import io.scalac.tezos.translator.model.{ AuthUserData, EmailAddress, SendEmail }
-import io.scalac.tezos.translator.routes.dto.DTOValidation
+import io.scalac.tezos.translator.routes.dto.{
+  DTOValidation,
+  LibraryEntryDTO,
+  LibraryEntryRoutesAdminDto,
+  LibraryEntryRoutesDto,
+  LibraryEntryRoutesInputDto
+}
 import io.scalac.tezos.translator.routes.dto.DTO.Error
 import io.scalac.tezos.translator.routes.utils.ReCaptcha._
-import io.scalac.tezos.translator.routes.dto.{ LibraryEntryDTO, LibraryEntryRoutesAdminDto, LibraryEntryRoutesDto }
 import io.scalac.tezos.translator.routes.dto.LibraryEntryDTO._
 import io.scalac.tezos.translator.model.types.UUIDs.{ LibraryEntryId, UUIDString }
 import io.scalac.tezos.translator.service.{ Emails2SendService, LibraryService, UserService }
@@ -21,6 +26,7 @@ import cats.syntax.either._
 import io.scalac.tezos.translator.routes.Endpoints.{ uidQuery, _ }
 import io.scalac.tezos.translator.model.types.Auth.{ Captcha, UserToken }
 import io.scalac.tezos.translator.model.types.Params._
+
 import scala.concurrent.{ ExecutionContext, Future }
 import scala.util.{ Failure, Success }
 
@@ -41,9 +47,9 @@ class LibraryRoutes(
   private val libraryEndpoint: Endpoint[Unit, Unit, Unit, Nothing]      = Endpoints.baseEndpoint.in("library")
   private val libraryEntryEndpoint: Endpoint[Unit, Unit, Unit, Nothing] = Endpoints.baseEndpoint.in("library").in("entry")
 
-  private val libraryAddEndpoint: Endpoint[(Option[Captcha], LibraryEntryRoutesDto), ErrorResponse, StatusCode, Nothing] =
+  private val libraryAddEndpoint: Endpoint[(Option[Captcha], LibraryEntryRoutesInputDto), ErrorResponse, StatusCode, Nothing] =
     libraryCaptchaEndpoint
-      .in(jsonBody[LibraryEntryRoutesDto])
+      .in(jsonBody[LibraryEntryRoutesInputDto])
       .post
       .out(statusCode)
       .description("Will add LibraryEntryRoutesDto to storage")
@@ -89,13 +95,14 @@ class LibraryRoutes(
   private def addNewEntryRoute(): Route =
     libraryAddEndpoint.toRoute {
       (withReCaptchaVerify(_, log, captchaConfig))
-        .andThenFirstE { t: (Unit, LibraryEntryRoutesDto) =>
+        .andThenFirstE { t: (Unit, LibraryEntryRoutesInputDto) =>
           DTOValidation.validateDto(t._2)
         }
         .andThenFirstE(addNewEntry)
     }
 
-  private def addNewEntry(libraryDTO: LibraryEntryRoutesDto): Future[Either[ErrorResponse, StatusCode]] = {
+  private def addNewEntry(libraryInputDTO: LibraryEntryRoutesInputDto): Future[Either[ErrorResponse, StatusCode]] = {
+    val libraryDTO = libraryInputDTO.generateLibraryEntryRoutesDto()
     val sendEmailF = libraryDTO.email match {
       case Some(_) =>
         val e = SendEmail.approvalRequest(libraryDTO, adminEmail)
@@ -207,9 +214,7 @@ class LibraryRoutes(
     }
 
   private def getEntryDto(maybeToken: Option[UserToken], uid: UUIDString): Future[Either[ErrorResponse, LibraryEntryDTO]] =
-    maybeToken
-      .withMaybeAuth(userService)(getAdminsEntryDTO(uid))(getJustEntryDTO(uid))
-      .value
+    getJustEntryDTO(uid)
 
   private def getEntryRoute: Route =
     getEntryEndpoint.toRoute {
@@ -222,17 +227,7 @@ class LibraryRoutes(
       .map(LibraryEntryRoutesDto.fromDomain(_).asRight)
       .recover {
         case e =>
-          log.error(s"Can't delete library entry, uid: $uid, error - $e")
-          handleError(e).asLeft
-      }
-
-  private def getAdminsEntryDTO(uid: UUIDString): Future[Either[ErrorResponse, LibraryEntryDTO]] =
-    service
-      .getRecord(LibraryEntryId(uid))
-      .map(LibraryEntryRoutesAdminDto.fromDomain(_).asRight)
-      .recover {
-        case e =>
-          log.error(s"Can't delete library entry, uid: $uid, error - $e")
+          log.error(s"Can't get library entry, uid: $uid, error - $e")
           handleError(e).asLeft
       }
 

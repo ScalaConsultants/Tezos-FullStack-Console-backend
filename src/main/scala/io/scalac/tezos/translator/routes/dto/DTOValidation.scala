@@ -101,7 +101,7 @@ object DTOValidation {
            }
       )
 
-  def validateLibraryEntryRoutesDto: LibraryEntryRoutesDto => ValidationResult[LibraryEntryRoutesDto] = { dto =>
+  def validateLibraryEntryRoutesDto: LibraryEntryRoutesInputDto => ValidationResult[LibraryEntryRoutesInputDto] = { dto =>
     val checkEmail: Either[NonEmptyList[DTOValidationError], Option[EmailS]] =
       dto.email.traverse(checkEmailIsValid)
 
@@ -118,7 +118,7 @@ object DTOValidation {
 
   final case class FieldIsEmpty(field: String) extends DTOValidationError
 
-  implicit val LibraryDTOValidation: DTOValidation[LibraryEntryRoutesDto] = { dto =>
+  implicit val LibraryDTOValidation: DTOValidation[LibraryEntryRoutesInputDto] = { dto =>
     validateLibraryEntryRoutesDto(dto)
   }
 
