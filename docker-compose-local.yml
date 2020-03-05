@@ -14,6 +14,8 @@ services:
       EMAIL_USER: ${EMAIL_USER}
       EMAIL_PASS: ${EMAIL_PASS}
       EMAIL_RECEIVER: ${EMAIL_RECEIVER}
+      FE_URL: ${FE_URL}
+      BE_URL: ${BE_URL}
     depends_on:
       - tezos-console-db
     command: ["/usr/wait-for-it.sh", "tezos-console-db:5432", "--timeout=90", "--", "java", "-jar", "tezos-console.jar"]
