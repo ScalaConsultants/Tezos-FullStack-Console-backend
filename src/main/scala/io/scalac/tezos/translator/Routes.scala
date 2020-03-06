@@ -39,9 +39,11 @@ class Routes(
   }
 
   private val apis: List[HttpRoutes] =
-    List(new TranslatorRoutes(translator),
-         new MessageRoutes(emails2SendService, log, captchaConfig, adminEmail),
-         new LibraryRoutes(libraryService, userService, emails2SendService, log, captchaConfig, adminEmail),
-         new LoginRoutes(userService))
+    List(
+       new TranslatorRoutes(translator),
+       new MessageRoutes(emails2SendService, log, captchaConfig, adminEmail),
+       new LibraryRoutes(libraryService, userService, emails2SendService, log, captchaConfig, adminEmail),
+       new LoginRoutes(userService)
+    )
 
 }

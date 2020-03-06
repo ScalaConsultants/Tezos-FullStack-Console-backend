@@ -30,9 +30,7 @@ class UserService(repository: UserRepository, tokenToUser: Cache[Username], db: 
     tokenToUser.get(token.v.value).map {
       _.fold {
         (Error("Token not found"), StatusCode.Unauthorized).asLeft[AuthUserData]
-      } { username =>
-        AuthUserData(username, token).asRight
-      }
+      }(username => AuthUserData(username, token).asRight)
     }
 
   def logout(token: UserToken): Future[Unit] = tokenToUser.remove(token).map(_ => ())

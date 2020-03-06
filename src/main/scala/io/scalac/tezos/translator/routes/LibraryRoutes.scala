@@ -79,9 +79,7 @@ class LibraryRoutes(
   private def addNewEntryRoute(): Route =
     libraryAddEndpoint.toRoute {
       (withReCaptchaVerify(_, log, captchaConfig))
-        .andThenFirstE { t: (Unit, LibraryEntryRoutesDto) =>
-          DTOValidation.validateDto(t._2)
-        }
+        .andThenFirstE { t: (Unit, LibraryEntryRoutesDto) => DTOValidation.validateDto(t._2) }
         .andThenFirstE(addNewEntry)
     }
 
@@ -150,9 +148,7 @@ class LibraryRoutes(
     putEntryEndpoint.toRoute {
       (bearer2TokenF _)
         .andThenFirstE(userService.authenticate)
-        .andThenFirstE { args: (AuthUserData, UUIDString, String) =>
-          putDto(args._2, args._3)
-        }
+        .andThenFirstE { args: (AuthUserData, UUIDString, String) => putDto(args._2, args._3) }
     }
 
   private def putDto(uid: UUIDString, status: String): Future[Either[ErrorResponse, StatusCode]] = {
@@ -191,9 +187,7 @@ class LibraryRoutes(
     deleteEntryEndpoint.toRoute {
       (bearer2TokenF _)
         .andThenFirstE(userService.authenticate)
-        .andThenFirstE { args: (AuthUserData, UUIDString) =>
-          deleteDto(args._2)
-        }
+        .andThenFirstE { args: (AuthUserData, UUIDString) => deleteDto(args._2) }
     }
 
   private def deleteDto(uid: UUIDString): Future[Either[ErrorResponse, StatusCode]] =

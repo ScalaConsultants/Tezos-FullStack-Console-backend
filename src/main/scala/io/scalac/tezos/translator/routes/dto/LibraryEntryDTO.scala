@@ -38,14 +38,16 @@ case class LibraryEntryRoutesAdminDto(
 object LibraryEntryRoutesAdminDto {
 
   def fromDomain(v: LibraryEntry): LibraryEntryRoutesAdminDto =
-    LibraryEntryRoutesAdminDto(uid         = v.uid,
-                               title       = v.title,
-                               author      = v.author,
-                               email       = v.email.toEmailS,
-                               description = v.description,
-                               micheline   = v.micheline,
-                               michelson   = v.michelson,
-                               status      = v.status.toString)
+    LibraryEntryRoutesAdminDto(
+       uid         = v.uid,
+       title       = v.title,
+       author      = v.author,
+       email       = v.email.toEmailS,
+       description = v.description,
+       micheline   = v.micheline,
+       michelson   = v.michelson,
+       status      = v.status.toString
+    )
 
   implicit val libraryEntryRoutesAdminDtoEncoder: Encoder[LibraryEntryRoutesAdminDto] =
     deriveEncoder[LibraryEntryRoutesAdminDto]
@@ -71,17 +73,18 @@ case class LibraryEntryRoutesDto(
       case None    => Success(None)
     }
 
-    emailAdress.map(email => {
-
-      LibraryEntry(uid         = generateLibraryEntryId,
-                   title       = title,
-                   author      = author,
-                   email       = email,
-                   description = description,
-                   micheline   = micheline,
-                   michelson   = michelson,
-                   status      = PendingApproval)
-    })
+    emailAdress.map { email =>
+      LibraryEntry(
+         uid         = generateLibraryEntryId,
+         title       = title,
+         author      = author,
+         email       = email,
+         description = description,
+         micheline   = micheline,
+         michelson   = michelson,
+         status      = PendingApproval
+      )
+    }
   }
 
 }
@@ -89,12 +92,14 @@ case class LibraryEntryRoutesDto(
 object LibraryEntryRoutesDto {
 
   def fromDomain(v: LibraryEntry): LibraryEntryRoutesDto =
-    LibraryEntryRoutesDto(title       = v.title,
-                          author      = v.author,
-                          email       = v.email.toEmailS,
-                          description = v.description,
-                          micheline   = v.micheline,
-                          michelson   = v.michelson)
+    LibraryEntryRoutesDto(
+       title       = v.title,
+       author      = v.author,
+       email       = v.email.toEmailS,
+       description = v.description,
+       micheline   = v.micheline,
+       michelson   = v.michelson
+    )
 
   implicit val libraryEntryRoutesDtoEncoder: Encoder[LibraryEntryRoutesDto] =
     deriveEncoder[LibraryEntryRoutesDto]
