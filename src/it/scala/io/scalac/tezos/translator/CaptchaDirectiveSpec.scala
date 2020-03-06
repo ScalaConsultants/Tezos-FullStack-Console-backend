@@ -41,20 +41,20 @@ class CaptchaDirectiveSpec extends WordSpec with Matchers with ScalatestRouteTes
 
   implicit def default: RouteTestTimeout = RouteTestTimeout(5.seconds)
 
-  val captchaTestConfig: CaptchaConfig = CaptchaConfig(checkOn = true,
-                                                       url        = "http://" + testCaptchaHostName + checkCaptchaUri,
-                                                       secret     = secret,
-                                                       score      = 0.0f,
-                                                       headerName = headerName)
+  val captchaTestConfig: CaptchaConfig = CaptchaConfig(
+     checkOn    = true,
+     url        = "http://" + testCaptchaHostName + checkCaptchaUri,
+     secret     = secret,
+     score      = 0.0f,
+     headerName = headerName
+  )
 
   val captchaTestRoute: Route = Endpoints
     .captchaEndpoint(captchaTestConfig)
     .in("test")
     .get
     .out(jsonBody[String])
-    .toRoute((ReCaptcha.withReCaptchaVerify(_, sy.log, captchaTestConfig)).andThenFirstE { _: Unit =>
-      emptyOk()
-    })
+    .toRoute((ReCaptcha.withReCaptchaVerify(_, sy.log, captchaTestConfig)).andThenFirstE { _: Unit => emptyOk() })
 
   override def beforeAll: Unit = {
     wireMockServer.start()
@@ -80,9 +80,7 @@ class CaptchaDirectiveSpec extends WordSpec with Matchers with ScalatestRouteTes
         .out(jsonBody[String])
 
       val captchaTestRoute: Route = captchaTestEndpoint
-        .toRoute((ReCaptcha.withReCaptchaVerify(_, sy.log, captchaTestConfig)).andThenFirstE { _: Unit =>
-          emptyOk()
-        })
+        .toRoute((ReCaptcha.withReCaptchaVerify(_, sy.log, captchaTestConfig)).andThenFirstE { _: Unit => emptyOk() })
 
       Get(testEndpoint) ~> Route.seal(captchaTestRoute) ~> check {
         status shouldBe StatusCodes.BadRequest
@@ -130,9 +128,7 @@ class CaptchaDirectiveSpec extends WordSpec with Matchers with ScalatestRouteTes
         .in("test")
         .get
         .out(jsonBody[String])
-        .toRoute((ReCaptcha.withReCaptchaVerify(_, sy.log, configWithFalseFlag)).andThenFirstE { _: Unit =>
-          emptyOk()
-        })
+        .toRoute((ReCaptcha.withReCaptchaVerify(_, sy.log, configWithFalseFlag)).andThenFirstE { _: Unit => emptyOk() })
 
       Get(testEndpoint) ~> captchaNotCheckRoute ~> check {
         status shouldBe StatusCodes.OK

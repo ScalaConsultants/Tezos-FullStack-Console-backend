@@ -70,7 +70,7 @@ class EmailSenderSpec
     "send emails" in {
       val addMail: Future[Int] = email2SendService.addNewEmail2Send(newEmail2Send.get)
 
-      whenReady(addMail) { _ shouldBe 1 }
+      whenReady(addMail)(_ shouldBe 1)
 
       whenReady(getNextEmail) { message =>
         message shouldBe defined
@@ -96,7 +96,7 @@ class EmailSenderSpec
         Future(Thread.sleep(5000)) // this is to give time for EmailSender actor to finish db deletion
           .flatMap(_ => email2SendService.getEmails2Send(10))
 
-      whenReady(dbState) { _ shouldBe 'empty }
+      whenReady(dbState)(_ shouldBe 'empty)
 
       cronTask.cancel()
     }

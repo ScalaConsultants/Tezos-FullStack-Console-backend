@@ -46,10 +46,12 @@ object SendEmail {
                 case None    => Success(None)
               }
       contact <- Contact.create(dto.phone, email)
-    } yield new SendEmail(uid     = generateSendEmailId,
-                          to      = adminEmail,
-                          subject = "Contact request",
-                          content = ContactFormContent(name = dto.name, contact = contact, content = dto.content)) {}
+    } yield new SendEmail(
+       uid     = generateSendEmailId,
+       to      = adminEmail,
+       subject = "Contact request",
+       content = ContactFormContent(name = dto.name, contact = contact, content = dto.content)
+    ) {}
 
   def fromSendEmailDbDto(dto: SendEmailDbDto): Try[SendEmail] =
     for {

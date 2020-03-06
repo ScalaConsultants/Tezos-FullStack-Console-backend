@@ -3,20 +3,20 @@ package io.scalac.tezos.translator
 import akka.actor.ActorSystem
 import akka.event.LoggingAdapter
 import akka.testkit.TestKit
-import com.icegreen.greenmail.util.{GreenMail, GreenMailUtil, ServerSetupTest}
+import com.icegreen.greenmail.util.{ GreenMail, GreenMailUtil, ServerSetupTest }
 import eu.timepit.refined.collection.NonEmpty
-import io.scalac.tezos.translator.config.{CronConfiguration, EmailConfiguration}
+import io.scalac.tezos.translator.config.{ CronConfiguration, EmailConfiguration }
 import io.scalac.tezos.translator.model.LibraryEntry.Accepted
-import io.scalac.tezos.translator.model.types.ContactData.{Content, EmailReq, EmailS, Name, NameReq, Phone, PhoneReq}
-import io.scalac.tezos.translator.model.{EmailAddress, SendEmail}
+import io.scalac.tezos.translator.model.types.ContactData.{ Content, EmailReq, EmailS, Name, NameReq, Phone, PhoneReq }
+import io.scalac.tezos.translator.model.{ EmailAddress, SendEmail }
 import io.scalac.tezos.translator.repository.Emails2SendRepository
-import io.scalac.tezos.translator.routes.dto.{LibraryEntryRoutesDto, SendEmailRoutesDto}
-import io.scalac.tezos.translator.service.{Emails2SendService, SendEmailsServiceImpl}
+import io.scalac.tezos.translator.routes.dto.{ LibraryEntryRoutesDto, SendEmailRoutesDto }
+import io.scalac.tezos.translator.service.{ Emails2SendService, SendEmailsServiceImpl }
 import javax.mail.internet.MimeMessage
 import org.scalatest.concurrent.ScalaFutures
-import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, FlatSpecLike, Matchers}
+import org.scalatest.{ BeforeAndAfterAll, BeforeAndAfterEach, FlatSpecLike, Matchers }
 import eu.timepit.refined.refineMV
-import io.scalac.tezos.translator.model.types.Library.{Author, Description, Micheline, Michelson, NotEmptyAndNotLong, Title}
+import io.scalac.tezos.translator.model.types.Library.{ Author, Description, Micheline, Michelson, NotEmptyAndNotLong, Title }
 import cats.syntax.option._
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -26,7 +26,7 @@ import scala.language.postfixOps
 
 //noinspection TypeAnnotation
 class SendEmailServiceSpec
-  extends TestKit(ActorSystem("MySpec"))
+    extends TestKit(ActorSystem("MySpec"))
     with FlatSpecLike
     with Matchers
     with ScalaFutures
@@ -54,15 +54,15 @@ class SendEmailServiceSpec
   val testDb = DbTestBase.db
 
   val log: LoggingAdapter = system.log
-  val emails2SendRepo = new Emails2SendRepository
-  val email2SendService = new Emails2SendService(emails2SendRepo, testDb)
+  val emails2SendRepo     = new Emails2SendRepository
+  val email2SendService   = new Emails2SendService(emails2SendRepo, testDb)
 
-  val testMailUser = "sender@mail.some"
-  val testMailPass = "6131Zz$*n6z2"
-  val testAdmin = "testrec@some.some"
+  val testMailUser   = "sender@mail.some"
+  val testMailPass   = "6131Zz$*n6z2"
+  val testAdmin      = "testrec@some.some"
   val testAdminEmail = unsafeEmailAddress(testAdmin)
 
-  val testCronConfig = CronConfiguration(cronTaskInterval = 3 seconds)
+  val testCronConfig  = CronConfiguration(cronTaskInterval         = 3 seconds)
   val testEmailConfig = EmailConfiguration("localhost", 3025, auth = true, testMailUser, testMailPass, receiver = testAdmin)
 
   val emailSenderService = SendEmailsServiceImpl(email2SendService, log, testEmailConfig, testCronConfig).get
@@ -82,9 +82,7 @@ class SendEmailServiceSpec
 
     val expected: Seq[SendEmail] = toInsert
 
-    whenReady(emailSenderService.getEmailsToSend) { emailsToSend =>
-      emailsToSend should contain theSameElementsAs expected
-    }
+    whenReady(emailSenderService.getEmailsToSend)(emailsToSend => emailsToSend should contain theSameElementsAs expected)
   }
 
   behavior of "SendEmailsService.sendSingleMail"
@@ -127,13 +125,11 @@ class SendEmailServiceSpec
     }
 
     val received: Map[String, MimeMessage] =
-      greenMail.getReceivedMessages
-        .toList
-        .map { m =>
-          val subject = m.getSubject
+      greenMail.getReceivedMessages.toList.map { m =>
+        val subject = m.getSubject
 
-          (subject, m)
-        }.toMap
+        (subject, m)
+      }.toMap
 
     received.size shouldBe 3
 
@@ -151,7 +147,6 @@ class SendEmailServiceSpec
 
     body1 shouldBe """Acceptance status of your translation: "translation title" has changed to: accepted"""
 
-
     received.get(e2.subject) shouldBe defined
     val e2SendResult = received(e2.subject)
 
@@ -165,13 +160,11 @@ class SendEmailServiceSpec
     val body2 = GreenMailUtil.getBody(e2SendResult)
 
     Helper.testFormat(body2) shouldBe
-      Helper.testFormat(
-        s"""
-           |name: Dude
-           |phone: 666666666
-           |email: dude@service.com
-           |content: some content""".stripMargin)
-
+      Helper.testFormat(s"""
+                           |name: Dude
+                           |phone: 666666666
+                           |email: dude@service.com
+                           |content: some content""".stripMargin)
 
     received.get(e3.subject) shouldBe defined
     val e3SendResult = received(e3.subject)
@@ -186,35 +179,44 @@ class SendEmailServiceSpec
     val body3 = GreenMailUtil.getBody(e3SendResult).replaceAll("\r", "")
 
     Helper.testFormat(body3) should startWith
-    Helper.testFormat(
-      s"""
-         |Please add my translation to your library:
-         |Title: contract name
-         |Description: Some description""".stripMargin)
+    Helper.testFormat(s"""
+                         |Please add my translation to your library:
+                         |Title: contract name
+                         |Description: Some description""".stripMargin)
 
   }
 
   private trait SampleEmails {
     val e1: SendEmail = SendEmail.statusChange(unsafeEmailAddress("xxx@service.com"), Title(refineMV("translation title")), Accepted)
-    val e2: SendEmail = SendEmail.fromSendEmailRoutesDto(
-      SendEmailRoutesDto(
-        Name(refineMV[NameReq]("Dude")),
-        Some(Phone(refineMV[PhoneReq]("666666666"))),
-        Some(EmailS(refineMV[EmailReq]("dude@service.com"))),
-        Content(refineMV[NonEmpty]("some content"))),
-      testAdminEmail).get
+
+    val e2: SendEmail = SendEmail
+      .fromSendEmailRoutesDto(
+         SendEmailRoutesDto(
+            Name(refineMV[NameReq]("Dude")),
+            Some(Phone(refineMV[PhoneReq]("666666666"))),
+            Some(EmailS(refineMV[EmailReq]("dude@service.com"))),
+            Content(refineMV[NonEmpty]("some content"))
+         ),
+         testAdminEmail
+      )
+      .get
+
     val e3: SendEmail = SendEmail.approvalRequest(
-      LibraryEntryRoutesDto(
-        Title(refineMV[NotEmptyAndNotLong]("contract name")),
-        Author(refineMV[NotEmptyAndNotLong]("Thanos")).some,
-        None,
-        Description(refineMV[NotEmptyAndNotLong]("Some description")).some,
-        Micheline(refineMV[NonEmpty]("micheline")),
-        Michelson(refineMV[NonEmpty]("michelson"))), testAdminEmail)
+       LibraryEntryRoutesDto(
+          Title(refineMV[NotEmptyAndNotLong]("contract name")),
+          Author(refineMV[NotEmptyAndNotLong]("Thanos")).some,
+          None,
+          Description(refineMV[NotEmptyAndNotLong]("Some description")).some,
+          Micheline(refineMV[NonEmpty]("micheline")),
+          Michelson(refineMV[NonEmpty]("michelson"))
+       ),
+       testAdminEmail
+    )
 
     val toInsert: Seq[SendEmail] = Seq(e1, e2, e3)
 
-    def insert(service: Emails2SendService, toInsert: Seq[SendEmail] = toInsert): Future[Seq[Int]] = Future.sequence(toInsert.map(service.addNewEmail2Send))
+    def insert(service: Emails2SendService, toInsert: Seq[SendEmail] = toInsert): Future[Seq[Int]] =
+      Future.sequence(toInsert.map(service.addNewEmail2Send))
   }
 
   private def unsafeEmailAddress(s: String): EmailAddress = {

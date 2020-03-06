@@ -28,9 +28,8 @@ object ReCaptcha {
     if (reCaptchaConfig.checkOn)
       maybeCaptcha.fold {
         captchaHeaderIsMissingAsFuture(reCaptchaConfig.headerName)
-      } { header =>
-        checkCaptcha(header, log, reCaptchaConfig)
-      } else
+      }(header => checkCaptcha(header, log, reCaptchaConfig))
+    else
       Future.successful(().asRight[ErrorResponse])
 
   protected def captchaHeaderIsMissingAsFuture(captchaHeaderName: String): Future[Either[ErrorResponse, Unit]] =
@@ -64,8 +63,8 @@ object ReCaptcha {
      ec: ExecutionContext
    ): Future[Either[Error, HttpResponse]] =
     Http()
-      .singleRequest(
-         request = HttpRequest(HttpMethods.POST, reCaptchaConfig.url + s"?secret=${reCaptchaConfig.secret}&response=${userCaptcha.v.value}")
+      .singleRequest(request =
+        HttpRequest(HttpMethods.POST, reCaptchaConfig.url + s"?secret=${reCaptchaConfig.secret}&response=${userCaptcha.v.value}")
       )
       .map(Right(_))
       .recover {
@@ -105,8 +104,10 @@ object ReCaptcha {
         else
           (Error("You are bot"), StatusCode.Unauthorized).asLeft
       case _ =>
-        (Error(s"""Google response was successful but "score" field is empty. You probably did not use reCAPTCHA V3"""),
-         StatusCode.Unauthorized).asLeft
+        (
+           Error(s"""Google response was successful but "score" field is empty. You probably did not use reCAPTCHA V3"""),
+           StatusCode.Unauthorized
+        ).asLeft
     }
 
 }

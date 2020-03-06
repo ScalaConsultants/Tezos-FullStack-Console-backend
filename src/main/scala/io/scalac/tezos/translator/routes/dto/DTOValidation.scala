@@ -110,17 +110,13 @@ object DTOValidation {
 
   sealed trait DTOValidationError extends Product with Serializable
 
-  implicit val SendEmailDTOValidation: DTOValidation[SendEmailRoutesDto] = { dto =>
-    validateSendEmailDTO(dto)
-  }
+  implicit val SendEmailDTOValidation: DTOValidation[SendEmailRoutesDto] = { dto => validateSendEmailDTO(dto) }
 
   final case class FieldToLong(field: String, maxLength: Int) extends DTOValidationError
 
   final case class FieldIsEmpty(field: String) extends DTOValidationError
 
-  implicit val LibraryDTOValidation: DTOValidation[LibraryEntryRoutesDto] = { dto =>
-    validateLibraryEntryRoutesDto(dto)
-  }
+  implicit val LibraryDTOValidation: DTOValidation[LibraryEntryRoutesDto] = { dto => validateLibraryEntryRoutesDto(dto) }
 
   final case class FieldIsInvalid(fieldName: String, field: String) extends DTOValidationError
 

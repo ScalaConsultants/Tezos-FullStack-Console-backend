@@ -1,4 +1,5 @@
 package io.scalac.tezos.translator.model
+
 import Contact._
 import io.scalac.tezos.translator.model.types.ContactData.{ Phone, PhoneReq }
 import org.scalatest.{ Matchers, WordSpec }
