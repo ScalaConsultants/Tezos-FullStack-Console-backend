@@ -2,8 +2,8 @@ import Dependencies._
 
 lazy val compilerOptions = Seq(
   "-deprecation", // Emit warning and location for usages of deprecated APIs.
-  "-encoding",
-  "utf-8",                            // Specify character encoding used by source files.
+  "-encoding", // Specify character encoding used by source files.
+  "utf-8", // To UTF-8 encoding.
   "-explaintypes",                    // Explain type errors in more detail.
   "-feature",                         // Emit warning and location for usages of features that should be imported explicitly.
   "-language:existentials",           // Existential types (besides wildcard types) can be written and inferred
@@ -80,6 +80,9 @@ lazy val root = (project in file(".")).settings(
 
 ).configs(IntegrationTest)
 
+inConfig(IntegrationTest)(org.scalafmt.sbt.ScalafmtPlugin.scalafmtConfigSettings)
+
 addCommandAlias("testAll", ";test;it:test")
+addCommandAlias("formatCode", ";clean;scalafmt;test:scalafmt;it:scalafmt;scalafmtSbt")
 
 addCompilerPlugin("org.scalamacros" % "paradise" % "2.1.1" cross CrossVersion.full)
