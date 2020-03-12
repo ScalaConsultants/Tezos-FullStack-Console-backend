@@ -1,18 +1,19 @@
 package io.scalac.tezos.translator.routes.dto
 
 import cats.data.NonEmptyList
-import cats.instances.parallel._
-import cats.instances.option._
 import cats.instances.either._
-import cats.syntax.traverse._
+import cats.instances.option._
+import cats.instances.parallel._
 import cats.syntax.either._
 import cats.syntax.parallel._
+import cats.syntax.traverse._
 import eu.timepit.refined.refineV
 import io.scalac.tezos.translator.model._
 import io.scalac.tezos.translator.model.types.ContactData.{ EmailReq, EmailS }
 import io.scalac.tezos.translator.routes.dto.DTO.{ ErrorDTO, Errors }
 import io.scalac.tezos.translator.routes.dto.DTOValidation.ValidationResult
 import sttp.model.StatusCode
+
 import scala.concurrent.{ ExecutionContext, Future }
 
 trait DTOValidation[T] {
@@ -101,7 +102,7 @@ object DTOValidation {
            }
       )
 
-  def validateLibraryEntryRoutesDto: LibraryEntryRoutesDto => ValidationResult[LibraryEntryRoutesDto] = { dto =>
+  def validateLibraryEntryRoutesNewDto: LibraryEntryRoutesNewDto => ValidationResult[LibraryEntryRoutesNewDto] = { dto =>
     val checkEmail: Either[NonEmptyList[DTOValidationError], Option[EmailS]] =
       dto.email.traverse(checkEmailIsValid)
 
@@ -116,7 +117,7 @@ object DTOValidation {
 
   final case class FieldIsEmpty(field: String) extends DTOValidationError
 
-  implicit val LibraryDTOValidation: DTOValidation[LibraryEntryRoutesDto] = { dto => validateLibraryEntryRoutesDto(dto) }
+  implicit val LibraryDTOValidation: DTOValidation[LibraryEntryRoutesNewDto] = { dto => validateLibraryEntryRoutesNewDto(dto) }
 
   final case class FieldIsInvalid(fieldName: String, field: String) extends DTOValidationError
 

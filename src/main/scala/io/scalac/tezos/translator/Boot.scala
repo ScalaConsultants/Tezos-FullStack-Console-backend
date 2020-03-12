@@ -81,7 +81,7 @@ object Boot {
           cronEmailSender.cancel()
           binding.unbind()
         case Failure(ex) =>
-          Future(log.error(ex, s"An error was occurred !"))
+          Future(log.error(ex, s"An error has occurred!"))
       }
       .onComplete(_ => system.terminate())
   }

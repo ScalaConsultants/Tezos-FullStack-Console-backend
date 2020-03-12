@@ -1,28 +1,28 @@
 package io.scalac.tezos.translator.routes.dto
 
+import io.circe.generic.semiauto.{ deriveDecoder, deriveEncoder }
 import io.circe.{ Decoder, Encoder }
-import io.circe.generic.semiauto.deriveEncoder
-import io.circe.generic.semiauto.deriveDecoder
 import io.scalac.tezos.translator.model.LibraryEntry.PendingApproval
-import io.scalac.tezos.translator.model.types.ContactData.EmailS
-import io.scalac.tezos.translator.model.types.ContactData.MaybeEmailAddressOps
+import io.scalac.tezos.translator.model.types.ContactData.{ EmailS, MaybeEmailAddressOps }
+import io.scalac.tezos.translator.model.types.Library._
 import io.scalac.tezos.translator.model.types.UUIDs._
 import io.scalac.tezos.translator.model.{ EmailAddress, LibraryEntry }
+
 import scala.util.{ Success, Try }
-import io.scalac.tezos.translator.model.types.Library._
 
 sealed trait LibraryEntryDTO
 
 object LibraryEntryDTO {
 
   implicit val LibraryEntryDTOEncoder: Encoder[LibraryEntryDTO] = {
-    case v: LibraryEntryRoutesAdminDto =>
-      LibraryEntryRoutesAdminDto.libraryEntryRoutesAdminDtoEncoder(v)
-    case v: LibraryEntryRoutesDto =>
-      LibraryEntryRoutesDto.libraryEntryRoutesDtoEncoder(v)
+    case v: LibraryEntryRoutesAdminDto => LibraryEntryRoutesAdminDto.libraryEntryRoutesAdminDtoEncoder(v)
+    case v: LibraryEntryRoutesNewDto   => LibraryEntryRoutesNewDto.libraryEntryRoutesNewDtoEncoder(v)
+    case v: LibraryEntryRoutesDto      => LibraryEntryRoutesDto.libraryEntryRoutesDtoEncoder(v)
   }
 
 }
+
+/** LibraryEntryRoutesAdminDto **/
 
 case class LibraryEntryRoutesAdminDto(
    uid: LibraryEntryId,
@@ -57,7 +57,9 @@ object LibraryEntryRoutesAdminDto {
 
 }
 
-case class LibraryEntryRoutesDto(
+/** LibraryEntryRoutesNewDto **/
+
+case class LibraryEntryRoutesNewDto(
    title: Title,
    author: Option[Author],
    email: Option[EmailS],
@@ -89,10 +91,33 @@ case class LibraryEntryRoutesDto(
 
 }
 
+object LibraryEntryRoutesNewDto {
+
+  implicit val libraryEntryRoutesNewDtoEncoder: Encoder[LibraryEntryRoutesNewDto] =
+    deriveEncoder[LibraryEntryRoutesNewDto]
+
+  implicit val libraryEntryRoutesNewDtoDecoder: Decoder[LibraryEntryRoutesNewDto] =
+    deriveDecoder[LibraryEntryRoutesNewDto]
+
+}
+
+/** LibraryEntryRoutesDto **/
+
+case class LibraryEntryRoutesDto(
+   uid: LibraryEntryId,
+   title: Title,
+   author: Option[Author],
+   email: Option[EmailS],
+   description: Option[Description],
+   micheline: Micheline,
+   michelson: Michelson)
+    extends LibraryEntryDTO
+
 object LibraryEntryRoutesDto {
 
   def fromDomain(v: LibraryEntry): LibraryEntryRoutesDto =
     LibraryEntryRoutesDto(
+       uid         = v.uid,
        title       = v.title,
        author      = v.author,
        email       = v.email.toEmailS,

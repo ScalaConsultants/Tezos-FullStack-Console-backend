@@ -24,7 +24,7 @@ import io.scalac.tezos.translator.repository.dto.LibraryEntryDbDto
 import io.scalac.tezos.translator.repository.{ Emails2SendRepository, LibraryRepository, UserRepository }
 import io.scalac.tezos.translator.routes.LibraryRoutes
 import io.scalac.tezos.translator.routes.dto.DTO.Errors
-import io.scalac.tezos.translator.routes.dto.{ LibraryEntryRoutesAdminDto, LibraryEntryRoutesDto }
+import io.scalac.tezos.translator.routes.dto.{ LibraryEntryRoutesAdminDto, LibraryEntryRoutesDto, LibraryEntryRoutesNewDto }
 import io.scalac.tezos.translator.schema.LibraryTable
 import io.scalac.tezos.translator.service.{ Emails2SendService, LibraryService, UserService }
 import org.scalatest.concurrent.ScalaFutures
@@ -112,12 +112,12 @@ class LibrarySpec extends WordSpec with Matchers with ScalatestRouteTest with Sc
   "Library routes" should {
 
     "store proper payload" should {
-      "full filed payload " in {
+      "proper payload " in {
         val titleForFilter  = Title(refineMV[NotEmptyAndNotLong]("vss"))
         val testAuthor      = Author(refineMV[NotEmptyAndNotLong]("Mike")).some
         val testDescription = Description(refineMV[NotEmptyAndNotLong]("Some thing for some things")).some
 
-        val properPayload = LibraryEntryRoutesDto(titleForFilter, testAuthor, None, testDescription, properMicheline, properMichelson) // with all of some as none return 500
+        val properPayload = LibraryEntryRoutesNewDto(titleForFilter, testAuthor, None, testDescription, properMicheline, properMichelson) // with all of some as none return 500
         Post(libraryEndpoint, properPayload) ~> Route.seal(libraryRoute) ~> check {
           status shouldBe StatusCodes.OK
         }
@@ -135,7 +135,7 @@ class LibrarySpec extends WordSpec with Matchers with ScalatestRouteTest with Sc
       }
       "payload without options" in {
         val titleForFilter = Title(refineMV[NotEmptyAndNotLong]("vss"))
-        val properPayload  = LibraryEntryRoutesDto(titleForFilter, None, None, None, properMicheline, properMichelson)
+        val properPayload  = LibraryEntryRoutesNewDto(titleForFilter, None, None, None, properMicheline, properMichelson)
         Post(libraryEndpoint, properPayload) ~> Route.seal(libraryRoute) ~> check {
           status shouldBe StatusCodes.OK
         }
@@ -151,7 +151,7 @@ class LibrarySpec extends WordSpec with Matchers with ScalatestRouteTest with Sc
       "payload with UpperCased Email make lower " in {
         val titleForFilter  = Title(refineMV[NotEmptyAndNotLong]("vss"))
         val testDescription = Description(refineMV[NotEmptyAndNotLong]("Some thing for some things")).some
-        val properPayload = LibraryEntryRoutesDto(
+        val properPayload = LibraryEntryRoutesNewDto(
            titleForFilter,
            None,
            Some(EmailS(refineMV[EmailReq]("Aeaaast@service.pl"))),
@@ -179,7 +179,7 @@ class LibrarySpec extends WordSpec with Matchers with ScalatestRouteTest with Sc
         _ shouldBe 'empty
       }
       val userEmail = EmailS(refineMV[EmailReq]("name@service.com"))
-      val record = LibraryEntryRoutesDto(
+      val record = LibraryEntryRoutesNewDto(
          Title(refineMV[NotEmptyAndNotLong]("name")),
          Author(refineMV[NotEmptyAndNotLong]("Author")).some,
          Some(userEmail),
@@ -202,6 +202,7 @@ class LibrarySpec extends WordSpec with Matchers with ScalatestRouteTest with Sc
 
     // it was the only one accepted
     val expectedRecord2 = LibraryEntryRoutesDto(
+       record2.uid,
        Title(refineMV[NotEmptyAndNotLong]("nameE2")),
        Author(refineMV[NotEmptyAndNotLong]("authorE2")).some,
        Some(EmailS(refineMV[EmailReq]("name@service.com"))),
@@ -210,10 +211,10 @@ class LibrarySpec extends WordSpec with Matchers with ScalatestRouteTest with Sc
        Michelson(refineMV[NonEmpty]("michelsonE2"))
     )
 
-    whenReady(libraryService.getRecords()) {
+    whenReady(libraryService.getEntries()) {
       _ should contain theSameElementsAs toInsert
     }
-    whenReady(libraryService.getRecords(statusFilter = Some(Accepted))) {
+    whenReady(libraryService.getEntries(statusFilter = Some(Accepted))) {
       _ should contain theSameElementsAs Seq(record2)
     }
 
@@ -245,12 +246,64 @@ class LibrarySpec extends WordSpec with Matchers with ScalatestRouteTest with Sc
     }
   }
 
+  "return single entry to unauthenticated users" in new SampleEntries {
+    whenReady(insert(libraryService)) {
+      _ should contain theSameElementsAs Seq(1, 1, 1)
+    }
+
+    val expectedRecord2 = LibraryEntryRoutesDto.fromDomain(record2)
+
+    Get(s"$libraryEndpoint/17976f3a-505b-4d66-854a-243a70bb94c0") ~> libraryRoute ~> check {
+      status shouldBe StatusCodes.OK
+      val actualRecord = responseAs[LibraryEntryRoutesDto]
+
+      actualRecord shouldBe expectedRecord2
+    }
+  }
+
+  "return full entry to admins" in new SampleEntries {
+    whenReady(insert(libraryService)) {
+      _ should contain theSameElementsAs Seq(1, 1, 1)
+    }
+
+    val expectedRecord2 = LibraryEntryRoutesAdminDto.fromDomain(record2)
+
+    val bearerToken = getToken(userService, adminCredentials)
+
+    Get(s"$libraryEndpoint/17976f3a-505b-4d66-854a-243a70bb94c0")
+      .withHeaders(Authorization(OAuth2BearerToken(bearerToken))) ~> libraryRoute ~> check {
+      status shouldBe StatusCodes.OK
+      val actualRecord = responseAs[LibraryEntryRoutesAdminDto]
+
+      actualRecord shouldBe expectedRecord2
+    }
+  }
+
+  "return Not Found for nonexistent IDs" in new SampleEntries {
+    whenReady(insert(libraryService)) {
+      _ should contain theSameElementsAs Seq(1, 1, 1)
+    }
+
+    // For unauthenticated users.
+    Get(s"$libraryEndpoint/00000000-0000-0000-0000-000000000000") ~> libraryRoute ~> check {
+      status shouldBe StatusCodes.NotFound
+    }
+
+    // For admins.
+    val bearerToken = getToken(userService, adminCredentials)
+    Get(s"$libraryEndpoint/00000000-0000-0000-0000-000000000000")
+      .withHeaders(Authorization(OAuth2BearerToken(bearerToken))) ~> libraryRoute ~> check {
+      status shouldBe StatusCodes.NotFound
+    }
+  }
+
   "update library entry status" in new SampleEntries {
     whenReady(insert(libraryService)) {
       _ should contain theSameElementsAs Seq(1, 1, 1)
     }
 
     val expectedRecord2 = LibraryEntryRoutesDto(
+       record2.uid,
        Title(refineMV[NotEmptyAndNotLong]("nameE2")),
        Author(refineMV[NotEmptyAndNotLong]("authorE2")).some,
        Some(EmailS(refineMV[EmailReq]("name@service.com"))),
@@ -269,38 +322,40 @@ class LibrarySpec extends WordSpec with Matchers with ScalatestRouteTest with Sc
 
     // change statuses
     // record1
-    Put(s"$libraryEndpoint?uid=d7327913-4957-4417-96d2-e5c1d4311f80&status=accepted")
+    Put(s"$libraryEndpoint/d7327913-4957-4417-96d2-e5c1d4311f80?status=accepted")
       .withHeaders(Authorization(OAuth2BearerToken(bearerToken))) ~> libraryRoute ~> check {
       status shouldBe StatusCodes.OK
     }
     // record2
-    Put(s"$libraryEndpoint?uid=17976f3a-505b-4d66-854a-243a70bb94c0&status=declined")
+    Put(s"$libraryEndpoint/17976f3a-505b-4d66-854a-243a70bb94c0?status=declined")
       .withHeaders(Authorization(OAuth2BearerToken(bearerToken))) ~> libraryRoute ~> check {
       status shouldBe StatusCodes.OK
     }
     // record3
-    Put(s"$libraryEndpoint?uid=5d8face2-ab24-49e0-b792-a0b99a031645&status=pending_approval")
+    Put(s"$libraryEndpoint/5d8face2-ab24-49e0-b792-a0b99a031645?status=pending_approval")
       .withHeaders(Authorization(OAuth2BearerToken(bearerToken))) ~> libraryRoute ~> check {
       status shouldBe StatusCodes.NotFound // cannot update status to "pending_approval"
     }
 
     // invalid uid
-    Put(s"$libraryEndpoint?uid=aada8ebe&status=accepted")
+    Put(s"$libraryEndpoint/NOTaVALIDuuid?status=accepted")
       .withHeaders(Authorization(OAuth2BearerToken(bearerToken))) ~> libraryRoute ~> check {
-      status shouldBe StatusCodes.BadRequest
+      handled shouldBe false
     }
-    // non exisitng uid
-    Put(s"$libraryEndpoint?uid=4cb9f377-718c-4d5d-be0d-118a5c99e298&status=accepted")
+
+    // non existing uid
+    Put(s"$libraryEndpoint/4cb9f377-718c-4d5d-be0d-118a5c99e298?status=accepted")
       .withHeaders(Authorization(OAuth2BearerToken(bearerToken))) ~> libraryRoute ~> check {
       status shouldBe StatusCodes.NotFound
     }
 
     val expectedNewStatuses = Seq(record1.copy(status = Accepted), record2.copy(status = Declined), record3)
-    whenReady(libraryService.getRecords(limit = Some(Limit(refineMV[Positive](5))))) {
+    whenReady(libraryService.getEntries(limit = Some(Limit(refineMV[Positive](5))))) {
       _ should contain theSameElementsAs expectedNewStatuses
     }
 
     val expectedRecord1 = LibraryEntryRoutesDto(
+       record1.uid,
        Title(refineMV[NotEmptyAndNotLong]("nameE1")),
        Author(refineMV[NotEmptyAndNotLong]("authorE1")).some,
        None,
@@ -322,6 +377,7 @@ class LibrarySpec extends WordSpec with Matchers with ScalatestRouteTest with Sc
     }
 
     val expectedRecord2 = LibraryEntryRoutesDto(
+       record2.uid,
        Title(refineMV[NotEmptyAndNotLong]("nameE2")),
        Author(refineMV[NotEmptyAndNotLong]("authorE2")).some,
        Some(EmailS(refineMV[EmailReq]("name@service.com"))),
@@ -339,7 +395,7 @@ class LibrarySpec extends WordSpec with Matchers with ScalatestRouteTest with Sc
     val bearerToken = getToken(userService, adminCredentials)
 
     // record 2
-    Delete(s"$libraryEndpoint?uid=17976f3a-505b-4d66-854a-243a70bb94c0")
+    Delete(s"$libraryEndpoint/17976f3a-505b-4d66-854a-243a70bb94c0")
       .withHeaders(Authorization(OAuth2BearerToken(bearerToken))) ~> libraryRoute ~> check {
       status shouldBe StatusCodes.OK
     }
@@ -351,12 +407,12 @@ class LibrarySpec extends WordSpec with Matchers with ScalatestRouteTest with Sc
     }
 
     // invalid uid
-    Delete(s"$libraryEndpoint?uid=4cb9f377-718c-4d5d-be0d-118a5c99e294")
+    Delete(s"$libraryEndpoint/4cb9f377-718c-4d5d-be0d-118a5c99e294")
       .withHeaders(Authorization(OAuth2BearerToken(bearerToken))) ~> libraryRoute ~> check {
       status shouldBe StatusCodes.NotFound
     }
     // non exisitng uid
-    Delete(s"$libraryEndpoint?uid=4cb9f377-718c-4d5d-be0d-118a5c99e298")
+    Delete(s"$libraryEndpoint/4cb9f377-718c-4d5d-be0d-118a5c99e298")
       .withHeaders(Authorization(OAuth2BearerToken(bearerToken))) ~> libraryRoute ~> check {
       status shouldBe StatusCodes.NotFound
     }
@@ -415,7 +471,7 @@ class LibrarySpec extends WordSpec with Matchers with ScalatestRouteTest with Sc
     val userEmail       = EmailS(refineMV[EmailReq]("name@service.com"))
     val userDescription = Description(refineMV[NotEmptyAndNotLong]("description"))
     val userName        = Author(refineMV[NotEmptyAndNotLong]("name@service.com"))
-    val record = LibraryEntryRoutesDto(
+    val record = LibraryEntryRoutesNewDto(
        Title(refineMV[NotEmptyAndNotLong]("name")),
        Some(userName),
        Some(userEmail),
@@ -444,7 +500,7 @@ class LibrarySpec extends WordSpec with Matchers with ScalatestRouteTest with Sc
       email2SendService.removeSentMessage(approvalRequest.uid)
     }
 
-    val records = Await.result(libraryService.getRecords(), 3 seconds)
+    val records = Await.result(libraryService.getEntries(), 3 seconds)
 
     records.length shouldBe 1
 
@@ -456,12 +512,12 @@ class LibrarySpec extends WordSpec with Matchers with ScalatestRouteTest with Sc
 
     val bearerToken = getToken(userService, adminCredentials)
 
-    Put(s"$libraryEndpoint?uid=${recordFromDB.uid}&status=accepted")
+    Put(s"$libraryEndpoint/${recordFromDB.uid}?status=accepted")
       .withHeaders(Authorization(OAuth2BearerToken(bearerToken))) ~> libraryRoute ~> check {
       status shouldBe StatusCodes.OK
     }
 
-    whenReady(libraryService.getRecords()) { records =>
+    whenReady(libraryService.getEntries()) { records =>
       val updatedRecord = records.filter(_.uid == recordFromDB.uid)
 
       updatedRecord.length shouldBe 1

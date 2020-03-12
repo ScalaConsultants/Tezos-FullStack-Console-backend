@@ -3,11 +3,11 @@ package io.scalac.tezos.translator.routes.dto
 import cats.data.NonEmptyList
 import cats.syntax.option._
 import eu.timepit.refined.collection.NonEmpty
+import eu.timepit.refined.refineMV
 import io.scalac.tezos.translator.model.types.ContactData.{ Content, EmailReq, EmailS, Name, NameReq, Phone, PhoneReq }
+import io.scalac.tezos.translator.model.types.Library._
 import io.scalac.tezos.translator.routes.dto.DTOValidation.{ DTOValidationError, FieldIsInvalid }
 import org.scalatest.{ Matchers, WordSpec }
-import eu.timepit.refined.refineMV
-import io.scalac.tezos.translator.model.types.Library._
 
 class DTOValidationSpec extends WordSpec with Matchers {
 
@@ -49,62 +49,62 @@ class DTOValidationSpec extends WordSpec with Matchers {
 
   }
 
-  "DTOValidation.validateLibraryEntryRoutesDto" should {
+  "DTOValidation.validateLibraryEntryRoutesNewDto" should {
 
     "pass validation" when {
 
       "all data is given" in {
-        val input = validLibraryEntryRoutesDto()
+        val input = validLibraryEntryRoutesNewDto()
 
-        DTOValidation.validateLibraryEntryRoutesDto(input) shouldBe Right(input)
+        DTOValidation.validateLibraryEntryRoutesNewDto(input) shouldBe Right(input)
       }
 
       "author is not given" in {
-        val input = validLibraryEntryRoutesDto(author = None)
+        val input = validLibraryEntryRoutesNewDto(author = None)
 
-        DTOValidation.validateLibraryEntryRoutesDto(input) shouldBe Right(input)
+        DTOValidation.validateLibraryEntryRoutesNewDto(input) shouldBe Right(input)
       }
 
       "email is not given" in {
-        val input = validLibraryEntryRoutesDto(email = None)
+        val input = validLibraryEntryRoutesNewDto(email = None)
 
-        DTOValidation.validateLibraryEntryRoutesDto(input) shouldBe Right(input)
+        DTOValidation.validateLibraryEntryRoutesNewDto(input) shouldBe Right(input)
       }
 
       "description is not given" in {
-        val input = validLibraryEntryRoutesDto(description = None)
+        val input = validLibraryEntryRoutesNewDto(description = None)
 
-        DTOValidation.validateLibraryEntryRoutesDto(input) shouldBe Right(input)
+        DTOValidation.validateLibraryEntryRoutesNewDto(input) shouldBe Right(input)
       }
 
       "description is an empty string" in {
-        val input = validLibraryEntryRoutesDto(description = None)
+        val input = validLibraryEntryRoutesNewDto(description = None)
 
-        DTOValidation.validateLibraryEntryRoutesDto(input) shouldBe Right(input.copy(description = None))
+        DTOValidation.validateLibraryEntryRoutesNewDto(input) shouldBe Right(input.copy(description = None))
       }
 
       "author, email is not given" in {
-        val input = validLibraryEntryRoutesDto(author = None, email = None)
+        val input = validLibraryEntryRoutesNewDto(author = None, email = None)
 
-        DTOValidation.validateLibraryEntryRoutesDto(input) shouldBe Right(input)
+        DTOValidation.validateLibraryEntryRoutesNewDto(input) shouldBe Right(input)
       }
 
       "email, description is not given" in {
-        val input = validLibraryEntryRoutesDto(email = None, description = None)
+        val input = validLibraryEntryRoutesNewDto(email = None, description = None)
 
-        DTOValidation.validateLibraryEntryRoutesDto(input) shouldBe Right(input)
+        DTOValidation.validateLibraryEntryRoutesNewDto(input) shouldBe Right(input)
       }
 
       "author, description is not given" in {
-        val input = validLibraryEntryRoutesDto(author = None, description = None)
+        val input = validLibraryEntryRoutesNewDto(author = None, description = None)
 
-        DTOValidation.validateLibraryEntryRoutesDto(input) shouldBe Right(input)
+        DTOValidation.validateLibraryEntryRoutesNewDto(input) shouldBe Right(input)
       }
 
       "author, email, description is not given" in {
-        val input = validLibraryEntryRoutesDto(author = None, email = None, description = None)
+        val input = validLibraryEntryRoutesNewDto(author = None, email = None, description = None)
 
-        DTOValidation.validateLibraryEntryRoutesDto(input) shouldBe Right(input)
+        DTOValidation.validateLibraryEntryRoutesNewDto(input) shouldBe Right(input)
       }
 
     }
@@ -120,13 +120,13 @@ class DTOValidationSpec extends WordSpec with Matchers {
      content: Content      = Content(refineMV[NonEmpty]("content"))
    ): SendEmailRoutesDto = SendEmailRoutesDto(name, phone, email, content)
 
-  private def validLibraryEntryRoutesDto(
+  private def validLibraryEntryRoutesNewDto(
      title: Title                     = Title(refineMV[NotEmptyAndNotLong]("title")),
      author: Option[Author]           = Author(refineMV[NotEmptyAndNotLong]("author")).some,
      email: Option[EmailS]            = Some(EmailS(refineMV[EmailReq]("email@email.com"))),
      description: Option[Description] = Description(refineMV[NotEmptyAndNotLong]("description")).some,
      micheline: Micheline             = Micheline(refineMV[NonEmpty]("micheline")),
      michelson: Michelson             = Michelson(refineMV[NonEmpty]("michelson"))
-   ): LibraryEntryRoutesDto = LibraryEntryRoutesDto(title, author, email, description, micheline, michelson)
+   ): LibraryEntryRoutesNewDto = LibraryEntryRoutesNewDto(title, author, email, description, micheline, michelson)
 
 }
