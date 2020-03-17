@@ -51,6 +51,8 @@ TEZOS_DB_IP="127.0.0.1" \
 sbt run
 ```
 
+* Backend documentation is provided by Swagger and it is available at `$BE_URL/docs`
+
 ## Exemplary queries
 
 Backed is available at `localhost` at port `8080` if running without a container

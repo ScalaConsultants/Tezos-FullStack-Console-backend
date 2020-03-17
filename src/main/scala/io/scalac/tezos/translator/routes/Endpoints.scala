@@ -47,8 +47,8 @@ object Endpoints {
   val limitQuery: EndpointInput.Query[Option[Limit]] =
     query[Option[Limit]](limit).description("Limit")
 
-  val uidQuery: EndpointInput.Query[UUIDString] =
-    query[UUIDString]("uid").description("Uid").example(refineMV[Uuid]("8682fcd8-b73d-48fa-abdc-3a2b9093b1f2"))
+  val uidPath: EndpointInput.PathCapture[UUIDString] =
+    path[UUIDString]("entryId").description("UUID of related entry").example(refineMV[Uuid]("8682fcd8-b73d-48fa-abdc-3a2b9093b1f2"))
 
   val statusQuery: EndpointInput.Query[String] =
     query[String]("status").description("Desired status").example("accepted")

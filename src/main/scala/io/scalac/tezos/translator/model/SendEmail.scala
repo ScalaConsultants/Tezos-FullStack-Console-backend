@@ -2,10 +2,9 @@ package io.scalac.tezos.translator.model
 
 import io.scalac.tezos.translator.model.LibraryEntry.Status
 import io.scalac.tezos.translator.model.types.Library.Title
-import io.scalac.tezos.translator.model.types.UUIDs.SendEmailId
-import io.scalac.tezos.translator.model.types.UUIDs.generateSendEmailId
+import io.scalac.tezos.translator.model.types.UUIDs.{ generateSendEmailId, SendEmailId }
 import io.scalac.tezos.translator.repository.dto.SendEmailDbDto
-import io.scalac.tezos.translator.routes.dto.{ LibraryEntryRoutesDto, SendEmailRoutesDto }
+import io.scalac.tezos.translator.routes.dto.{ LibraryEntryRoutesNewDto, SendEmailRoutesDto }
 
 import scala.util.{ Success, Try }
 
@@ -17,7 +16,7 @@ sealed abstract case class SendEmail(
 
 object SendEmail {
 
-  def approvalRequest(libraryDto: LibraryEntryRoutesDto, adminEmail: EmailAddress): SendEmail = {
+  def approvalRequest(libraryDto: LibraryEntryRoutesNewDto, adminEmail: EmailAddress): SendEmail = {
     val uid     = generateSendEmailId
     val subject = "Library approval request"
     val message = TextContent {

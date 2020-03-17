@@ -3,26 +3,27 @@ package io.scalac.tezos.translator
 import akka.actor.ActorSystem
 import akka.event.LoggingAdapter
 import akka.testkit.TestKit
+import cats.syntax.option._
 import com.icegreen.greenmail.util.{ GreenMail, GreenMailUtil, ServerSetupTest }
 import eu.timepit.refined.collection.NonEmpty
+import eu.timepit.refined.refineMV
 import io.scalac.tezos.translator.config.{ CronConfiguration, EmailConfiguration }
 import io.scalac.tezos.translator.model.LibraryEntry.Accepted
 import io.scalac.tezos.translator.model.types.ContactData.{ Content, EmailReq, EmailS, Name, NameReq, Phone, PhoneReq }
+import io.scalac.tezos.translator.model.types.Library.{ Author, Description, Micheline, Michelson, NotEmptyAndNotLong, Title }
 import io.scalac.tezos.translator.model.{ EmailAddress, SendEmail }
 import io.scalac.tezos.translator.repository.Emails2SendRepository
-import io.scalac.tezos.translator.routes.dto.{ LibraryEntryRoutesDto, SendEmailRoutesDto }
+import io.scalac.tezos.translator.routes.dto.{ LibraryEntryRoutesNewDto, SendEmailRoutesDto }
 import io.scalac.tezos.translator.service.{ Emails2SendService, SendEmailsServiceImpl }
 import javax.mail.internet.MimeMessage
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.{ BeforeAndAfterAll, BeforeAndAfterEach, FlatSpecLike, Matchers }
-import eu.timepit.refined.refineMV
-import io.scalac.tezos.translator.model.types.Library.{ Author, Description, Micheline, Michelson, NotEmptyAndNotLong, Title }
-import cats.syntax.option._
+
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.concurrent.duration._
-import scala.util.Success
 import scala.language.postfixOps
+import scala.util.Success
 
 //noinspection TypeAnnotation
 class SendEmailServiceSpec
@@ -202,7 +203,7 @@ class SendEmailServiceSpec
       .get
 
     val e3: SendEmail = SendEmail.approvalRequest(
-       LibraryEntryRoutesDto(
+       LibraryEntryRoutesNewDto(
           Title(refineMV[NotEmptyAndNotLong]("contract name")),
           Author(refineMV[NotEmptyAndNotLong]("Thanos")).some,
           None,
