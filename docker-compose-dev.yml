@@ -23,4 +23,3 @@ services:
       RE_CAPTCHA_CHECK_ON: ${RE_CAPTCHA_CHECK_ON}
       RE_CAPTCHA_SECRET: ${RE_CAPTCHA_SECRET}
     command: ["java", "-jar", "tezos-console.jar"]
-

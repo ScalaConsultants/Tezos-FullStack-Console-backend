@@ -39,7 +39,7 @@ class LoginRoutes(userService: UserService)(implicit ec: ExecutionContext) exten
   def loginLogic(credentials: UserCredentials): Future[Either[ErrorResponse, String]] =
     userService.authenticateAndCreateToken(credentials.username, credentials.password).map {
       case Some(token) => Right(token.v.value)
-      case None        => (Error("Wrong credentials !"), StatusCode.Forbidden).asLeft
+      case None        => (Error("Wrong credentials!"), StatusCode.Forbidden).asLeft
     }
 
   def logoutLogic(token: UserToken): Future[Either[ErrorResponse, Unit]] =

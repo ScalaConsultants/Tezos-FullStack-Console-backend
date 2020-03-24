@@ -59,10 +59,12 @@ class MessageSpec extends WordSpec with Matchers with ScalatestRouteTest with Be
     }
 
     "save proper dto" in {
-      val validDto = SendEmailRoutesDto(Name(refineMV[NameReq]("name")),
-                                        Some(Phone(refineMV[PhoneReq]("+77072123434"))),
-                                        Some(EmailS(refineMV[EmailReq]("email@gmail.com"))),
-                                        Content(refineMV[NonEmpty]("I wanna pizza")))
+      val validDto = SendEmailRoutesDto(
+         Name(refineMV[NameReq]("name")),
+         Some(Phone(refineMV[PhoneReq]("+77072123434"))),
+         Some(EmailS(refineMV[EmailReq]("email@gmail.com"))),
+         Content(refineMV[NonEmpty]("I wanna pizza"))
+      )
       Post(messageEndpoint, validDto) ~> messageRoute ~> check {
         status shouldBe StatusCodes.OK
       }

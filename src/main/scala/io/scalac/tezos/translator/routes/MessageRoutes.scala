@@ -1,4 +1,5 @@
 package io.scalac.tezos.translator.routes
+
 import akka.actor.ActorSystem
 import io.scalac.tezos.translator.model.{ EmailAddress, SendEmail }
 import io.scalac.tezos.translator.routes.utils.ReCaptcha
@@ -41,9 +42,7 @@ class MessageRoutes(
     messageEndpoint.toRoute {
       (ReCaptcha
         .withReCaptchaVerify(_, log, reCaptchaConfig))
-        .andThenFirstE { t: (Unit, SendEmailRoutesDto) =>
-          DTOValidation.validateDto(t._2)
-        }
+        .andThenFirstE { t: (Unit, SendEmailRoutesDto) => DTOValidation.validateDto(t._2) }
         .andThenFirstE(addNewEmail)
     }
 

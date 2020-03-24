@@ -29,9 +29,11 @@ object DbTestBase {
 
   private def dropTables(): Seq[Unit] = runDB(
      DBIO.sequence(
-        Seq(Emails2SendTable.emails2Send.schema.dropIfExists,
-            LibraryTable.library.schema.dropIfExists,
-            UsersTable.users.schema.dropIfExists)
+        Seq(
+           Emails2SendTable.emails2Send.schema.dropIfExists,
+           LibraryTable.library.schema.dropIfExists,
+           UsersTable.users.schema.dropIfExists
+        )
      )
   )
 

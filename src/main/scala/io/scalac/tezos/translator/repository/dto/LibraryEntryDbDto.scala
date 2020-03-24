@@ -30,26 +30,30 @@ case class LibraryEntryDbDto(
                       case Some(e) => EmailAddress.fromString(e.v.value).map(Some(_))
                       case None    => Success(None)
                     }
-    } yield LibraryEntry(uid         = uid,
-                         title       = title,
-                         author      = author,
-                         email       = emailAdress,
-                         description = description,
-                         micheline   = micheline,
-                         michelson   = michelson,
-                         status      = status)
+    } yield LibraryEntry(
+       uid         = uid,
+       title       = title,
+       author      = author,
+       email       = emailAdress,
+       description = description,
+       micheline   = micheline,
+       michelson   = michelson,
+       status      = status
+    )
 }
 
 object LibraryEntryDbDto {
 
   def fromDomain(v: LibraryEntry) =
-    LibraryEntryDbDto(uid         = v.uid,
-                      title       = v.title,
-                      author      = v.author,
-                      email       = v.email.toEmailS,
-                      description = v.description,
-                      micheline   = v.micheline,
-                      michelson   = v.michelson,
-                      createdAt   = Timestamp.from(Instant.now),
-                      status      = v.status.value)
+    LibraryEntryDbDto(
+       uid         = v.uid,
+       title       = v.title,
+       author      = v.author,
+       email       = v.email.toEmailS,
+       description = v.description,
+       micheline   = v.micheline,
+       michelson   = v.michelson,
+       createdAt   = Timestamp.from(Instant.now),
+       status      = v.status.value
+    )
 }
